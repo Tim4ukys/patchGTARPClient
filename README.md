@@ -9,6 +9,7 @@ ASI Plugin который _исправляет или изменяет_ пов�
 
 ## Установка
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/YC9oGw_tunQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 Чтобы установить последнию версию данного плагина, перейдите в [_Release_](https://github.com/Tim4ukys/patchGTARPClient/releases/latest) и скачайте _patchGTARPClientByTim4ukys.rar_. В этом архиве будет лежать два файла, Вам нужен именно _!000patchGTARPClientByTim4ukys.ASI_. Этот файл нужно будет перенести в корневую папку игры *(эта та папка в которой лежит gta_sa.exe)*. 
 
