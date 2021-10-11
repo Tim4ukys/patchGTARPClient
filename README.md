@@ -25,7 +25,7 @@ ASI Plugin который патчит(латает)/улучшает клиен
 
 ## Авторы
 
-[Tim4ukys](https://vk.com/tim4ukys) - Автор
+[Tim4ukys](https://vk.com/tim4ukys) - Разработчик и простой игрок GTA RP
 
 ### Спасибо
 
