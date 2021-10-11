@@ -11,8 +11,27 @@
 #ifndef _DLLMAIN_H_
 #define _DLLMAIN_H_
 
+enum class OFFSETS : unsigned int {
+    // gtarp_clientside.asi + ...
+    GTARP_LOCKCONNECTTOOTHERSERVER = 0x48F2,
+    GTARP_INITTEXTURE_INITHOOK = 0x1B81D,
+
+    GTARP_ARRAYSERVERLOGO = 0xDD69C,
+    GTARP_SERVERID = 0xCD990,
+
+    GTARP_DRAWHUD = 0x1BBE0,
+
+    // samp.dll + ...
+    SAMP_ENABLECLOCK = 0xA0D84,
+
+    // gta_sa.exe
+    GTASA_DRAWWANTED = 0x58D9A0,
+    GTASA_DRAWHUD_CLOCK_SPRINTF = 0x58EBAF
+};
+
 // stl
 #include <string>
+#include <functional>
 // old (C) Library
 #include <cstdint>
 #include <cstdio>
@@ -41,11 +60,12 @@
 // other library
 #include "qis/xorstr.hpp"
 // My library
-#include "patch.hpp"
 #include "CLog.hpp"
 #include "CConfig.hpp"
+#include "patch.hpp"
+#include "snippets.hpp"
 
-#define SAFE_DELETE(p) if (p) delete p
 #define SAFE_UNHOOK(p) if (p) { p->unHook(); delete p; }
+#define SAFE_DELETE(p) if (p) delete p
 
 #endif

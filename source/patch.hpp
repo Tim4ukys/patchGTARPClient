@@ -21,6 +21,30 @@
 namespace patch 
 {
 	/*
+	* @breaf Считывает участок памяти и переобразует его в HEX строку
+	* @param address Адрес участка памяти с которого будет начинаться чтение
+	* @param size Размер строки(массива байт)
+	* @return HEX строка
+	*/
+	inline std::string getHEX(uint64_t address, size_t size)
+	{
+		std::stringstream sstream{};
+		
+		DWORD oldProtect;
+		if (VirtualProtect(reinterpret_cast<LPVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect))
+		{
+			for (size_t i = 0; i < size; i++)
+			{
+				sstream << std::uppercase << std::hex << static_cast<int>(*(reinterpret_cast<uint8_t*>(address) + i));
+			}
+
+			VirtualProtect(reinterpret_cast<LPVOID>(address), size, oldProtect, NULL);
+		}
+
+		return sstream.str();
+	}
+
+	/*
 	* @breaf Меняет участок памяти согласно по массиву байтов в строке
 	* @param address Адрес участка памяти с которого будет начинаться запись
 	* @param raw Сам текст, из которового будет браться массив байт

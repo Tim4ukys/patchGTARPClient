@@ -11,7 +11,7 @@
 #include <fstream>
 #include <Windows.h>
 
-#define MODULE_NAME ("AutoRem")
+#define MODULE_NAME ("patchGTARPClientByTim4ukys")
 #define CONTACT ("My contact: vk.com/tim4ukys or tim4ukys.dev@yandex.ru")
 
 class CLog {

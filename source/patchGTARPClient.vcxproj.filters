@@ -28,5 +28,8 @@
     <ClInclude Include="dllmain.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="snippets.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
