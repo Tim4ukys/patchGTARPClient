@@ -14,8 +14,8 @@ const std::string SAMP_CMP{ "E86D9AA083C41C85C0" };
 const std::string GTARPCLIENTSIDE_CMP{ "CCCC558BEC568D71908B" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v1.1"
-#define CURRENTVERSION L"v1.1"
+#define CURRENTVERSIONA "v2.0"
+#define CURRENTVERSION L"v2.0"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
