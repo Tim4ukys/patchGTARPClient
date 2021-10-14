@@ -11,6 +11,14 @@
 #ifndef _DLLMAIN_H_
 #define _DLLMAIN_H_
 
+#define WIN32_LEAN_AND_MEAN
+
+#pragma warning( disable : 4099 )
+#pragma warning( disable : 4250 )
+#pragma warning( disable : 4100 )
+#pragma warning( disable : 4733 )
+#pragma warning( disable : 4996 )
+
 enum class OFFSETS : unsigned int {
     // gtarp_clientside.asi + ...
     GTARP_LOCKCONNECTTOOTHERSERVER = 0x48F2,
@@ -20,13 +28,22 @@ enum class OFFSETS : unsigned int {
     GTARP_SERVERID = 0xCD990,
 
     GTARP_DRAWHUD = 0x1BBE0,
+    GTARP_DRAWSPEEDOMETER_DRAWRAMKA = 0x24CDA,
+
+    GTARP_DISABLECHECKTXD = 0xE834,
 
     // samp.dll + ...
     SAMP_ENABLECLOCK = 0xA0D84,
 
+    SAMP_CREATEFONT = 0xC650A,
+
+    SAMP_RENDERPLAYERTAG_SPRINTF = 0x74E3F,
+    SAMP_PLAYERTAG_DRAWLABEL = 0x6C630,
+
     // gta_sa.exe
     GTASA_DRAWWANTED = 0x58D9A0,
-    GTASA_DRAWHUD_CLOCK_SPRINTF = 0x58EBAF
+    GTASA_DRAWHUD_CLOCK_SPRINTF = 0x58EBAF,
+    GTASA_GAMELOOP = 0x53BEE0
 };
 
 // stl
@@ -57,15 +74,18 @@ enum class OFFSETS : unsigned int {
 
 #include "plugin.h"
 #include "CSprite2d.h"
-// other library
-#include "qis/xorstr.hpp"
 // My library
 #include "CLog.hpp"
 #include "CConfig.hpp"
 #include "patch.hpp"
 #include "snippets.hpp"
+#include "Client.hpp"
+
+typedef ULONGLONG TICK;
 
 #define SAFE_UNHOOK(p) if (p) { p->unHook(); delete p; }
 #define SAFE_DELETE(p) if (p) delete p
+
+#include "CSAMP.h"
 
 #endif
