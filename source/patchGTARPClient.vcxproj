@@ -49,8 +49,9 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.ASI</TargetExt>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
-    <IncludePath>G:\GitHub\PolyHook_2_0\include;$(DIRECTX9_SDK_DIR)\Include\;$(IncludePath)</IncludePath>
-    <LibraryPath>G:\GitHub\PolyHook_2_0\lib\Release;$(DIRECTX9_SDK_DIR)\Lib\x86\;$(LibraryPath)</LibraryPath>
+    <IncludePath>G:\GitHub\PolyHook_2_0\include;$(DIRECTX9_SDK_DIR)\Include\;G:\cpp\boost_1_77_0;G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(IncludePath)</IncludePath>
+    <LibraryPath>G:\GitHub\PolyHook_2_0\lib\Release;$(DIRECTX9_SDK_DIR)\Lib\x86\;G:\cpp\boost_1_77_0\libs;G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -75,8 +76,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalLibraryDirectories>$(PLUGIN_SDK_DIR)\output\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>plugin.lib;d3d9.lib;d3dx9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PLUGIN_SDK_DIR)\output\lib\;G:\cpp\boost_1_77_0\boost;G:\cpp\boost_1_77_0\stage\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>plugin.lib;d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -99,11 +100,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CSAMP.cpp" />
     <ClCompile Include="dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Client.hpp" />
     <ClInclude Include="CConfig.hpp" />
     <ClInclude Include="CLog.hpp" />
+    <ClInclude Include="CSAMP.h" />
     <ClInclude Include="dllmain.h" />
     <ClInclude Include="patch.hpp" />
     <ClInclude Include="snippets.hpp" />
