@@ -21,6 +21,55 @@
 namespace patch 
 {
 	/*
+	* @breaf Конвертирует HEX строку в массив с байтами
+	* @param hex Строка в которой записаны числа в HEX формате
+	* @return Контейнер vector с байтами внутри
+	*/
+	inline std::vector<uint8_t> HEXtoRaw(std::string hex)
+	{
+		std::vector<uint8_t> byte{};
+		
+		for (size_t i = 0; i + 1 < hex.size(); i += 2)
+		{
+			std::string h{}; h.push_back(hex[i]); h.push_back(hex[i + 1]);
+			byte.push_back(std::stoi(h, NULL, 16));
+		}
+		return byte;
+	}
+
+	/*
+	* @breaf Пихает offset переменной в стек
+	* @param address Адрес участка памяти в котором будет это происходить
+	* @param offsetAddress Адрес переменной
+	* @return Состояние проделанной работы
+	*/
+	inline BOOL setPushOffset(uint32_t address, uint32_t offsetAddress)
+	{
+		std::stringstream sstream{};
+		sstream << std::uppercase << std::hex << offsetAddress;
+		auto raw = HEXtoRaw(sstream.str());
+		if (!raw.size()) return FALSE;
+
+		//g_pLog->Log("offsetAddress: 0x%X", offsetAddress);
+
+		DWORD oldProtect;
+		if (VirtualProtect(reinterpret_cast<LPVOID>(address), 5, PAGE_EXECUTE_READWRITE, &oldProtect))
+		{
+			uint8_t* pAddr = reinterpret_cast<uint8_t*>(address);
+			*pAddr = 0x68;
+			for	(size_t i = 1; i < 5; i++)
+			{
+				size_t vecPos = 4 - i;
+				*(pAddr + i) = raw.size() > vecPos ? raw[vecPos] : 0;
+			}
+			VirtualProtect(reinterpret_cast<LPVOID>(address), 5, oldProtect, NULL);
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	/*
 	* @breaf Считывает участок памяти и переобразует его в HEX строку
 	* @param address Адрес участка памяти с которого будет начинаться чтение
 	* @param size Размер строки(массива байт)
