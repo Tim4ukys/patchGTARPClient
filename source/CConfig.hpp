@@ -38,6 +38,8 @@ public:
 
 			bool m_bIsCustomFont;
 			std::string m_FontFaceName;
+
+			bool m_bIsSortingScreenshots;
 		} m_samp;
 	};
 
@@ -95,7 +97,8 @@ private:
 			j["vehicleHud"]["isDrawHelpTablet"].is_null() ||
 
 			j["samp"].is_null() ||
-			j["samp"]["isWhiteID"].is_null() || j["samp"]["isCustomFont"].is_null() || j["samp"]["fontFaceName"].is_null())
+			j["samp"]["isWhiteID"].is_null() || j["samp"]["isCustomFont"].is_null() || j["samp"]["fontFaceName"].is_null() ||
+			j["samp"]["isSortingScreenshots"].is_null())
 		{
 			return FALSE;
 		}
@@ -120,7 +123,8 @@ private:
 			{
 				true,
 				false,
-				"Segoe UI"
+				"Segoe UI",
+				false
 			}
 		};
 	}
@@ -139,7 +143,8 @@ private:
 			{
 				j["samp"]["isWhiteID"].get<bool>(),
 				j["samp"]["isCustomFont"].get<bool>(),
-				j["samp"]["fontFaceName"].get<std::string>()
+				j["samp"]["fontFaceName"].get<std::string>(),
+				j["samp"]["isSortingScreenshots"].get<bool>()
 			}
 		};
 	}
@@ -159,6 +164,7 @@ private:
 		j["samp"]["isWhiteID"] = conf.m_samp.m_bIsWhiteID;
 		j["samp"]["isCustomFont"] = conf.m_samp.m_bIsCustomFont;
 		j["samp"]["fontFaceName"] = conf.m_samp.m_FontFaceName;
+		j["samp"]["isSortingScreenshots"] = conf.m_samp.m_bIsSortingScreenshots;
 
 		return j;
 	}
