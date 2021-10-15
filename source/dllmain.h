@@ -37,8 +37,12 @@ enum class OFFSETS : unsigned int {
 
     SAMP_CREATEFONT = 0xC650A,
 
-    SAMP_RENDERPLAYERTAG_SPRINTF = 0x74E3F,
-    SAMP_PLAYERTAG_DRAWLABEL = 0x6C630,
+    SAMP_RENDERPLAYERTAG_FORMAT = 0x74E35,
+    SAMP_RENDERPLAYERTAG_PUSHBUFF_1 = 0x74E3A,
+    SAMP_RENDERPLAYERTAG_PUSHBUFF_2 = 0x74E80,
+
+    SAMP_FORMATPATHSCREENSHOT = 0x61B52,
+    SAMP_FORMATFULLPATHSCREENSHOT = 0xC4573,
 
     // gta_sa.exe
     GTASA_DRAWWANTED = 0x58D9A0,
@@ -76,6 +80,8 @@ enum class OFFSETS : unsigned int {
 #include "CSprite2d.h"
 // My library
 #include "CLog.hpp"
+extern CLog* g_pLog;
+
 #include "CConfig.hpp"
 #include "patch.hpp"
 #include "snippets.hpp"

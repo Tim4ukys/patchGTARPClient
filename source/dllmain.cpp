@@ -60,30 +60,6 @@ NOINLINE int WINAPI D3DXCreateFontDetourFNC(int a1, int a2, int a3, int a4, int 
         (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, int(g_pConfig->getConfig()->m_samp.m_FontFaceName.c_str()), a12, a13, a14, a15);
 }
 
-////
-
-char g_arrBuffPlayerTag[128 + 8];
-
-int renderPlayerTagSprintfDetourFNC(char* buff, const char* f, ...)
-{
-    va_list args;
-    va_start(args, f);
-    auto r = vsprintf(g_arrBuffPlayerTag, "%s {FFFFFF}(%d)", args);
-    va_end(args);
-
-    return r;
-}
-
-uint64_t g_ui64DrawLabelJumpTrampline;
-PLH::x86Detour* g_pDrawLabelDetour = nullptr;
-NOINLINE void __fastcall drawLabelDetourFNC(void* p_this, void* EDX, void* pos, const char* text, uint32_t color, float distanceCamera, bool drawStatus, int status)
-{
-    return ((void(__thiscall*)(PVOID, PVOID, const char*, D3DCOLOR, float, bool, int))g_ui64DrawLabelJumpTrampline)
-        (p_this, pos, g_arrBuffPlayerTag, color, distanceCamera, drawStatus, status);
-}
-
-////
-
 CSAMP* g_pSAMP = nullptr;
 
 uint64_t g_ui64GameLoopJumpTrampline;
@@ -228,12 +204,16 @@ void MainThread()
     /*
         Делаем ID цвета my cum
     */
-    plugin::patch::ReplaceFunctionCall(static_cast<uint32_t>(g_dlSAMP.getAddress(OFFSETS::SAMP_RENDERPLAYERTAG_SPRINTF)), &renderPlayerTagSprintfDetourFNC);
+    if (g_pConfig->getConfig()->m_samp.m_bIsWhiteID)
+    {
+        const char* formatPlayerTag = "%s {FFFFFF}(%d)";
+        static char s_arrBuffPlayerTag[128 + 8];
 
-    g_pDrawLabelDetour = new PLH::x86Detour( 
-        reinterpret_cast<PCHAR>(g_dlSAMP.getAddress(OFFSETS::SAMP_PLAYERTAG_DRAWLABEL)), reinterpret_cast<PCHAR>(&drawLabelDetourFNC), &g_ui64DrawLabelJumpTrampline, g_dis
-    );
-    g_pDrawLabelDetour->hook();
+        patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_RENDERPLAYERTAG_FORMAT), reinterpret_cast<uint32_t>(formatPlayerTag));
+        patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_RENDERPLAYERTAG_PUSHBUFF_1), reinterpret_cast<uint32_t>(&s_arrBuffPlayerTag));
+
+        patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_RENDERPLAYERTAG_PUSHBUFF_2), reinterpret_cast<uint32_t>(&s_arrBuffPlayerTag));
+    }
 
     /*
         Проверяем на обновления
@@ -242,6 +222,40 @@ void MainThread()
         reinterpret_cast<PCHAR>(OFFSETS::GTASA_GAMELOOP), reinterpret_cast<PCHAR>(&gameLoopDetourFNC), &g_ui64GameLoopJumpTrampline, g_dis
     );
     g_pGameLoopDetour->hook();
+
+    /*
+        Парсим скриншоты по датам
+    */
+    if (g_pConfig->getConfig()->m_samp.m_bIsSortingScreenshots)
+    {
+        static char s_fullPathScreenshot[22] = "%s"; // '%s\\screens\\xx-xx-xxxx'
+        static char s_pathScreenshot[35]; // '\\screens\\xx-xx-xxxx\\sa-mp-%03i.png'
+
+        auto t = time(0);
+        static auto s_pLocalTime = localtime(&t);
+
+        std::thread(
+            [] {
+                while (true)
+                {
+                    if (static int s_oldDay{}; s_pLocalTime->tm_mday != s_oldDay)
+                    {
+                        sprintf_s(s_pathScreenshot, "\\screens\\%02d-%02d-%d", s_pLocalTime->tm_mday, s_pLocalTime->tm_mon, s_pLocalTime->tm_year + 1900);
+
+                        strcat(s_fullPathScreenshot, s_pathScreenshot);
+                        strcat(s_pathScreenshot, "\\sa-mp-%03i.png");
+
+                        s_oldDay = s_pLocalTime->tm_mday;
+                    }
+                    Sleep(60000);
+                }
+            }
+        ).detach();
+
+
+        patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_FORMATPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_pathScreenshot));
+        patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_FORMATFULLPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_fullPathScreenshot));
+    }
 
     g_pLog->Log("All patching succesful!!");
 }
@@ -268,7 +282,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
         SAFE_UNHOOK(g_pDrawWantedDetour);
         SAFE_UNHOOK(g_pD3DXCreateFontDetour);
-        SAFE_UNHOOK(g_pDrawLabelDetour);
         SAFE_UNHOOK(g_pGameLoopDetour);
 
         SAFE_DELETE(g_pSAMP);
