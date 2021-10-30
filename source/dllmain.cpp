@@ -14,8 +14,8 @@ const std::string SAMP_CMP{ "E86D9A0A0083C41C85C0" };
 const std::string GTARPCLIENTSIDE_CMP{ "CCCC558BEC568D71908B" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v2.2"
-#define CURRENTVERSION L"v2.2"
+#define CURRENTVERSIONA "v2.3"
+#define CURRENTVERSION L"v2.3"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
@@ -48,23 +48,22 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...)
     auto t = time(0);
     tm* pLocalTim = localtime(&t);
 
-    int8_t timeOffset{ 45 };
-    if (timeOffset == 45)
-    {
-        timeOffset = 0;
-        if (g_pConfig->getConfig()->m_clock.m_bFixTimeZone)
-        {
-            json j = json::parse(Client::downloadStringFromURL(false, "worldtimeapi.org", "/api/ip"));
-            TimeZone tmz{ j["utc_offset"].get<std::string>() };
-            timeOffset = tmz.getOffset("+03:00");
-        }
-    }
-
     int32_t hour{ pLocalTim->tm_hour };
 
     if (g_pConfig->getConfig()->m_clock.m_bFixTimeZone)
     {
-        hour += timeOffset;
+        static int8_t* s_pTimeOffset = nullptr;
+
+        if (!s_pTimeOffset)
+        {
+            json j = json::parse(Client::downloadStringFromURL(false, "worldtimeapi.org", "/api/ip"));
+            TimeZone tmz{ j["utc_offset"].get<std::string>() };
+
+            s_pTimeOffset = new int8_t;
+            *s_pTimeOffset = tmz.getOffset("+03:00");
+        }
+
+        hour += *s_pTimeOffset;
         hour += hour < 0 ? 24 : (hour > 23 ? -24 : 0);
     }
 
