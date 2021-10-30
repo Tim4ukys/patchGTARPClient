@@ -81,6 +81,7 @@ enum class OFFSETS : unsigned int {
 // My library
 #include "CLog.hpp"
 extern CLog* g_pLog;
+#include "TimeZone.hpp"
 
 #include "CConfig.hpp"
 #include "patch.hpp"
