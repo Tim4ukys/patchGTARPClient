@@ -10,12 +10,12 @@
 ****************************************************/
 #include "dllmain.h"
 
-const std::string SAMP_CMP{ "E86D9AA083C41C85C0" };
+const std::string SAMP_CMP{ "E86D9A0A0083C41C85C0" };
 const std::string GTARPCLIENTSIDE_CMP{ "CCCC558BEC568D71908B" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v2.0"
-#define CURRENTVERSION L"v2.0"
+#define CURRENTVERSIONA "v2.1"
+#define CURRENTVERSION L"v2.1"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
@@ -45,11 +45,30 @@ NOINLINE void drawWantedDetourFNC()
 
 int drawClockSprintfDetourFNC(char* buff, const char* f, ...)
 {
-    auto t = time(0);
-    auto local_t = localtime(&t);
-    auto r = sprintf(buff, "%02d:%02d", local_t->tm_hour, local_t->tm_min);
+    static tm* s_pLocalTima = nullptr;
+    static int8_t timeOffset{};
+    if (!s_pLocalTima)
+    {
+        auto t = time(0);
+        s_pLocalTima = localtime(&t);
 
-    return r;
+        if (g_pConfig->getConfig()->m_clock.m_bFixTimeZone)
+        {
+            json j = json::parse(Client::downloadStringFromURL(false, "worldtimeapi.org", "/api/ip"));
+            TimeZone tmz{ j["utc_offset"].get<std::string>() };
+            timeOffset = tmz.getOffset("+03:00");
+        }
+    }
+
+    int32_t hour{ s_pLocalTima->tm_hour };
+
+    if (g_pConfig->getConfig()->m_clock.m_bFixTimeZone)
+    {
+        hour += timeOffset;
+        hour += hour < 0 ? 24 : (hour > 23 ? -24 : 0);
+    }
+
+    return sprintf(buff, "%02d:%02d", hour, s_pLocalTima->tm_min);
 }
 
 uint64_t g_ui64D3DXCreateFontJumpTrampline;
@@ -86,6 +105,16 @@ NOINLINE void gameLoopDetourFNC()
     }
 }
 
+uint64_t g_ui64LoadLibraryAHooked_Detour;
+PLH::x86Detour* g_pLoadLibraryAHookedDetour = nullptr;
+NOINLINE HMODULE WINAPI loadLibraryHookedDetourFNC(const char* fileName)
+{
+    if (!strcmp(fileName, "SAMPFUNCS.asi"))
+        return LoadLibraryA(fileName);
+    
+    return ((HMODULE(WINAPI*)(const char* a1))g_ui64LoadLibraryAHooked_Detour)(fileName); // call original
+}
+
 ///////////////////////////////////////////////////////////////////
 
 CSprite2d* g_pServerSprite = nullptr;
@@ -107,9 +136,11 @@ int drawServerIcon()
 
 void MainThread()
 {
-    while (!g_gtarpclientside.getAddress()) Sleep(10);
+    while (!g_gtarpclientside.getAddress()) {
 
-    if (patch::getHEX(g_gtarpclientside.getAddress(0xBABE), 10) != GTARPCLIENTSIDE_CMP) {
+    }
+
+    if (auto currentCMP = patch::getHEX(g_gtarpclientside.getAddress(0xBABE), 10); currentCMP != GTARPCLIENTSIDE_CMP) {
         MessageBoxW(
             NULL,
             L"ERROR: Эта версия плагина ещё не поддерживает эту версию клиента игры.\n\n"
@@ -118,9 +149,10 @@ void MainThread()
             L"!000patchGTARPClientByTim4ukys.ASI",
             MB_ICONERROR
         );
+        g_pLog->Log("gtarp_cmp: %s", currentCMP.c_str());
         TerminateProcess(GetCurrentProcess(), -1);
     }
-    else if (patch::getHEX(g_dlSAMP.getAddress(0xBABE), 10) != SAMP_CMP) {
+    else if (currentCMP = patch::getHEX(g_dlSAMP.getAddress(0xBABE), 10); currentCMP != SAMP_CMP) {
         MessageBoxW(
             NULL,
             L"ERROR: Эта версия плагина ещё не поддерживает эту версию SAMP.\n\n"
@@ -129,11 +161,26 @@ void MainThread()
             L"!000patchGTARPClientByTim4ukys.ASI",
             MB_ICONERROR
         );
+        g_pLog->Log("samp_cmp: %s", currentCMP.c_str());
         TerminateProcess(GetCurrentProcess(), -1);
     }
     else {
         g_pLog->Log("gtarp_clientside & samp: Version supported!!!");
     }
+
+    /*
+        Вырубаем блок на SAMPFUNCS | Work in progress
+    */
+    //patch::fill(g_gtarpclientside.getAddress(0xE2EA), 0x5, 0x90);
+    //patch::fill(g_gtarpclientside.getAddress(0xE2F2), 0x65, 0x90);
+    
+    //patch::fill(g_gtarpclientside.getAddress(0xE2F8), 15u, 0x90);
+    //patch::fill(g_gtarpclientside.getAddress(0xE30D), 5u, 0x90);
+    //g_pLoadLibraryAHookedDetour = new PLH::x86Detour(
+        //reinterpret_cast<PCHAR>(g_gtarpclientside.getAddress(0x2E290)), reinterpret_cast<PCHAR>(&loadLibraryHookedDetourFNC), &g_ui64LoadLibraryAHooked_Detour, g_dis
+    //);
+    //g_pLoadLibraryAHookedDetour->hook();
+    
 
     /*
         Выключает лок на подключение на стороние сервера.
@@ -232,26 +279,12 @@ void MainThread()
         static char s_pathScreenshot[35]; // '\\screens\\xx-xx-xxxx\\sa-mp-%03i.png'
 
         auto t = time(0);
-        static auto s_pLocalTime = localtime(&t);
+        auto pLocalTime = localtime(&t);
 
-        std::thread(
-            [] {
-                while (true)
-                {
-                    if (static int s_oldDay{}; s_pLocalTime->tm_mday != s_oldDay)
-                    {
-                        sprintf_s(s_pathScreenshot, "\\screens\\%02d-%02d-%d", s_pLocalTime->tm_mday, s_pLocalTime->tm_mon, s_pLocalTime->tm_year + 1900);
+        sprintf_s(s_pathScreenshot, "\\screens\\%02d-%02d-%d", pLocalTime->tm_mday, pLocalTime->tm_mon, pLocalTime->tm_year + 1900);
 
-                        strcat(s_fullPathScreenshot, s_pathScreenshot);
-                        strcat(s_pathScreenshot, "\\sa-mp-%03i.png");
-
-                        s_oldDay = s_pLocalTime->tm_mday;
-                    }
-                    Sleep(60000);
-                }
-            }
-        ).detach();
-
+        strcat(s_fullPathScreenshot, s_pathScreenshot);
+        strcat(s_pathScreenshot, "\\sa-mp-%03i.png");
 
         patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_FORMATPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_pathScreenshot));
         patch::setPushOffset(g_dlSAMP.getAddress(OFFSETS::SAMP_FORMATFULLPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_fullPathScreenshot));
@@ -275,6 +308,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
         g_pConfig = new CConfig(L"!000patchGTARPClientByTim4ukys.json");
         g_pSAMP = new CSAMP();
 
+        /*
+            В след обновлении перейду с CreateThread на хук KernelBase. В данной ситуации многопоточность лучше не юзать(unsafe).
+        */
         CreateThread(NULL, NULL, LPTHREAD_START_ROUTINE(MainThread), NULL, NULL, NULL);
 
         break;
