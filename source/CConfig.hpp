@@ -41,6 +41,10 @@ public:
 
 			bool m_bIsSortingScreenshots;
 		} m_samp;
+
+		struct Clock {
+			bool m_bFixTimeZone;
+		} m_clock;
 	};
 
 	inline CConfig(std::wstring fileName)
@@ -98,7 +102,9 @@ private:
 
 			j["samp"].is_null() ||
 			j["samp"]["isWhiteID"].is_null() || j["samp"]["isCustomFont"].is_null() || j["samp"]["fontFaceName"].is_null() ||
-			j["samp"]["isSortingScreenshots"].is_null())
+			j["samp"]["isSortingScreenshots"].is_null() ||
+
+			j["clock"]["fixTimeZone"].is_null())
 		{
 			return FALSE;
 		}
@@ -125,6 +131,10 @@ private:
 				false,
 				"Segoe UI",
 				false
+			},
+			/*Clock*/
+			{
+				false
 			}
 		};
 	}
@@ -145,6 +155,9 @@ private:
 				j["samp"]["isCustomFont"].get<bool>(),
 				j["samp"]["fontFaceName"].get<std::string>(),
 				j["samp"]["isSortingScreenshots"].get<bool>()
+			},
+			{
+				j["clock"]["fixTimeZone"].get<bool>()
 			}
 		};
 	}
@@ -165,6 +178,9 @@ private:
 		j["samp"]["isCustomFont"] = conf.m_samp.m_bIsCustomFont;
 		j["samp"]["fontFaceName"] = conf.m_samp.m_FontFaceName;
 		j["samp"]["isSortingScreenshots"] = conf.m_samp.m_bIsSortingScreenshots;
+
+		// Clock
+		j["clock"]["fixTimeZone"] = conf.m_clock.m_bFixTimeZone;
 
 		return j;
 	}
