@@ -11,11 +11,11 @@
 #include "dllmain.h"
 
 const std::string SAMP_CMP{ "E86D9A0A0083C41C85C0" };
-const std::string GTARPCLIENTSIDE_CMP{ "CCCC558BEC568D71908B" };
+const std::string GTARPCLIENTSIDE_CMP{ "74708D44240850FF774C" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v2.3"
-#define CURRENTVERSION L"v2.3"
+#define CURRENTVERSIONA "v3.0"
+#define CURRENTVERSION L"v3.0"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
@@ -33,7 +33,7 @@ uint64_t g_ui64DrawWantedJumpTrampline;
 PLH::x86Detour* g_pDrawWantedDetour = nullptr;
 NOINLINE void drawWantedDetourFNC()
 {
-    static auto s_piWantedLevel = reinterpret_cast<DWORD*>(g_gtarpclientside.getAddress(0xDD450));
+    static auto s_piWantedLevel = reinterpret_cast<DWORD*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_WANTEDLEVEL));
 
     if (*s_piWantedLevel != FindPlayerWanted(-1)->m_nWantedLevel)
     {
@@ -45,10 +45,10 @@ NOINLINE void drawWantedDetourFNC()
 
 int drawClockSprintfDetourFNC(char* buff, const char* f, ...)
 {
-    auto t = time(0);
-    tm* pLocalTim = localtime(&t);
+    SYSTEMTIME timeInfo;
+    GetLocalTime(&timeInfo);
 
-    int32_t hour{ pLocalTim->tm_hour };
+    int32_t hour{ timeInfo.wHour };
 
     if (g_pConfig->getConfig()->m_clock.m_bFixTimeZone)
     {
@@ -67,7 +67,7 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...)
         hour += hour < 0 ? 24 : (hour > 23 ? -24 : 0);
     }
 
-    return sprintf(buff, "%02d:%02d", hour, pLocalTim->tm_min);
+    return sprintf(buff, "%02d:%02d", hour, timeInfo.wMinute);
 }
 
 uint64_t g_ui64D3DXCreateFontJumpTrampline;
@@ -104,28 +104,31 @@ NOINLINE void gameLoopDetourFNC()
     }
 }
 
-uint64_t g_ui64LoadLibraryAHooked_Detour;
-PLH::x86Detour* g_pLoadLibraryAHookedDetour = nullptr;
-NOINLINE HMODULE WINAPI loadLibraryHookedDetourFNC(const char* fileName)
-{
-    if (!strcmp(fileName, "SAMPFUNCS.asi"))
-        return LoadLibraryA(fileName);
-    
-    return ((HMODULE(WINAPI*)(const char* a1))g_ui64LoadLibraryAHooked_Detour)(fileName); // call original
-}
+//uint64_t g_ui64LoadLibraryAHooked_Detour;
+//PLH::x86Detour* g_pLoadLibraryAHookedDetour = nullptr;
+//NOINLINE HMODULE WINAPI loadLibraryHookedDetourFNC(const char* fileName)
+//{
+//    if (!strcmp(fileName, "SAMPFUNCS.asi"))
+//        return LoadLibraryA(fileName);
+//    
+//    return ((HMODULE(WINAPI*)(const char* a1))g_ui64LoadLibraryAHooked_Detour)(fileName); // call original
+//}
 
 ///////////////////////////////////////////////////////////////////
 
-CSprite2d* g_pServerSprite = nullptr;
+CSprite2d* g_aServerSprite = nullptr;
 
 int drawServerIcon()
 {
-    auto conf = g_pConfig->getConfig();
-    if (conf->m_serverIcon.m_bState)
+    static auto s_Conf = g_pConfig->getConfig();
+    if (s_Conf->m_serverIcon.m_bState)
     {
-        g_pServerSprite->Draw(
-            SCREEN_COORD_LEFT(conf->m_serverIcon.m_fX), SCREEN_COORD_TOP(conf->m_serverIcon.m_fY), 
-            SCREEN_COORD(static_cast<float>(g_pServerSprite->m_pTexture->raster->width / 2)), SCREEN_COORD(static_cast<float>(g_pServerSprite->m_pTexture->raster->height / 2)),
+        static auto s_nIsX2PayDay = reinterpret_cast<int32_t*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_X2PAYDAY));
+
+        auto sprite = &g_aServerSprite[*s_nIsX2PayDay];
+        sprite->Draw(
+            SCREEN_COORD_LEFT(s_Conf->m_serverIcon.m_fX), SCREEN_COORD_TOP(s_Conf->m_serverIcon.m_fY),
+            SCREEN_COORD(static_cast<float>(sprite->m_pTexture->raster->width / 2)), SCREEN_COORD(static_cast<float>(sprite->m_pTexture->raster->height / 2)),
             CRGBA(0xFF, 0xFF, 0xFF)
         );
     }
@@ -211,11 +214,17 @@ void MainThread()
         Фиксит положение иконки сервера
     */
     RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientside.getAddress(OFFSETS::GTARP_ARRAYSERVERLOGO));
-    while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2]) Sleep(100);
+    while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2] || !serverIcon[3]) Sleep(100);
 
-    g_pServerSprite = new CSprite2d();
+    g_aServerSprite = new CSprite2d[2];
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_SERVERID));
-    g_pServerSprite->m_pTexture = serverIcon[serverID > 2 || serverID < 0 ? 2 : serverID];
+    serverID = serverID > 2 || serverID < 0 ? 0 : serverID;
+
+    for (size_t i = 0; i < 2; i++)
+    {
+        g_aServerSprite[i].m_pTexture = serverIcon[serverID + i];
+    }
+    
     plugin::patch::ReplaceFunction(g_gtarpclientside.getAddress(OFFSETS::GTARP_DRAWHUD), &drawServerIcon);
 
     /*
@@ -277,10 +286,17 @@ void MainThread()
         static char s_fullPathScreenshot[22] = "%s"; // '%s\\screens\\xx-xx-xxxx'
         static char s_pathScreenshot[35]; // '\\screens\\xx-xx-xxxx\\sa-mp-%03i.png'
 
+        /*
         auto t = time(0);
         auto pLocalTime = localtime(&t);
+        
+        SYSTEMTIME - быстрее в ~7 раз
+        */
 
-        sprintf_s(s_pathScreenshot, "\\screens\\%02d-%02d-%d", pLocalTime->tm_mday, pLocalTime->tm_mon, pLocalTime->tm_year + 1900);
+        SYSTEMTIME timeInfo;
+        GetLocalTime(&timeInfo);
+
+        sprintf_s(s_pathScreenshot, "\\screens\\%02d-%02d-%d", timeInfo.wDay, timeInfo.wMonth, timeInfo.wYear);
 
         strcat(s_fullPathScreenshot, s_pathScreenshot);
         strcat(s_pathScreenshot, "\\sa-mp-%03i.png");
@@ -319,8 +335,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
         SAFE_UNHOOK(g_pD3DXCreateFontDetour);
         SAFE_UNHOOK(g_pGameLoopDetour);
 
+        SAFE_DELETEARRAY(g_aServerSprite);
+        
         SAFE_DELETE(g_pSAMP);
-        SAFE_DELETE(g_pServerSprite);
         SAFE_DELETE(g_pConfig);
         SAFE_DELETE(g_pLog);
         break;

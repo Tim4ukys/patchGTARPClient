@@ -21,16 +21,19 @@
 
 enum class OFFSETS : unsigned int {
     // gtarp_clientside.asi + ...
-    GTARP_LOCKCONNECTTOOTHERSERVER = 0x48F2,
-    GTARP_INITTEXTURE_INITHOOK = 0x1B81D,
+    GTARP_LOCKCONNECTTOOTHERSERVER = 0x5794,
+    GTARP_INITTEXTURE_INITHOOK = 0x1C63D,
 
-    GTARP_ARRAYSERVERLOGO = 0xDD69C,
-    GTARP_SERVERID = 0xCD990,
+    GTARP_ARRAYSERVERLOGO = 0xD8CB8,
+    GTARP_SERVERID = 0xD368C,
+    GTARP_X2PAYDAY = 0xCDB20,
 
-    GTARP_DRAWHUD = 0x1BBE0,
-    GTARP_DRAWSPEEDOMETER_DRAWRAMKA = 0x24CDA,
+    GTARP_DRAWHUD = 0x1CA00,
+    GTARP_DRAWSPEEDOMETER_DRAWRAMKA = 0x25EAA,
 
-    GTARP_DISABLECHECKTXD = 0xE834,
+    GTARP_WANTEDLEVEL = 0xD8CD4,
+
+    GTARP_DISABLECHECKTXD = 0xFA34,
 
     // samp.dll + ...
     SAMP_ENABLECLOCK = 0xA0D84,
@@ -90,8 +93,9 @@ extern CLog* g_pLog;
 
 typedef ULONGLONG TICK;
 
-#define SAFE_UNHOOK(p) if (p) { p->unHook(); delete p; }
-#define SAFE_DELETE(p) if (p) delete p
+#define SAFE_UNHOOK(p) if (p) { p->unHook(); delete p; p=nullptr; }
+#define SAFE_DELETE(p) if (p) { delete p; p=nullptr; }
+#define SAFE_DELETEARRAY(p) if (p) { delete[] p; p=nullptr; }
 
 #include "CSAMP.h"
 
