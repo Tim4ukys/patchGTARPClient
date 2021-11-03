@@ -21,10 +21,9 @@
 #include <cstring>
 // C (Old-Library): uint8_t, uint16_t, uint32_t, uint64_t
 #include <cstdint>
+// C (Old-Library): memcpy, ZeroMemory, FillMemory
 
-/*
-	В след. обновлении переделаю модуль под C язык, чтобы добиться максимальной скорости.
-*/
+
 namespace patch
 {
 	/*
@@ -32,16 +31,18 @@ namespace patch
 	* @param hex Строка в которой записаны числа в HEX формате
 	* @return Контейнер vector с байтами внутри
 	*/
-	inline std::vector<uint8_t> HEXtoRaw(std::string hex) // vector::push_back - не есть хорошо.
+	inline void HEXtoRaw(std::string &hex, std::vector<uint8_t> *raw)
 	{
-		std::vector<uint8_t> byte{};
+		raw->resize(hex.size() / 2);
 
 		for (size_t i = 0; i + 1 < hex.size(); i += 2)
 		{
-			std::string h{}; h.push_back(hex[i]); h.push_back(hex[i + 1]);
-			byte.push_back(std::stoi(h, NULL, 16));
+			char buff[3];
+			memcpy(buff, &hex[i], 2);
+			buff[2] = '\0';
+
+			(*raw)[i / 2] = static_cast<uint8_t>(strtol(buff, nullptr, 16));
 		}
-		return byte;
 	}
 
 	/*
@@ -50,14 +51,14 @@ namespace patch
 	* @param offsetAddress Адрес переменной
 	* @return Состояние проделанной работы
 	*/
-	inline BOOL setPushOffset(uint32_t address, uint32_t offsetAddress) // unsafe. В след. обновлении переделаю
+	inline BOOL setPushOffset(uint32_t address, uint32_t offsetAddress)
 	{
 		std::stringstream sstream{};
-		sstream << std::uppercase << std::hex << offsetAddress;
-		auto raw = HEXtoRaw(sstream.str());
-		if (!raw.size()) return FALSE;
+		sstream << std::hex << offsetAddress;
 
-		//g_pLog->Log("offsetAddress: 0x%X", offsetAddress);
+		std::vector<uint8_t> raw;
+		HEXtoRaw(sstream.str(), &raw);
+		if (!raw.size()) return FALSE;
 
 		DWORD oldProtect;
 		if (VirtualProtect(reinterpret_cast<LPVOID>(address), 5, PAGE_EXECUTE_READWRITE, &oldProtect))
@@ -67,7 +68,7 @@ namespace patch
 			for (size_t i = 1; i < 5; i++)
 			{
 				size_t vecPos = 4 - i;
-				*(pAddr + i) = raw.size() > vecPos ? raw[vecPos] : 0;
+				pAddr[i] = raw.size() > vecPos ? raw[vecPos] : 0;
 			}
 			VirtualProtect(reinterpret_cast<LPVOID>(address), 5, oldProtect, NULL);
 			return TRUE;
@@ -91,7 +92,7 @@ namespace patch
 		{
 			for (size_t i = 0; i < size; i++)
 			{
-				sstream << std::setfill('0') << std::setw(2) << std::uppercase << std::hex << static_cast<int>(*(reinterpret_cast<uint8_t*>(address) + i));
+				sstream << std::setfill('0') << std::setw(2) << std::uppercase << std::hex << static_cast<int>(reinterpret_cast<uint8_t*>(address)[i]);
 			}
 
 			VirtualProtect(reinterpret_cast<LPVOID>(address), size, oldProtect, NULL);
@@ -107,17 +108,15 @@ namespace patch
 	* @param size Размер строки(массива байт)
 	* @return Состояние проделанной работы
 	*/
-	inline BOOL setRaw(uint32_t address, std::vector<uint8_t> raw, size_t size)
+	inline BOOL setRaw(uint32_t address, std::vector<uint8_t> &raw)
 	{
 		DWORD oldProtect;
 
-		if (VirtualProtect(reinterpret_cast<LPVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect))
+		if (VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), PAGE_EXECUTE_READWRITE, &oldProtect))
 		{
-			for (size_t i = 0; i < size; i++) {
-				*(reinterpret_cast<uint8_t*>(address) + i) = raw[i];
-			}
+			memcpy(PVOID(address), &raw[0], raw.size());
 
-			VirtualProtect(reinterpret_cast<LPVOID>(address), size, oldProtect, NULL);
+			VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), oldProtect, NULL);
 			return TRUE;
 		}
 		return FALSE;
@@ -135,9 +134,7 @@ namespace patch
 
 		if (VirtualProtect(reinterpret_cast<LPVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect))
 		{
-			for (size_t i = 0; i < size; i++) {
-				*(reinterpret_cast<uint8_t*>(address) + i) = static_cast<uint8_t>(raw[i]);
-			}
+			memcpy(PVOID(address), raw, size);
 
 			VirtualProtect(reinterpret_cast<LPVOID>(address), size, oldProtect, NULL);
 			return TRUE;
@@ -150,14 +147,12 @@ namespace patch
 	* @param raw Сам текст, из которового будет браться массив байт
 	* @return Состояние проделанной работы
 	*/
-	inline BOOL setRaw(uint32_t address, std::string raw)
+	inline BOOL setRaw(uint32_t address, std::string &raw)
 	{
 		DWORD oldProtect;
 		if (VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), PAGE_EXECUTE_READWRITE, &oldProtect))
 		{
-			for (size_t i = 0; i < raw.size(); i++) {
-				*(reinterpret_cast<uint8_t*>(address) + i) = static_cast<uint8_t>(raw.at(i));
-			}
+			memcpy(PVOID(address), &raw[0], raw.size());
 
 			VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), oldProtect, NULL);
 			return TRUE;
@@ -196,9 +191,7 @@ namespace patch
 		DWORD oldProtect;
 		if (VirtualProtect(reinterpret_cast<PVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect))
 		{
-			for (size_t i = 0; i < size; i++) {
-				*(reinterpret_cast<uint8_t*>(address) + i) = value;
-			}
+			FillMemory(PVOID(address), size, value);
 			VirtualProtect(reinterpret_cast<PVOID>(address), size, oldProtect, NULL);
 			return TRUE;
 		}
