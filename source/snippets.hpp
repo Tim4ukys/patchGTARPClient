@@ -29,7 +29,7 @@ public:
             m_baseAddress = reinterpret_cast<uint32_t>(GetModuleHandleA(m_moduleName.c_str()));
         }
 
-        return m_baseAddress + static_cast<int>(offset);
+        return m_baseAddress + static_cast<uint32_t>(offset);
     }
 
 private:
