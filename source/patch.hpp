@@ -11,21 +11,119 @@
 #ifndef _PATCH_HPP_
 #define _PATCH_HPP_
 
-// Win-API: VirtualProtect, typedef BOOL
+// Win-API: VirtualProtect, typedef BOOL, typedef DWORD
 #include <Windows.h>
 // STL: std::stringstream
 #include <sstream>
-// STL: std:setfill, std::setw
+// STL: std::setfill, std::setw
 #include <iomanip>
+// STL: std::reverse
+#include <algorithm>
 // C (Old-Library): strlen()
 #include <cstring>
 // C (Old-Library): uint8_t, uint16_t, uint32_t, uint64_t
 #include <cstdint>
 // C (Old-Library): memcpy, ZeroMemory, FillMemory
+#include <memory.h>
+
+#include <Psapi.h>
 
 
 namespace patch
 {
+	inline MODULEINFO GetModuleInfo(char* szModule)
+	{
+		MODULEINFO modinfo{};
+		HMODULE hModule = GetModuleHandleA(szModule);
+		if (!hModule)
+			return modinfo;
+		GetModuleInformation(GetCurrentProcess(), hModule, &modinfo, sizeof(MODULEINFO));
+		return modinfo;
+	}
+
+	inline DWORD FindPattern(char* module, char* pattern, char* mask, DWORD startSearchAddr = NULL)
+	{
+		//Get all module related information
+		MODULEINFO mInfo = GetModuleInfo(module);
+
+
+		//Assign our base and module size
+		//Having the values right is ESSENTIAL, this makes sure
+		//that we don't scan unwanted memory and leading our game to crash
+		DWORD base = startSearchAddr == NULL ? DWORD(mInfo.lpBaseOfDll) : startSearchAddr;
+		DWORD size = mInfo.SizeOfImage;
+
+		//Get length for our mask, this will allow us to loop through our array
+		DWORD patternLength = (DWORD)strlen(mask);
+
+		for (DWORD i = 0; i < size - patternLength; i++)
+		{
+			bool found = true;
+			for (DWORD j = 0; j < patternLength; j++)
+			{
+				//if we have a ? in our mask then we have true by default, 
+				//or if the bytes match then we keep searching until finding it or not
+				found &= mask[j] == '?' || pattern[j] == *(char*)(base + i + j);
+			}
+
+			//found = true, our entire pattern was found
+			//return the memory addy so we can write to it
+			if (found)
+			{
+				return base + i;
+			}
+		}
+
+		return NULL;
+	}
+
+	/*inline DWORD SearchCallFunction(DWORD fncStartAddr, DWORD searchFncAdrr)
+	{
+		uint8_t* p = reinterpret_cast<uint8_t*>(fncStartAddr);
+
+		DWORD call = searchFncAdrr - fncStartAddr - 5;
+
+		while (true)
+		{
+			if (*p != 0xE8)
+			{
+				p++;
+				continue;
+			}
+
+			if (memcmp(p + 1, &call, 4U) == 0)
+			{
+				break;
+			}
+			else
+			{
+				p += 5;
+			}
+		}
+
+		return DWORD(p);
+	}*/
+
+	/*
+	* @breaf Ставит hook на вызов функции
+	* @param HookAddress Адрес call функции
+	* @param DetourFunction Обработчик функции
+	* @return Адресс на оригинальну функцию
+	* @auther kin4stat
+	*/
+	inline void* SetCallHook(uint32_t HookAddress, void* DetourFunction) {
+		uint32_t OriginalFunction = *reinterpret_cast<uint32_t*>(HookAddress + 1) + HookAddress + 5;
+
+		DWORD oldProt;
+		VirtualProtect(reinterpret_cast<void*>(HookAddress + 1), sizeof(uint32_t), PAGE_READWRITE, &oldProt);
+
+		*reinterpret_cast<uint32_t*>(HookAddress + 1) = reinterpret_cast<uint32_t>(DetourFunction) - HookAddress - 5;
+
+		VirtualProtect(reinterpret_cast<void*>(HookAddress + 1), sizeof(uint32_t), oldProt, &oldProt);
+
+		return reinterpret_cast<void*>(OriginalFunction);
+	}
+
 	/*
 	* @breaf Конвертирует HEX строку в массив с байтами
 	* @param hex Строка в которой записаны числа в HEX формате
