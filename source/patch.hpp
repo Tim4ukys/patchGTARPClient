@@ -13,24 +13,37 @@
 
 // Win-API: VirtualProtect, typedef BOOL, typedef DWORD
 #include <Windows.h>
+// Win-API: struct MODULEINFO, GetModuleHandleA
+#include <Psapi.h>
 // STL: std::stringstream
 #include <sstream>
 // STL: std::setfill, std::setw
 #include <iomanip>
 // STL: std::reverse
 #include <algorithm>
-// C (Old-Library): strlen()
+// C (Old-Library): strlen
 #include <cstring>
 // C (Old-Library): uint8_t, uint16_t, uint32_t, uint64_t
 #include <cstdint>
 // C (Old-Library): memcpy, ZeroMemory, FillMemory
 #include <memory.h>
 
-#include <Psapi.h>
-
-
+/*
+* @authors Tim4ukys
+* @date 05.11.2021
+* @copyright GNU GPLv3
+* @warning Работает только с x86 приложениями
+* 
+* Модуль для патчинга памяти
+*/
 namespace patch
 {
+	/*
+	* @breaf Возрващает информацию о модуле по его названию
+	* @param szModule Название модуля
+	* @return Информацию о модуле
+	* @auther fredaikis unknowncheats
+	*/
 	inline MODULEINFO GetModuleInfo(char* szModule)
 	{
 		MODULEINFO modinfo{};
@@ -41,6 +54,15 @@ namespace patch
 		return modinfo;
 	}
 
+	/*
+	* @breaf Ищет патерн и возвращает его адрес
+	* @param module Название модуля
+	* @param pattern Патерн в виде RAW строки
+	* @param mask Макска. X - будут читаться, а ? - игнорироваться
+	* @param startSearchAddr Адресс с которого нужно начинать поиск.
+	* @return Адрес патерна
+	* @auther fredaikis unknowncheats
+	*/
 	inline DWORD FindPattern(char* module, char* pattern, char* mask, DWORD startSearchAddr = NULL)
 	{
 		//Get all module related information
@@ -76,33 +98,6 @@ namespace patch
 
 		return NULL;
 	}
-
-	/*inline DWORD SearchCallFunction(DWORD fncStartAddr, DWORD searchFncAdrr)
-	{
-		uint8_t* p = reinterpret_cast<uint8_t*>(fncStartAddr);
-
-		DWORD call = searchFncAdrr - fncStartAddr - 5;
-
-		while (true)
-		{
-			if (*p != 0xE8)
-			{
-				p++;
-				continue;
-			}
-
-			if (memcmp(p + 1, &call, 4U) == 0)
-			{
-				break;
-			}
-			else
-			{
-				p += 5;
-			}
-		}
-
-		return DWORD(p);
-	}*/
 
 	/*
 	* @breaf Ставит hook на вызов функции
@@ -151,23 +146,14 @@ namespace patch
 	*/
 	inline BOOL setPushOffset(uint32_t address, uint32_t offsetAddress)
 	{
-		std::stringstream sstream{};
-		sstream << std::hex << offsetAddress;
-
-		std::vector<uint8_t> raw;
-		HEXtoRaw(sstream.str(), &raw);
-		if (!raw.size()) return FALSE;
-
 		DWORD oldProtect;
 		if (VirtualProtect(reinterpret_cast<LPVOID>(address), 5, PAGE_EXECUTE_READWRITE, &oldProtect))
 		{
 			uint8_t* pAddr = reinterpret_cast<uint8_t*>(address);
 			*pAddr = 0x68;
-			for (size_t i = 1; i < 5; i++)
-			{
-				size_t vecPos = 4 - i;
-				pAddr[i] = raw.size() > vecPos ? raw[vecPos] : 0;
-			}
+
+			memcpy(++pAddr, &offsetAddress, 4U);
+
 			VirtualProtect(reinterpret_cast<LPVOID>(address), 5, oldProtect, NULL);
 			return TRUE;
 		}
