@@ -14,8 +14,8 @@ const std::string SAMP_CMP{ "E86D9A0A0083C41C85C0" };
 const std::string GTARPCLIENTSIDE_CMP{ "74708D44240850FF774C" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v3.0"
-#define CURRENTVERSION L"v3.0"
+#define CURRENTVERSIONA "v3.1"
+#define CURRENTVERSION L"v3.1"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
@@ -136,12 +136,31 @@ int drawServerIcon()
     return NULL;
 }
 
-void MainThread()
-{
-    while (!g_gtarpclientside.getAddress()) {
+///////////////////////////////////////////////////////////////////
 
+uint64_t g_ui64LoadTextureHudJumpTrampline;
+PLH::x86Detour* g_pLoadTextureHudDetour = nullptr;
+NOINLINE void loadTextureHudDetourFNC()
+{
+    ((void(__cdecl*)())g_ui64LoadTextureHudJumpTrampline)(); // call original
+
+    RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientside.getAddress(OFFSETS::GTARP_ARRAYSERVERLOGO));
+    while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2] || !serverIcon[3]) Sleep(100);
+
+    g_aServerSprite = new CSprite2d[2];
+    auto serverID = *reinterpret_cast<int*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_SERVERID));
+    serverID = serverID > 2 || serverID < 0 ? 0 : serverID;
+
+    for (size_t i = 0; i < 2; i++)
+    {
+        g_aServerSprite[i].m_pTexture = serverIcon[serverID + i];
     }
 
+    plugin::patch::ReplaceFunction(g_gtarpclientside.getAddress(OFFSETS::GTARP_DRAWHUD), &drawServerIcon);
+}
+
+void MainFunction()
+{
     if (auto currentCMP = patch::getHEX(g_gtarpclientside.getAddress(0xBABE), 10); currentCMP != GTARPCLIENTSIDE_CMP) {
         MessageBoxW(
             NULL,
@@ -169,20 +188,6 @@ void MainThread()
     else {
         g_pLog->Log("gtarp_clientside & samp: Version supported!!!");
     }
-
-    /*
-        Вырубаем блок на SAMPFUNCS | Work in progress
-    */
-    //patch::fill(g_gtarpclientside.getAddress(0xE2EA), 0x5, 0x90);
-    //patch::fill(g_gtarpclientside.getAddress(0xE2F2), 0x65, 0x90);
-    
-    //patch::fill(g_gtarpclientside.getAddress(0xE2F8), 15u, 0x90);
-    //patch::fill(g_gtarpclientside.getAddress(0xE30D), 5u, 0x90);
-    //g_pLoadLibraryAHookedDetour = new PLH::x86Detour(
-        //reinterpret_cast<PCHAR>(g_gtarpclientside.getAddress(0x2E290)), reinterpret_cast<PCHAR>(&loadLibraryHookedDetourFNC), &g_ui64LoadLibraryAHooked_Detour, g_dis
-    //);
-    //g_pLoadLibraryAHookedDetour->hook();
-    
 
     /*
         Выключает лок на подключение на стороние сервера.
@@ -213,19 +218,10 @@ void MainThread()
     /*
         Фиксит положение иконки сервера
     */
-    RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientside.getAddress(OFFSETS::GTARP_ARRAYSERVERLOGO));
-    while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2] || !serverIcon[3]) Sleep(100);
-
-    g_aServerSprite = new CSprite2d[2];
-    auto serverID = *reinterpret_cast<int*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_SERVERID));
-    serverID = serverID > 2 || serverID < 0 ? 0 : serverID;
-
-    for (size_t i = 0; i < 2; i++)
-    {
-        g_aServerSprite[i].m_pTexture = serverIcon[serverID + i];
-    }
-    
-    plugin::patch::ReplaceFunction(g_gtarpclientside.getAddress(OFFSETS::GTARP_DRAWHUD), &drawServerIcon);
+    g_pLoadTextureHudDetour = new PLH::x86Detour(
+        reinterpret_cast<PCHAR>(g_gtarpclientside.getAddress(OFFSETS::GTARP_INITTEXTURE_FNC)), reinterpret_cast<PCHAR>(&loadTextureHudDetourFNC), &g_ui64LoadTextureHudJumpTrampline, g_dis
+    );
+    g_pLoadTextureHudDetour->hook();
 
     /*
         Возвращает часы
@@ -308,11 +304,38 @@ void MainThread()
     g_pLog->Log("All patching succesful!!");
 }
 
+///////////////////////////////
+
+#include <subauth.h>
+
+struct ldrrModuleDLL
+{
+    uint32_t pad_0[6];
+    HANDLE hModule;
+};
+
+typedef PDWORD(__fastcall* _LdrpDereferenceModule)(ldrrModuleDLL* a1, PVOID a2);
+
+_LdrpDereferenceModule g_pLdrpDereferenceModule__Jump = nullptr;
+PDWORD __fastcall LdrpDereferenceModule__Detour(ldrrModuleDLL* p_this, void* trash)
+{
+    static bool s_bIsLoaded{};
+    if (!s_bIsLoaded && DWORD(p_this->hModule) == g_gtarpclientside.getAddress())
+    {
+        MainFunction();
+
+        s_bIsLoaded = true;
+    }
+
+    return g_pLdrpDereferenceModule__Jump(p_this, trash);
+}
+
+///////////////////////////////
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
-    switch (ul_reason_for_call)
+    if (ul_reason_for_call == DLL_PROCESS_ATTACH)
     {
-    case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hModule);
 
         if (hModule != GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI")) {
@@ -324,23 +347,56 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
         g_pSAMP = new CSAMP();
 
         /*
-            В след обновлении перейду с CreateThread на хук KernelBase. В данной ситуации многопоточность лучше не юзать(unsafe).
+            Давайте расмотрим функцию loadLibraryA. Заходим на MSDN и смотрим(url - https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibrarya).
+
+            Теперь мы знаем, что эта функция находится в Kernel32.dll. Не трате время, а сразу открывайте KernelBase, т.к. с Windows 7(вроде бы) эта не DLL, а затычка, которая
+            ссылается на KernelBase.
+
+            Открываем и видим, что теперь мы в LoadLibraryExW. Почему? Потому, что ядро винды использует Юникод(PUNICODE_STRING). Да чё ты делать то будешь, теперь она ссылается на 
+            LdrLoadDll (ntdll.dll). 
+
+            Судя по этой теме(url - https://www.cyberforum.ru/blogs/172954/blog5934.html) мы видим, что она принимает четыре аргумента: Flags, Reserved, ModuleFileName, ModuleHandle.
+            Отлично! Мы нашли то, что нам нужно! 
+            
+            HANDLE - это адрес начала адресного пространства DLL. Если он есть - значит DLL загружен. Делаем псевдокод(в ida pro просто по нажатию F5) и смотрим:
+
+            v7 = v11;
+            *p_ModuleHandle = *(_DWORD *)(v11 + 0x18);
+            LdrpDereferenceModule(v7);
+
+            v7 - Это указатель на v11 => это одно и тоже. Вот и наш Handle. Исходя из протатипа мы видим, что это выходной аргумент и это ед. место где он инициализируется =>
+            Мы должны использовать его до того, как он будет где либо использован. В DLLMain как можно видеть он используется => мы воспользуемся им до того, как будет 
+            вызван DLLMain. 
+            
+            0x18 - Явно это смещение => v11 это некая структура. Лично мне вообще похуй что это за структура, мне нужен только hednl, по этому делаем 
+            псевдоструктуру. Полная она нам не нужна.
+
+            Ставим callhook LdrpDereferenceModule и в ней будем чекать, та ли DLL. Если та, то ебашим ;)
         */
-        CreateThread(NULL, NULL, LPTHREAD_START_ROUTINE(MainThread), NULL, NULL, NULL);
+        auto handleNTDLL = GetModuleHandleA("ntdll.dll");
+        auto nAddressLdrLoadDll = DWORD(GetProcAddress(handleNTDLL, "LdrLoadDll"));
 
-        break;
-    case DLL_PROCESS_DETACH:
 
+        auto callDereferenceModule = patch::FindPattern("ntdll.dll", "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8", "x???x???x??xxx", nAddressLdrLoadDll);
+
+        callDereferenceModule += 13;
+        g_pLog->Log("call address: 0x%X", callDereferenceModule);
+
+        g_pLdrpDereferenceModule__Jump = _LdrpDereferenceModule(patch::SetCallHook(callDereferenceModule, &LdrpDereferenceModule__Detour));
+    }
+    else if (ul_reason_for_call == DLL_PROCESS_DETACH)
+    {
         SAFE_UNHOOK(g_pDrawWantedDetour);
         SAFE_UNHOOK(g_pD3DXCreateFontDetour);
         SAFE_UNHOOK(g_pGameLoopDetour);
+        SAFE_UNHOOK(g_pLoadTextureHudDetour);
 
         SAFE_DELETEARRAY(g_aServerSprite);
-        
+
         SAFE_DELETE(g_pSAMP);
         SAFE_DELETE(g_pConfig);
         SAFE_DELETE(g_pLog);
-        break;
     }
+
     return TRUE;
 }
