@@ -82,10 +82,13 @@ enum class OFFSETS : unsigned int {
 
 #include "plugin.h"
 #include "CSprite2d.h"
+// DirectX SDK
+#include <d3d9.h>
+#include <d3dx9.h>
 // My library
 #include "CLog.hpp"
 extern CLog* g_pLog;
-#include "TimeZone.hpp"
+//#include "TimeZone.hpp"
 
 #include "CConfig.hpp"
 #include "patch.hpp"
@@ -97,6 +100,7 @@ typedef ULONGLONG TICK;
 #define SAFE_UNHOOK(p) if (p) { p->unHook(); delete p; p=nullptr; }
 #define SAFE_DELETE(p) if (p) { delete p; p=nullptr; }
 #define SAFE_DELETEARRAY(p) if (p) { delete[] p; p=nullptr; }
+#define SAFE_RELEASE(p) if (p) { p->Release(); p=nullptr; }
 
 #include "CSAMP.h"
 
