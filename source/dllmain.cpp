@@ -56,11 +56,11 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...)
 
         if (!s_pTimeOffset)
         {
-            json j = json::parse(Client::downloadStringFromURL(false, "worldtimeapi.org", "/api/ip"));
-            TimeZone tmz{ j["utc_offset"].get<std::string>() };
+            TIME_ZONE_INFORMATION timeZoneInfo;
+            GetTimeZoneInformation(&timeZoneInfo);
 
             s_pTimeOffset = new int8_t;
-            *s_pTimeOffset = tmz.getOffset("+03:00");
+            *s_pTimeOffset = int8_t(timeZoneInfo.Bias / 60 + 3);
         }
 
         hour += *s_pTimeOffset;
@@ -70,13 +70,44 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...)
     return sprintf(buff, "%02d:%02d", hour, timeInfo.wMinute);
 }
 
-uint64_t g_ui64D3DXCreateFontJumpTrampline;
-PLH::x86Detour* g_pD3DXCreateFontDetour = nullptr;
-NOINLINE int WINAPI D3DXCreateFontDetourFNC(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11/*fontFaceName*/, int a12, int a13, int a14, int a15)
+///////////////////
+
+ID3DXFont* g_pChatFont = nullptr;
+
+void chatFontReset()
 {
-    return ((int(WINAPI*)(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, int a11, int a12, int a13, int a14, int a15))g_ui64D3DXCreateFontJumpTrampline)
-        (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, int(g_pConfig->getConfig()->m_samp.m_FontFaceName.c_str()), a12, a13, a14, a15);
+    SAFE_RELEASE(g_pChatFont);
+
+    int iFontSize = ((int(*)())g_dlSAMP.getAddress(0xC5B20))();
+    int iFontWeight = ((int(*)())g_dlSAMP.getAddress(0xC5BD0))();
+
+    g_pLog->Log("iFontSize: %d | iFontWeight: %d", iFontSize, iFontWeight);
+
+    D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1, FALSE, DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, g_pConfig->getConfig()->m_samp.m_FontFaceName.c_str(), &g_pChatFont);
 }
+
+void chatFontResetDevice()
+{
+    if (g_pChatFont)
+        g_pChatFont->OnResetDevice();
+}
+
+void chatFontLostDevice()
+{
+    if (g_pChatFont)
+        g_pChatFont->OnLostDevice();
+}
+
+typedef int(WINAPI* _Direct9CreateFontA)(int _a1, int _a2, int _a3, int _a4, int _a5, int _a6, int _a7, int _a8, int _a9, int _a10, const char* _fontFaceName, int _a12, int _a13, int _a14, int _a15);
+_Direct9CreateFontA g_pOrigDirect9CreateFontA = nullptr;
+
+int WINAPI Direct9CreateFontA__Detour(int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, const char* fontFaceName, int a12, int a13, int a14, int a15)
+{
+    return g_pOrigDirect9CreateFontA(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, g_pConfig->getConfig()->m_samp.m_FontFaceName.c_str(), a12, a13, a14, a15);
+}
+
+///////////////////
 
 CSAMP* g_pSAMP = nullptr;
 
@@ -246,10 +277,22 @@ void MainFunction()
     */
     if (g_pConfig->getConfig()->m_samp.m_bIsCustomFont)
     {
-        g_pD3DXCreateFontDetour = new PLH::x86Detour(
-            reinterpret_cast<PCHAR>(g_dlSAMP.getAddress(OFFSETS::SAMP_CREATEFONT)), reinterpret_cast<PCHAR>(&D3DXCreateFontDetourFNC), &g_ui64D3DXCreateFontJumpTrampline, g_dis
-        );
-        g_pD3DXCreateFontDetour->hook();
+        patch::setJump(g_dlSAMP.getAddress(0x6AA7F), uint32_t(&chatFontResetDevice), 5U, true);
+        patch::setJump(g_dlSAMP.getAddress(0x6AA3F), uint32_t(&chatFontLostDevice), 5U, true);
+        patch::setJump(g_dlSAMP.getAddress(0x6B36C), uint32_t(&chatFontReset), 5U, true);
+
+        ///
+
+        char raw[6]{ '\x8B', '\x35', 0, 0, 0, 0 }; // 8B 35 ? ? ? ? 
+
+        *(DWORD*)(DWORD(raw + 2)) = DWORD(&g_pChatFont); // mov esi, [pFont]
+
+        patch::fill(g_dlSAMP.getAddress(0x66D06), 3U, 0x90);
+        patch::setRawThroughJump(g_dlSAMP.getAddress(0x66D06), raw, 6, 5U, true);
+
+        ///
+
+        g_pOrigDirect9CreateFontA = _Direct9CreateFontA(patch::SetCallHook(g_dlSAMP.getAddress(0x6B230), &Direct9CreateFontA__Detour));
     }
 
     /*
@@ -387,7 +430,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
     else if (ul_reason_for_call == DLL_PROCESS_DETACH)
     {
         SAFE_UNHOOK(g_pDrawWantedDetour);
-        SAFE_UNHOOK(g_pD3DXCreateFontDetour);
         SAFE_UNHOOK(g_pGameLoopDetour);
         SAFE_UNHOOK(g_pLoadTextureHudDetour);
 
