@@ -21,20 +21,20 @@
 
 enum class OFFSETS : unsigned int {
     // gtarp_clientside.asi + ...
-    GTARP_LOCKCONNECTTOOTHERSERVER = 0x5794,
-    GTARP_INITTEXTURE_INITHOOK = 0x1C63D,
-    GTARP_INITTEXTURE_FNC = 0x1C010,
+    GTARP_LOCKCONNECTTOOTHERSERVER = 0x5134,
+    GTARP_INITTEXTURE_INITHOOK = 0x1C4ED,
+    GTARP_INITTEXTURE_FNC = 0x1BEC0,
 
-    GTARP_ARRAYSERVERLOGO = 0xD8CB8,
-    GTARP_SERVERID = 0xD368C,
+    GTARP_ARRAYSERVERLOGO = 0xD8B40,
+    GTARP_SERVERID = 0xD372C,
     GTARP_X2PAYDAY = 0xCDB20,
 
-    GTARP_DRAWHUD = 0x1CA00,
-    GTARP_DRAWSPEEDOMETER_DRAWRAMKA = 0x25EAA,
+    GTARP_DRAWHUD = 0x1C8B0,
+    GTARP_DRAWSPEEDOMETER_DRAWRAMKA = 0x25DDA,
 
-    GTARP_WANTEDLEVEL = 0xD8CD4,
+    GTARP_WANTEDLEVEL = 0xD8B60,
 
-    GTARP_DISABLECHECKTXD = 0xFA34,
+    GTARP_DISABLECHECKTXD = 0xF154,
 
     // samp.dll + ...
     SAMP_ENABLECLOCK = 0xA0D84,
@@ -82,10 +82,13 @@ enum class OFFSETS : unsigned int {
 
 #include "plugin.h"
 #include "CSprite2d.h"
+// DirectX SDK
+#include <d3d9.h>
+#include <d3dx9.h>
 // My library
 #include "CLog.hpp"
 extern CLog* g_pLog;
-#include "TimeZone.hpp"
+//#include "TimeZone.hpp"
 
 #include "CConfig.hpp"
 #include "patch.hpp"
@@ -97,6 +100,7 @@ typedef ULONGLONG TICK;
 #define SAFE_UNHOOK(p) if (p) { p->unHook(); delete p; p=nullptr; }
 #define SAFE_DELETE(p) if (p) { delete p; p=nullptr; }
 #define SAFE_DELETEARRAY(p) if (p) { delete[] p; p=nullptr; }
+#define SAFE_RELEASE(p) if (p) { p->Release(); p=nullptr; }
 
 #include "CSAMP.h"
 

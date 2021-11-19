@@ -38,6 +38,107 @@
 */
 namespace patch
 {
+	inline BOOL setRawThroughJump(uint32_t address, const char* raw, size_t rawSize, size_t saveByte = NULL, bool isSave = false)
+	{
+		DWORD oldProtect;
+
+		size_t size = saveByte < 5U ? 5 : saveByte;
+
+		if (VirtualProtect(PVOID(address), size, PAGE_READWRITE, &oldProtect))
+		{
+			// Копируем память, чтобы потом вставить её в конец
+			uint8_t* aSaveByte = nullptr;
+			if (isSave)
+			{
+				aSaveByte = new uint8_t[size];
+				memcpy(aSaveByte, PVOID(address), size);
+			}
+
+			// NOP'им память
+			FillMemory(PVOID(address), size, 0x90);
+
+			// Создаём островок, где будем вызывать detour
+			uint8_t* memIsland = reinterpret_cast<uint8_t*>(malloc(5U + (isSave ? size : 0U) + 5U));
+
+			// Делаем прыжок на островок 
+			*(uint8_t*)address = 0xE9; /* jump */
+			*reinterpret_cast<DWORD*>(address + 1) = DWORD(memIsland) - address - 5;
+
+			// Ставим raw
+			memcpy(memIsland, raw, rawSize);
+			memIsland += rawSize;
+
+			// Вставляем сохранёные байты
+			if (isSave)
+			{
+				memcpy(memIsland, aSaveByte, size);
+				memIsland += size;
+
+				delete[] aSaveByte;
+			}
+
+			// Делаем прыжок назад
+			*memIsland = 0xE9; /* jump */
+			*(DWORD*)(DWORD(memIsland) + 1) = (address + 5U) - DWORD(memIsland) - 5;
+
+			VirtualProtect(PVOID(address), size, oldProtect, NULL);
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	inline BOOL setJump(uint32_t address, uint32_t detour, size_t saveByte = NULL, bool isSave = false)
+	{
+		DWORD oldProtect;
+
+		size_t size = saveByte < 5U ? 5 : saveByte;
+
+		if (VirtualProtect(PVOID(address), size, PAGE_READWRITE, &oldProtect))
+		{
+			// Копируем память, чтобы потом вставить её в конец
+			uint8_t* aSaveByte = nullptr;
+			if (isSave)
+			{
+				aSaveByte = new uint8_t[size];
+				memcpy(aSaveByte, PVOID(address), size);
+			}
+
+			// NOP'им память
+			FillMemory(PVOID(address), size, 0x90);
+
+			// Создаём островок, где будем вызывать detour
+			uint8_t* memIsland = reinterpret_cast<uint8_t*>(malloc(5U + (isSave ? size : 0U) + 5U));
+
+			// Делаем прыжок на островок 
+			*(uint8_t*)address = 0xE9; /* jump */
+			*reinterpret_cast<DWORD*>(address + 1) = DWORD(memIsland) - address - 5;
+
+			// Вызываем detour
+			*memIsland = 0xE8; /* call */
+			*reinterpret_cast<DWORD*>(memIsland + 1) = detour - DWORD(memIsland) - 5;
+			memIsland += 5;
+
+			// Вставляем сохранёные байты
+			if (isSave)
+			{
+				memcpy(memIsland, aSaveByte, size);
+				memIsland += size;
+
+				delete[] aSaveByte;
+			}
+
+			// Делаем прыжок назад
+			*memIsland = 0xE9; /* jump */
+			*(DWORD*)(DWORD(memIsland) + 1) = (address + 5U) - DWORD(memIsland) - 5;
+
+			VirtualProtect(PVOID(address), size, oldProtect, NULL);
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
 	/*
 	* @breaf Возрващает информацию о модуле по его названию
 	* @param szModule Название модуля
