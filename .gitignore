@@ -454,3 +454,5 @@ source/.idea/misc.xml
 source/.idea/modules.xml
 source/.idea/source.iml
 source/.idea/vcs.xml
+source/cmake-build-release/OFF
+source/cmake-build-release/!000patchGTARPClientByTim4ukys.ASI
