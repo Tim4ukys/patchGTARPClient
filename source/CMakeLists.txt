@@ -37,7 +37,7 @@ link_directories("G:/cpp/boost_1_77_0/stage/lib")
 include_directories("G:/cpp/OpenSSL/out/Lib/x32/Release/include")
 link_directories("G:/cpp/OpenSSL/out/Lib/x32/Release/lib")
 
-add_library(patchGTARPClient SHARED
+add_library(${PROJECT_NAME} SHARED
         nlohmann/json.hpp
         CConfig.hpp
         Client.hpp
@@ -49,5 +49,16 @@ add_library(patchGTARPClient SHARED
         patch.hpp
         snippets.hpp offsets.hpp)
 
-set_target_properties(patchGTARPClient PROPERTIES OUTPUT_NAME "000patchGTARPClientByTim4ukys")
-set_target_properties(patchGTARPClient PROPERTIES SUFFIX ".ASI")
+#######################################################
+
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "000patchGTARPClientByTim4ukys")
+set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".ASI")
+
+IF(EXISTS "000patchGTARPClientByTim4ukys.ASI")
+    IF (EXISTS "!000patchGTARPClientByTim4ukys.ASI")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND del !000patchGTARPClientByTim4ukys.ASI)
+    ENDIF()
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND ren 000patchGTARPClientByTim4ukys.ASI !000patchGTARPClientByTim4ukys.ASI)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD COMMAND copy \"!000patchGTARPClientByTim4ukys.ASI\" \"D:/Games/GTA RP\" /y)
+ENDIF()
