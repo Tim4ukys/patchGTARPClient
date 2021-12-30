@@ -15,7 +15,7 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="CSAMP.cpp">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
