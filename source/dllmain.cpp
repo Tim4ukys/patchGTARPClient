@@ -11,11 +11,11 @@
 #include "dllmain.h"
 
 const std::string SAMP_CMP{ "E86D9A0A0083C41C85C0" };
-const std::string GTARPCLIENTSIDE_CMP{ "CF746A8B4B0C8D433C39" };
+const std::string GTARPCLIENTSIDE_CMP{ "5E5DC20400CCCCCCCCCC" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v4.0"
-#define CURRENTVERSION L"v4.0"
+#define CURRENTVERSIONA "v5.0"
+#define CURRENTVERSION L"v5.0"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
