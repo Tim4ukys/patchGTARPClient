@@ -11,11 +11,11 @@
 #include "dllmain.h"
 
 const std::string SAMP_CMP{ "E86D9A0A0083C41C85C0" };
-const std::string GTARPCLIENTSIDE_CMP{ "CF746A8B4B0C8D433C39" };
+const std::string GTARPCLIENTSIDE_CMP{ "5E5DC20400CCCCCCCCCC" };
 
 #define UPDATE_DELAY 12000
-#define CURRENTVERSIONA "v4.0"
-#define CURRENTVERSION L"v4.0"
+#define CURRENTVERSIONA "v5.0"
+#define CURRENTVERSION L"v5.0"
 #define GITHUBURLA "github.com/Tim4ukys/patchGTARPClient"
 #define GITHUBURL L"github.com/Tim4ukys/patchGTARPClient"
 
@@ -37,7 +37,9 @@ NOINLINE void drawWantedDetourFNC()
 
     if (*s_piWantedLevel != FindPlayerWanted(-1)->m_nWantedLevel)
     {
-        FindPlayerWanted(-1)->SetWantedLevel(*s_piWantedLevel);
+        //g_pLog->Log("s_piWantedLevel: %d", int(*s_piWantedLevel));
+        //FindPlayerWanted(-1)->SetWantedLevel(FindPlayerWanted(-1)->m_nWantedLevel = *s_piWantedLevel);
+        FindPlayerPed(-1)->GetWanted()->SetWantedLevel(*s_piWantedLevel);
     }
 
     ((void(__cdecl*)())g_ui64DrawWantedJumpTrampline)(); // call original
@@ -154,14 +156,10 @@ int drawServerIcon()
     static auto s_Conf = g_pConfig->getConfig();
     if (s_Conf->m_serverIcon.m_bState)
     {
-        static auto s_nIsX2PayDay = reinterpret_cast<int32_t*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_X2PAYDAY));
-
-        auto sprite = &g_aServerSprite[*s_nIsX2PayDay];
-        sprite->Draw(
+        g_aServerSprite->Draw(
             SCREEN_COORD_LEFT(s_Conf->m_serverIcon.m_fX), SCREEN_COORD_TOP(s_Conf->m_serverIcon.m_fY),
-            SCREEN_COORD(static_cast<float>(sprite->m_pTexture->raster->width / 2)), SCREEN_COORD(static_cast<float>(sprite->m_pTexture->raster->height / 2)),
-            CRGBA(0xFF, 0xFF, 0xFF)
-        );
+            SCREEN_COORD(static_cast<float>(g_aServerSprite->m_pTexture->raster->width / 2)), SCREEN_COORD(static_cast<float>(g_aServerSprite->m_pTexture->raster->height / 2)),
+            CRGBA(0xFF, 0xFF, 0xFF));
     }
 
     return NULL;
@@ -176,16 +174,13 @@ NOINLINE void loadTextureHudDetourFNC()
     ((void(__cdecl*)())g_ui64LoadTextureHudJumpTrampline)(); // call original
 
     RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientside.getAddress(OFFSETS::GTARP_ARRAYSERVERLOGO));
-    while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2] || !serverIcon[3]) Sleep(100);
+    //while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2]) Sleep(100);
 
-    g_aServerSprite = new CSprite2d[2];
+    g_aServerSprite = new CSprite2d;
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_SERVERID));
     serverID = serverID > 2 || serverID < 0 ? 0 : serverID;
 
-    for (size_t i = 0; i < 2; i++)
-    {
-        g_aServerSprite[i].m_pTexture = serverIcon[serverID + i];
-    }
+    g_aServerSprite->m_pTexture = serverIcon[serverID];
 
     plugin::patch::ReplaceFunction(g_gtarpclientside.getAddress(OFFSETS::GTARP_DRAWHUD), &drawServerIcon);
 }
@@ -433,7 +428,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
         SAFE_UNHOOK(g_pGameLoopDetour);
         SAFE_UNHOOK(g_pLoadTextureHudDetour);
 
-        SAFE_DELETEARRAY(g_aServerSprite);
+        SAFE_DELETE(g_aServerSprite);
 
         SAFE_DELETE(g_pSAMP);
         SAFE_DELETE(g_pConfig);
