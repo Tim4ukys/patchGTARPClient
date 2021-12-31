@@ -174,7 +174,7 @@ NOINLINE void loadTextureHudDetourFNC()
     ((void(__cdecl*)())g_ui64LoadTextureHudJumpTrampline)(); // call original
 
     RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientside.getAddress(OFFSETS::GTARP_ARRAYSERVERLOGO));
-    while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2]) Sleep(100);
+    //while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2]) Sleep(100);
 
     g_aServerSprite = new CSprite2d;
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientside.getAddress(OFFSETS::GTARP_SERVERID));
