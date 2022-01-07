@@ -355,12 +355,16 @@ struct ldrrModuleDLL
 typedef PDWORD(__fastcall* _LdrpDereferenceModule)(ldrrModuleDLL* a1, PVOID a2);
 
 _LdrpDereferenceModule g_pLdrpDereferenceModule__Jump = nullptr;
+DWORD g_nLdrpDereferenceModule__CallAddres = NULL;
 PDWORD __fastcall LdrpDereferenceModule__Detour(ldrrModuleDLL* p_this, void* trash)
 {
     static bool s_bIsLoaded{};
     if (!s_bIsLoaded && DWORD(p_this->hModule) == g_gtarpclientside.getAddress())
     {
         MainFunction();
+
+        // Снимаем хук
+        patch::SetCallHook(g_nLdrpDereferenceModule__CallAddres, (PVOID)g_pLdrpDereferenceModule__Jump);
 
         s_bIsLoaded = true;
     }
@@ -415,12 +419,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
         auto nAddressLdrLoadDll = DWORD(GetProcAddress(handleNTDLL, "LdrLoadDll"));
 
 
-        auto callDereferenceModule = patch::FindPattern("ntdll.dll", "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8", "x???x???x??xxx", nAddressLdrLoadDll);
+        g_nLdrpDereferenceModule__CallAddres = patch::FindPattern("ntdll.dll", "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8", "x???x???x??xxx", nAddressLdrLoadDll);
 
-        callDereferenceModule += 13;
-        g_pLog->Log("call address: 0x%X", callDereferenceModule);
+        g_nLdrpDereferenceModule__CallAddres += 13;
+        g_pLog->Log("call address: 0x%X", g_nLdrpDereferenceModule__CallAddres);
 
-        g_pLdrpDereferenceModule__Jump = _LdrpDereferenceModule(patch::SetCallHook(callDereferenceModule, &LdrpDereferenceModule__Detour));
+        g_pLdrpDereferenceModule__Jump = _LdrpDereferenceModule(patch::SetCallHook(g_nLdrpDereferenceModule__CallAddres, &LdrpDereferenceModule__Detour));
     }
     else if (ul_reason_for_call == DLL_PROCESS_DETACH)
     {
