@@ -1,44 +1,41 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Исходные файлы">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="core">
+      <UniqueIdentifier>{78f60042-e336-4da5-8eb7-77b7190ceaed}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="core\libs">
+      <UniqueIdentifier>{cfb140e5-257c-4165-af3f-9d1241e493ce}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="patch.h">
+      <Filter>core\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="client.h">
+      <Filter>core\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="loader.h">
+      <Filter>core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
     <ClCompile Include="dllmain.cpp">
-      <Filter>Исходные файлы</Filter>
+      <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="CSAMP.cpp">
-      <Filter>Исходные файлы</Filter>
+    <ClCompile Include="patch.cpp">
+      <Filter>core\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="client.cpp">
+      <Filter>core\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="loader.cpp">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="patch.hpp">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="CLog.hpp">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="CConfig.hpp">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="dllmain.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="snippets.hpp">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="Client.hpp">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="CSAMP.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
+    <None Include=".clang-format" />
   </ItemGroup>
 </Project>
