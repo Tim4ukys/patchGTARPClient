@@ -13,9 +13,9 @@
 class client {
 public:
     /**
-    * @brief Скачивает сайт в виде строки
-    * @param URL строка
-    * @warning поддерживается только HTTP и HTTPS
+    * @brief РЎРєР°С‡РёРІР°РµС‚ СЃР°Р№С‚ РІ РІРёРґРµ СЃС‚СЂРѕРєРё
+    * @param URL СЃС‚СЂРѕРєР°
+    * @warning РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ С‚РѕР»СЊРєРѕ HTTP Рё HTTPS
     * @example http://youtube.com.ua/cock/suck
     */
     static std::string downloadStringFromURL(std::string URL);
