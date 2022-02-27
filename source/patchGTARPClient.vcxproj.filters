@@ -19,6 +19,12 @@
     <ClInclude Include="loader.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="snippets.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="offsets.hpp">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -32,6 +38,9 @@
       <Filter>core\libs</Filter>
     </ClCompile>
     <ClCompile Include="loader.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="snippets.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
