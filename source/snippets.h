@@ -24,16 +24,16 @@ namespace snippets
     };
 
     /*
-    * @brief Переводит UTF8 в CP1251 кодировку
-    * @param utf8 строка UTF8
-    * @return строка в кодировке CP1251
+    * @brief РџРµСЂРµРІРѕРґРёС‚ UTF8 РІ CP1251 РєРѕРґРёСЂРѕРІРєСѓ
+    * @param utf8 СЃС‚СЂРѕРєР° UTF8
+    * @return СЃС‚СЂРѕРєР° РІ РєРѕРґРёСЂРѕРІРєРµ CP1251
     */
     std::string UTF8_to_CP1251(std::string const& utf8);
 
     /**
-    * @brief Конвертирует wchar_t в string
-    * @param wstr unicode строка
-    * @return char строка
+    * @brief РљРѕРЅРІРµСЂС‚РёСЂСѓРµС‚ wchar_t РІ string
+    * @param wstr unicode СЃС‚СЂРѕРєР°
+    * @return char СЃС‚СЂРѕРєР°
     */
     std::string ConvertWideToANSI(const wchar_t* wstr);
 };
