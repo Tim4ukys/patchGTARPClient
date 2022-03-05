@@ -11,6 +11,11 @@
 #ifndef PCH_H
 #define PCH_H
 
+// fix compilation
+#define WIN32_LEAN_AND_MEAN
+#define _CRT_SECURE_NO_WARNINGS
+#pragma warning(disable : 4996)
+
 // STL
 #include <string>
 #include <sstream>
@@ -20,7 +25,8 @@
 #include <functional>
 #include <array>
 #include <regex>
-
+#include <filesystem>
+#include <fstream>
 
 
 // C (Old-Library)
