@@ -9,24 +9,35 @@
 *                                                   *
 ****************************************************/
 #include "pch.h"
-#include "loader.h"
 #include "snippets.h"
+#include "Log.h"
 
-loader g_pLoader;
 //snippets::DynamicLibrary g_gtarpclient{ "gtarp_clientside.asi" };
+Log g_Log("!000patchGTARPClientByTim4ukys.log");
 
 patch::callHook *g_pLdrpDereferenceModule = nullptr;
 PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
     struct ldrrModuleDLL {
-        uint32_t pad_0[6];
-        HANDLE   hModule;
-    };
+        uint32_t pad_0[6]; // +0h
+        HANDLE   hModule; // +18h
+        uint32_t pad_1[5]; // +1Ch
+        wchar_t* pPluginName; // +30h
+    }* _a1 = (ldrrModuleDLL*)a1;
 
-    for (const auto &fnc : g_pLoader) {
-        fnc();
+    auto origFnc = reinterpret_cast<PDWORD(__fastcall*)(ldrrModuleDLL*, PVOID)>(g_pLdrpDereferenceModule->getOriginal());
+
+    //g_Log.Write("hModule: %p | name: %s", DWORD(a1), ConvertWideToANSI(_a1->pPluginName).c_str());
+    //MessageBoxA(NULL, "Stop", "patchTest", MB_OK | MB_ICONINFORMATION);
+    if (!wcscmp(_a1->pPluginName, L"gtarp_clientside.asi"))
+    {
+        //g_Log << "[loader]: gtarp_clientside.asi - injected. Start hooking.";
+
+
+        g_Log << "[loader]: end hooking. Destroy 'LdrpDereferenceModule' hook.";
+        g_pLdrpDereferenceModule->uninstallHook();
     }
-    
-    g_pLdrpDereferenceModule->getOriginal<PDWORD(__fastcall*)(ldrrModuleDLL*, PVOID)>()((ldrrModuleDLL*)a1, a2);
+
+    return origFnc((ldrrModuleDLL*)a1, a2);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
