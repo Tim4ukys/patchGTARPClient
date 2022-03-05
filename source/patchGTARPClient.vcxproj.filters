@@ -16,14 +16,14 @@
     <ClInclude Include="client.h">
       <Filter>core\libs</Filter>
     </ClInclude>
-    <ClInclude Include="loader.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="snippets.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="offsets.hpp">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>core\libs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -37,11 +37,11 @@
     <ClCompile Include="client.cpp">
       <Filter>core\libs</Filter>
     </ClCompile>
-    <ClCompile Include="loader.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="snippets.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>core\libs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

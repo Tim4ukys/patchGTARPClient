@@ -75,12 +75,16 @@
     <TargetExt>.ASI</TargetExt>
     <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
+    <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.ASI</TargetExt>
     <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+    <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
+    <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -166,7 +170,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="client.h" />
-    <ClInclude Include="loader.h" />
+    <ClInclude Include="Log.h" />
     <ClInclude Include="offsets.hpp" />
     <ClInclude Include="patch.h" />
     <ClInclude Include="pch.h" />
@@ -175,7 +179,7 @@
   <ItemGroup>
     <ClCompile Include="client.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="loader.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="patch.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
