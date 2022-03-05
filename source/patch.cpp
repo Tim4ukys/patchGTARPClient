@@ -46,9 +46,8 @@ BOOL patch::callHook::uninstallHook(uintptr_t oldAddrFunc) {
     return rr;
 }
 
-template<typename T>
-T patch::callHook::getOriginal() {
-    return reinterpret_cast<T>(m_nOldCallFunc);
+DWORD patch::callHook::getOriginal() const noexcept {
+    return m_nOldCallFunc;
 }
 
 // ---------------------------
@@ -105,7 +104,7 @@ void patch::HEXtoRaw(std::string& hex, std::vector<uint8_t>* raw) {
     }
 }
 
-BOOL patch::setRawThroughJump(uintptr_t address, const char* raw, size_t rawSize, size_t saveByte = NULL, bool isSave = false) {
+BOOL patch::setRawThroughJump(uintptr_t address, const char* raw, size_t rawSize, size_t saveByte, bool isSave) {
     DWORD oldProtect;
 
     size_t size = saveByte < (sizeof(uintptr_t) + 1) ? (sizeof(uintptr_t) + 1) : saveByte;

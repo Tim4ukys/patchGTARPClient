@@ -44,8 +44,7 @@ namespace patch {
         */
         BOOL uninstallHook(uintptr_t oldAddrFunc = NULL);
 
-        template<typename T>
-        T getOriginal();
+        DWORD getOriginal() const noexcept;
 
     private:
 
