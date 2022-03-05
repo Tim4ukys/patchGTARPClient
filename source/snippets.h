@@ -23,5 +23,17 @@ namespace snippets
         } m_unDllAddress;
     };
 
+    /*
+    * @brief Переводит UTF8 в CP1251 кодировку
+    * @param utf8 строка UTF8
+    * @return строка в кодировке CP1251
+    */
     std::string UTF8_to_CP1251(std::string const& utf8);
+
+    /**
+    * @brief Конвертирует wchar_t в string
+    * @param wstr unicode строка
+    * @return char строка
+    */
+    std::string ConvertWideToANSI(const wchar_t* wstr);
 };

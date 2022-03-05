@@ -52,3 +52,11 @@ std::string snippets::UTF8_to_CP1251(std::string const& utf8) {
     }
     return std::string();
 }
+
+std::string snippets::ConvertWideToANSI(const wchar_t* wstr)
+{
+    int         count = WideCharToMultiByte(CP_ACP, 0, wstr, wcslen(wstr), NULL, 0, NULL, NULL);
+    std::string str(count, 0);
+    WideCharToMultiByte(CP_ACP, 0, wstr, -1, &str[0], count, NULL, NULL);
+    return str;
+}
