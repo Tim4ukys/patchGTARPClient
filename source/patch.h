@@ -83,6 +83,16 @@ namespace patch {
     */
     BOOL setRawThroughJump(uintptr_t address, const char* raw, size_t rawSize, size_t saveByte = NULL, bool isSave = false);
 
+    /**
+    * @brief встраивает код путём создания Jump на detour
+    * @param address Адрес, куда будет встраиваться код
+    * @param detour адрес, куда будет сделан прыжок
+    * @param saveByte размер "сохраняемых" байтов
+    * @param isSave сохранять ли байты
+    * @warning В случае если 'saveByte != NULL', а 'isSave = false', то в address NOP'яться столько байтов, сколько указано в saveByte.
+    */
+    BOOL setJump(uintptr_t address, uintptr_t detour, size_t saveByte = NULL, bool isSave = false);
+
 	/*
 	* @breaf Пихает offset переменной в стек
 	* @param address Адрес участка памяти в котором будет это происходить

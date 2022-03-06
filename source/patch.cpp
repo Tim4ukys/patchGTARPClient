@@ -150,6 +150,53 @@ BOOL patch::setRawThroughJump(uintptr_t address, const char* raw, size_t rawSize
     return FALSE;
 }
 
+BOOL patch::setJump(uintptr_t address, uintptr_t detour, size_t saveByte, bool isSave) {
+    DWORD oldProtect;
+
+    size_t size = saveByte < (sizeof(uintptr_t) + 1) ? (sizeof(uintptr_t) + 1) : saveByte;
+
+    if (VirtualProtect(PVOID(address), size, PAGE_READWRITE, &oldProtect)) {
+        // Копируем память, чтобы потом вставить её в конец
+        uint8_t* aSaveByte = nullptr;
+        if (isSave) {
+            aSaveByte = new uint8_t[size];
+            memcpy(aSaveByte, PVOID(address), size);
+        }
+
+        // NOP'им память
+        FillMemory(PVOID(address), size, 0x90);
+
+        // Создаём островок, где будем вызывать detour
+        uint8_t* memIsland = reinterpret_cast<uint8_t*>(malloc((sizeof(uintptr_t) + 1) * 2 + (isSave ? size : 0U)));
+
+        // Делаем прыжок на островок
+        *(uint8_t*)address = 0xE9; /* jump */
+        *reinterpret_cast<DWORD*>(address + 1) = DWORD(memIsland) - address - (sizeof(uintptr_t) + 1);
+
+        // Вызываем detour
+        *memIsland = 0xE8; /* call */
+        *reinterpret_cast<DWORD*>(memIsland + 1) = detour - DWORD(memIsland) - (sizeof(uintptr_t) + 1);
+        memIsland += (sizeof(uintptr_t) + 1);
+
+        // Вставляем сохранёные байты
+        if (isSave) {
+            memcpy(memIsland, aSaveByte, size);
+            memIsland += size;
+
+            delete[] aSaveByte;
+        }
+
+        // Делаем прыжок назад
+        *memIsland = 0xE9; /* jump */
+        *(DWORD*)(DWORD(memIsland) + 1) = (address + (sizeof(uintptr_t) + 1)) - DWORD(memIsland) - (sizeof(uintptr_t) + 1);
+
+        VirtualProtect(PVOID(address), size, oldProtect, NULL);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 BOOL patch::setPushOffset(uintptr_t address, uintptr_t offsetAddress) {
     DWORD oldProtect;
     if (VirtualProtect(reinterpret_cast<LPVOID>(address), (sizeof(uintptr_t) + 1), PAGE_EXECUTE_READWRITE, &oldProtect)) {
