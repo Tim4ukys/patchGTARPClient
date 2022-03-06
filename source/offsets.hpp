@@ -42,7 +42,7 @@ public:
         FORMATFULLPATHSCREENSHOT = 0xC4573
     };
     
-    enum class GTASA : unsigned int {
+    enum class GTA_SA : unsigned int {
         DRAWWANTED = 0x58D9A0,
         DRAWHUD_CLOCK_SPRINTF = 0x58EBAF,
         GAMELOOP = 0x53BEE0
