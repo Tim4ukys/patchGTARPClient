@@ -17,10 +17,18 @@
         p = nullptr; \
     }
 
+#define SAFE_RELEASE(p) \
+    if (p) { \
+        p->Release();\
+        p=nullptr; \
+    }
+
+#define GET_ADDR(a) getAddress((unsigned long)(a))
+
 // fix compilation
 #define WIN32_LEAN_AND_MEAN
 #define _CRT_SECURE_NO_WARNINGS
-#pragma warning(disable : 4996)
+
 
 // STL
 #include <string>
@@ -46,10 +54,30 @@
 #include <memory.h>
 
 
+// DirectX 9
+#include <d3d9.h>
+#include <d3dx9.h>
+
+
 // BOOST
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/beast.hpp>
+
+
+// Poly-Hook2
+#include <polyhook2/Detour/x86Detour.hpp>
+#include <polyhook2/CapstoneDisassembler.hpp>
+
+
+// Plugin SDK
+#define GTASA
+#define _LA_SUPPORT
+#define _DX9_SDK_INSTALLED
+#define PLUGIN_SGV_10US
+
+#include <plugin.h>
+#include <CSprite2d.h>
 
 
 // third_party
