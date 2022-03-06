@@ -22,6 +22,7 @@ Config::Config(std::string fileName)
         if (isAllKeysCorrrect()) return;
     }
     loadDefaultConfig();
+    saveFile();
 }
 Config::~Config() {
     saveFile();
@@ -59,18 +60,18 @@ void Config::loadDefaultConfig() {
 
 bool Config::isAllKeysCorrrect() {
     if (
-        j["serverIcon"].is_structured() ||
-        j["serverIcon"]["state"].is_boolean() || j["serverIcon"]["x"].is_number_float() || j["serverIcon"]["y"].is_number_float() ||
+        j["serverIcon"].is_structured() &&
+        j["serverIcon"]["state"].is_boolean() && j["serverIcon"]["x"].is_number_float() && j["serverIcon"]["y"].is_number_float() &&
 
-        j["vehicleHud"].is_structured() ||
-        j["vehicleHud"]["isDrawHelpTablet"].is_boolean() ||
+        j["vehicleHud"].is_structured() &&
+        j["vehicleHud"]["isDrawHelpTablet"].is_boolean() &&
 
-        j["samp"].is_structured() ||
-        j["samp"]["isWhiteID"].is_boolean() || j["samp"]["isCustomFont"].is_boolean() || j["samp"]["fontFaceName"].is_string() ||
-        j["samp"]["isSortingScreenshots"].is_boolean() ||
+        j["samp"].is_structured() &&
+        j["samp"]["isWhiteID"].is_boolean() && j["samp"]["isCustomFont"].is_boolean() && j["samp"]["fontFaceName"].is_string() &&
+        j["samp"]["isSortingScreenshots"].is_boolean() &&
 
-        j["clock"].is_structured() ||
-        j["clock"]["fixTimeZone"].is_boolean() ||
+        j["clock"].is_structured() &&
+        j["clock"]["fixTimeZone"].is_boolean() &&
         
         j["isDisableSnowWindow"].is_boolean())
         return true;
