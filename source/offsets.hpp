@@ -26,7 +26,9 @@ public:
 
         WANTEDLEVEL = 0xDAB1C,
 
-        DISABLECHECKTXD = 0xE6E4
+        DISABLECHECKTXD = 0xE6E4,
+
+        DISABLEWINTERWINDOW = 0x25994
 	};
 
     enum class SAMP : unsigned int {

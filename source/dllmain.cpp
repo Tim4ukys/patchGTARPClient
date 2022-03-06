@@ -25,6 +25,7 @@ const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 #include "ReplaceableTXD.h"
 #include "DelCarTable.h"
 #include "SortScreenshot.h"
+#include "DisableSnowWindow.h"
 
 // ----------------------------------------
 
@@ -71,7 +72,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 #define PROCESS(a) {a::Process}
         std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                                     PROCESS(DelCarTable), PROCESS(SortScreenshot)};
+                                     PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow)};
         for (const auto& fnc : cock)
             fnc();
 #undef PROCESS

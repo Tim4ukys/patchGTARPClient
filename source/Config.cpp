@@ -51,7 +51,8 @@ void Config::loadDefaultConfig() {
         },
         "vehicleHud": {
             "isDrawHelpTablet": false
-        }
+        },
+        "isDisableSnowWindow": true
     }
     )"_json;
 }
@@ -69,7 +70,9 @@ bool Config::isAllKeysCorrrect() {
         j["samp"]["isSortingScreenshots"].is_boolean() ||
 
         j["clock"].is_structured() ||
-        j["clock"]["fixTimeZone"].is_boolean())
+        j["clock"]["fixTimeZone"].is_boolean() ||
+        
+        j["isDisableSnowWindow"].is_boolean())
         return true;
     else
         return false;
