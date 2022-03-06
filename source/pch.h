@@ -11,6 +11,12 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define SAFE_DELETE(p) \
+    if (p) { \
+        delete p; \
+        p = nullptr; \
+    }
+
 // fix compilation
 #define WIN32_LEAN_AND_MEAN
 #define _CRT_SECURE_NO_WARNINGS
@@ -46,8 +52,20 @@
 #include <boost/beast.hpp>
 
 
+// third_party
+#include "json.hpp"
+
+
 // my library
 #include "patch.h" 
 #include "client.h"
+#include "snippets.h"
+#include "Log.h"
+#include "Config.h"
+
+extern Log      g_Log;
+extern Config   g_Config;
+extern snippets::DynamicLibrary g_gtarpclientBase;
+extern snippets::DynamicLibrary g_sampBase;
 
 #endif //PCH_H
