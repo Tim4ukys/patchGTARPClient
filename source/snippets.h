@@ -20,9 +20,6 @@ namespace snippets
 
         DWORD getAddress() noexcept;
         DWORD getAddress(DWORD offset) noexcept;
-
-        template<typename T>
-        DWORD getAddress(T offset) noexcept;
     
     private:
         

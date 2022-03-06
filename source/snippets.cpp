@@ -10,7 +10,6 @@
 ****************************************************/
 #include "pch.h"
 #include "snippets.h"
-#include "offsets.hpp"
 
 snippets::DynamicLibrary::DynamicLibrary(const char* libName) {
     m_unDllAddress.pHandl = nullptr;
@@ -35,15 +34,6 @@ DWORD snippets::DynamicLibrary::getAddress(DWORD offset) noexcept {
     }
 
     return m_unDllAddress.dwHandl + offset;
-}
-
-template<typename T>
-DWORD snippets::DynamicLibrary::getAddress(T offset) noexcept {
-    if (!m_unDllAddress.pHandl) {
-        m_unDllAddress.pHandl = GetModuleHandleA(m_pModuleName);
-    }
-
-    return m_unDllAddress.dwHandl + reinterpret_cast<DWORD>(offset);
 }
 
 // -------------------------
