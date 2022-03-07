@@ -111,6 +111,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         break;
     case DLL_PROCESS_DETACH:
         SAFE_DELETE(g_pLdrpDereferenceModule);
+        g_Config.saveFile();
         break;
     }
     return TRUE;
