@@ -51,6 +51,9 @@ void showHelpDialogHook() {
 // ---------------------------
 
 void CustomHelp::Process() {
+    if (!g_Config["samp"]["isCustomF1"].get<bool>())
+        return;
+
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         D3DXGetImageInfoFromResourceA(GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI"), MAKEINTRESOURCEA(IDR_RCDATA1), &g_ImageInfo);
         D3DXCreateTextureFromResourceExA(pDevice, GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI"), MAKEINTRESOURCEA(IDR_RCDATA1),
