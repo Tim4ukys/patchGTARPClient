@@ -90,7 +90,10 @@
 #include "snippets.h"
 #include "Log.h"
 #include "Config.h"
+#include "SAMP.h"
+#include "D3D9Hook.h"
 
+extern D3D9Hook *g_pD3D9Hook;
 extern Log      g_Log;
 extern Config   g_Config;
 extern snippets::DynamicLibrary g_gtarpclientBase;
