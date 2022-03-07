@@ -55,9 +55,9 @@ void Config::loadDefaultConfig() {
             "y": 28.0
         },
         "vehicleHud": {
-            "isDrawHelpTablet": false
-        },
-        "isDisableSnowWindow": true
+            "isDrawHelpTablet": false,
+            "isDisableSnowWindow": true
+        }
     }
     )"_json;
 }
@@ -68,16 +68,14 @@ bool Config::isAllKeysCorrrect() {
         j["serverIcon"]["state"].is_boolean() && j["serverIcon"]["x"].is_number_float() && j["serverIcon"]["y"].is_number_float() &&
 
         j["vehicleHud"].is_structured() &&
-        j["vehicleHud"]["isDrawHelpTablet"].is_boolean() &&
+        j["vehicleHud"]["isDrawHelpTablet"].is_boolean() && j["vehicleHud"]["isDisableSnowWindow"].is_boolean() &&
 
         j["samp"].is_structured() &&
         j["samp"]["isWhiteID"].is_boolean() && j["samp"]["isCustomFont"].is_boolean() && j["samp"]["fontFaceName"].is_string() &&
         j["samp"]["isSortingScreenshots"].is_boolean() && j["samp"]["isCustomF1"].is_boolean() &&
 
         j["clock"].is_structured() &&
-        j["clock"]["fixTimeZone"].is_boolean() &&
-        
-        j["isDisableSnowWindow"].is_boolean())
+        j["clock"]["fixTimeZone"].is_boolean())
         return true;
     else
         return false;
