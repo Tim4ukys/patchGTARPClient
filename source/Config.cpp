@@ -19,8 +19,11 @@ Config::Config(std::string fileName)
         std::ifstream fconf{m_fileName};
         fconf >> j;
 
-        if (isAllKeysCorrrect()) return;
-    }
+        if (isAllKeysCorrrect())
+            return;
+        g_Log << "[Config]: Broken JSON config. Recreate..";
+    } else
+        g_Log << "[Config]: file don't exists. Recreate..";
     loadDefaultConfig();
     saveFile();
 }
@@ -43,7 +46,8 @@ void Config::loadDefaultConfig() {
             "fontFaceName": "Comic Sans MS",
             "isCustomFont": true,
             "isSortingScreenshots": true,
-            "isWhiteID": true
+            "isWhiteID": true,
+            "isCustomF1": true
         },
         "serverIcon": {
             "state": false,
@@ -68,7 +72,7 @@ bool Config::isAllKeysCorrrect() {
 
         j["samp"].is_structured() &&
         j["samp"]["isWhiteID"].is_boolean() && j["samp"]["isCustomFont"].is_boolean() && j["samp"]["fontFaceName"].is_string() &&
-        j["samp"]["isSortingScreenshots"].is_boolean() &&
+        j["samp"]["isSortingScreenshots"].is_boolean() && j["samp"]["isCustomF1"].is_boolean() &&
 
         j["clock"].is_structured() &&
         j["clock"]["fixTimeZone"].is_boolean() &&
