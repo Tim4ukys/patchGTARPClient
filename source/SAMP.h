@@ -16,7 +16,7 @@ typedef DWORD D3DCOLOR;
 
 typedef void(__cdecl* CMDPROC)(const char*);
 
-enum eChatMessageType : unsigned char {
+enum eChatMessageType {
     CHAT_TYPE_NONE = 0,
     CHAT_TYPE_CHAT = 2,
     CHAT_TYPE_INFO = 4,
@@ -37,8 +37,8 @@ private:
 
     void initPointerList();
 
-    PVOID g_pNetGame{}, g_pChat{}, g_pInput{};
+    PVOID g_pNetGame = nullptr, g_pChat = nullptr, g_pInput = nullptr;
 
-    void(__thiscall* g_fncAddEntry)(PVOID pChat, eChatMessageType eType, const char* szString, const char* szNick, D3DCOLOR dwTextColor, D3DCOLOR dwNickColor) = nullptr;
+    void(__thiscall* g_fncAddEntry)(PVOID pChat, char eType, const char* szString, const char* szNick, D3DCOLOR dwTextColor, D3DCOLOR dwNickColor) = nullptr;
     void(__thiscall* g_fncAddCmdProc)(PVOID pInput, const char* szCmdName, CMDPROC cmdHandler) = nullptr;
 };

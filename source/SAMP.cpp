@@ -27,17 +27,15 @@ void SAMP::initPointerList() {
     g_pChat = *(PVOID*)g_sampBase.getAddress(sampOffsets[CHAT]);
     g_pInput = *(PVOID*)g_sampBase.getAddress(sampOffsets[INPUT]);
 
-    g_fncAddEntry = reinterpret_cast<decltype(g_fncAddEntry)>(sampOffsets[FNC_ADDENTRY]);
-    g_fncAddCmdProc = reinterpret_cast<decltype(g_fncAddCmdProc)>(sampOffsets[FNC_CMDRECT]);
+    g_fncAddEntry = reinterpret_cast<decltype(g_fncAddEntry)>(g_sampBase.getAddress(sampOffsets[FNC_ADDENTRY]));
+    g_fncAddCmdProc = reinterpret_cast<decltype(g_fncAddCmdProc)>(g_sampBase.getAddress(sampOffsets[FNC_CMDRECT]));
 }
 
 void SAMP::addChatMessage(D3DCOLOR color, const char* fmt, ...) {
     if (!g_pNetGame || !g_pChat || !g_fncAddEntry) return;
 
-    const size_t maxMsgLenght = 145U;
-    char         buff[maxMsgLenght];
-
-    va_list arrg;
+    char    buff[512]{};
+    va_list arrg = nullptr;
     va_start(arrg, fmt);
     vsprintf_s(buff, fmt, arrg);
     va_end(arrg);
