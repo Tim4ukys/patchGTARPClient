@@ -7,6 +7,24 @@
     <Filter Include="core\libs">
       <UniqueIdentifier>{cfb140e5-257c-4165-af3f-9d1241e493ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="md">
+      <UniqueIdentifier>{5a4b7db9-13b9-46c3-819f-242725e4ca8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="md\samp">
+      <UniqueIdentifier>{5822226c-d463-4a5f-a550-241bc1c6832c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="md\bypass">
+      <UniqueIdentifier>{0ed9b55b-5a8d-42ad-8133-0f409ffbc6e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="md\gtarp">
+      <UniqueIdentifier>{32981620-c227-4bf4-804a-7143924706cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="md\gtasa">
+      <UniqueIdentifier>{6d662431-44cf-413b-afa8-967398e5e8b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{5161aff0-c854-480a-8df4-4f5b9d19449e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -24,6 +42,45 @@
     </ClInclude>
     <ClInclude Include="Log.h">
       <Filter>core\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>core\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="SAMP.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomFont.h">
+      <Filter>md\samp</Filter>
+    </ClInclude>
+    <ClInclude Include="UnlockConect.h">
+      <Filter>md\bypass</Filter>
+    </ClInclude>
+    <ClInclude Include="OldHUD.h">
+      <Filter>md\gtarp</Filter>
+    </ClInclude>
+    <ClInclude Include="ReplaceableTXD.h">
+      <Filter>md\bypass</Filter>
+    </ClInclude>
+    <ClInclude Include="WhiteID.h">
+      <Filter>md\samp</Filter>
+    </ClInclude>
+    <ClInclude Include="DelCarTable.h">
+      <Filter>md\gtarp</Filter>
+    </ClInclude>
+    <ClInclude Include="SortScreenshot.h">
+      <Filter>md\samp</Filter>
+    </ClInclude>
+    <ClInclude Include="DisableSnowWindow.h">
+      <Filter>md\gtarp</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D9Hook.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomHelp.h">
+      <Filter>md\samp</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -43,8 +100,54 @@
     <ClCompile Include="Log.cpp">
       <Filter>core\libs</Filter>
     </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>core\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="SAMP.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomFont.cpp">
+      <Filter>md\samp</Filter>
+    </ClCompile>
+    <ClCompile Include="UnlockConect.cpp">
+      <Filter>md\bypass</Filter>
+    </ClCompile>
+    <ClCompile Include="OldHUD.cpp">
+      <Filter>md\gtarp</Filter>
+    </ClCompile>
+    <ClCompile Include="ReplaceableTXD.cpp">
+      <Filter>md\bypass</Filter>
+    </ClCompile>
+    <ClCompile Include="WhiteID.cpp">
+      <Filter>md\samp</Filter>
+    </ClCompile>
+    <ClCompile Include="DelCarTable.cpp">
+      <Filter>md\gtarp</Filter>
+    </ClCompile>
+    <ClCompile Include="SortScreenshot.cpp">
+      <Filter>md\samp</Filter>
+    </ClCompile>
+    <ClCompile Include="DisableSnowWindow.cpp">
+      <Filter>md\gtarp</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D9Hook.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomHelp.cpp">
+      <Filter>md\samp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="patchGTARPClient.rc">
+      <Filter>resource</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="help_overlay.dds">
+      <Filter>resource</Filter>
+    </Image>
   </ItemGroup>
 </Project>
