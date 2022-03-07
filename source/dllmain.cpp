@@ -9,12 +9,15 @@
 *                                                   *
 ****************************************************/
 #include "pch.h"
+#include "offsets.hpp"
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 
 #define CURRENT_VERSION "6.0.0"
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
+
+#define UPDATE_DELAY 12000
 
 // ----------------------------------------
 
@@ -26,6 +29,7 @@ const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 #include "DelCarTable.h"
 #include "SortScreenshot.h"
 #include "DisableSnowWindow.h"
+#include "CustomHelp.h"
 
 // ----------------------------------------
 
@@ -72,7 +76,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 #define PROCESS(a) {a::Process}
         std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                                     PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow)};
+                                     PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
         for (const auto& fnc : cock)
             fnc();
 #undef PROCESS
@@ -84,10 +88,44 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
     return origFnc((ldrrModuleDLL*)a1, a2);
 }
 
+// ------------------------------
+
+SAMP*           g_pSAMP=nullptr;
+uint64_t        g_ui64GameLoopJumpTrampline;
+PLH::x86Detour* g_pGameLoopDetour = nullptr;
+NOINLINE void   gameLoopDetourFNC() {
+    ((void (*)())g_ui64GameLoopJumpTrampline)(); // call original
+
+    static bool s_bIsInit = false;
+    if (s_bIsInit || !g_pSAMP->isSAMPInit())
+        return;
+
+    static auto s_oldTime = GetTickCount64();
+    if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
+    {
+        auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+        auto vers = j["vers"].get<std::string>();
+        if (strcmp(vers.c_str(), CURRENT_VERSION) != NULL)
+        {
+            g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}ВНИМАНИЕ: {FF9900}Вышло обновление!");
+            g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
+            g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
+        }
+        g_Log.Write("[UPDATE]: Last version: %s", vers.c_str());
+        s_bIsInit = true;
+    }
+}
+
+// ------------------------------
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     switch (ul_reason_for_call) {
     case DLL_PROCESS_ATTACH: 
     {
+        g_pD3D9Hook = new D3D9Hook();
+
+        // ------------
+
         OSVERSIONINFOA vers;
         ZeroMemory(&vers, sizeof(OSVERSIONINFOA));
         vers.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
@@ -96,6 +134,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             g_Log.Write("[PC INFO]: Windows version: %s %u.%u build: %u | PlatformID - %u", vers.szCSDVersion, vers.dwMajorVersion,
                         vers.dwMinorVersion, vers.dwBuildNumber, vers.dwPlatformId);
         }
+
+        // ------------
+        // Проверка на обновления
+        g_pSAMP = new SAMP();
+        PLH::CapstoneDisassembler dis(PLH::Mode::x86);
+        g_pGameLoopDetour = new PLH::x86Detour(
+            reinterpret_cast<PCHAR>(OFFSETS::GTA_SA::GAMELOOP), reinterpret_cast<PCHAR>(&gameLoopDetourFNC), &g_ui64GameLoopJumpTrampline, dis);
+        g_pGameLoopDetour->hook();
 
         // ------------
 
@@ -110,7 +156,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     }
         break;
     case DLL_PROCESS_DETACH:
+        SAFE_DELETE(g_pD3D9Hook);
         SAFE_DELETE(g_pLdrpDereferenceModule);
+        SAFE_DELETE(g_pSAMP);
+        SAFE_DELETE(g_pGameLoopDetour);
         g_Config.saveFile();
         break;
     }
