@@ -14,7 +14,7 @@
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 
-#define CURRENT_VERSION "6.0.0"
+#define CURRENT_VERSION "6.0.1"
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
@@ -74,11 +74,15 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
-#define PROCESS(a) {a::Process}
-        std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                                     PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
-        for (const auto& fnc : cock)
-            fnc();
+#define PROCESS(a) {std::thread(a::Process)}
+        //std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
+                                     //PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
+        //for (const auto& fnc : cock)
+            //fnc();
+        std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
+        for (auto& thr : cock)
+            thr.join();
 #undef PROCESS
 
         g_Log << "[loader]: end patching. Destroy 'LdrpDereferenceModule' hook.";
