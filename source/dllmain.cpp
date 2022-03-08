@@ -14,7 +14,7 @@
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 
-#define CURRENT_VERSION "6.0.0"
+#define CURRENT_VERSION "6.0.1"
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
