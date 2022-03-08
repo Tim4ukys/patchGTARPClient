@@ -23,6 +23,7 @@ snippets::DynamicLibrary::~DynamicLibrary() {
 
 DWORD snippets::DynamicLibrary::getAddress() noexcept {
     if (!m_unDllAddress.pHandl) {
+        std::lock_guard<std::mutex> lock(m_lock);
         m_unDllAddress.pHandl = GetModuleHandleA(m_pModuleName);
     }
 
@@ -30,6 +31,7 @@ DWORD snippets::DynamicLibrary::getAddress() noexcept {
 }
 DWORD snippets::DynamicLibrary::getAddress(DWORD offset) noexcept {
     if (!m_unDllAddress.pHandl) {
+        std::lock_guard<std::mutex> lock(m_lock);
         m_unDllAddress.pHandl = GetModuleHandleA(m_pModuleName);
     }
 

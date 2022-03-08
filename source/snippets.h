@@ -23,6 +23,8 @@ namespace snippets
     
     private:
         
+        std::mutex m_lock;
+
         char* m_pModuleName;
         union {
             HANDLE pHandl;

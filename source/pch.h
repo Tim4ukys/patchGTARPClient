@@ -41,6 +41,8 @@
 #include <regex>
 #include <filesystem>
 #include <fstream>
+#include <thread>
+#include <mutex>
 
 
 // C (Old-Library)

@@ -22,6 +22,7 @@ Log::Log(std::string fileName)
 Log::~Log() {}
 
 void Log::Write(const char* fmt, ...) {
+    std::lock_guard<std::mutex> lock(m_lock);
     char buff[256];
     va_list arg;
     va_start(arg, fmt);

@@ -19,6 +19,8 @@ public:
 
 private:
 
+    std::mutex m_lock;
+
     std::string m_fileName;
     //std::ofstream *m_fileStream;
 
