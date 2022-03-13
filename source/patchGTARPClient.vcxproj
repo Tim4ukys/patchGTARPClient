@@ -178,6 +178,7 @@
     <ClInclude Include="D3D9Hook.h" />
     <ClInclude Include="DelCarTable.h" />
     <ClInclude Include="DisableSnowWindow.h" />
+    <ClInclude Include="FastScreenshot.h" />
     <ClInclude Include="OldHUD.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="offsets.hpp" />
@@ -199,6 +200,7 @@
     <ClCompile Include="D3D9Hook.cpp" />
     <ClCompile Include="DelCarTable.cpp" />
     <ClCompile Include="DisableSnowWindow.cpp" />
+    <ClCompile Include="FastScreenshot.cpp" />
     <ClCompile Include="OldHUD.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -221,9 +223,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="patchGTARPClient.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="help_overlay.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

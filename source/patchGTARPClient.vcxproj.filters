@@ -82,6 +82,9 @@
     <ClInclude Include="resource.h">
       <Filter>resource</Filter>
     </ClInclude>
+    <ClInclude Include="FastScreenshot.h">
+      <Filter>md\samp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -136,6 +139,9 @@
     <ClCompile Include="CustomHelp.cpp">
       <Filter>md\samp</Filter>
     </ClCompile>
+    <ClCompile Include="FastScreenshot.cpp">
+      <Filter>md\samp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -144,10 +150,5 @@
     <ResourceCompile Include="patchGTARPClient.rc">
       <Filter>resource</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="help_overlay.dds">
-      <Filter>resource</Filter>
-    </Image>
   </ItemGroup>
 </Project>
