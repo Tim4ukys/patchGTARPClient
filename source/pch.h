@@ -95,6 +95,7 @@
 #include "SAMP.h"
 #include "D3D9Hook.h"
 
+extern SAMP*    g_pSAMP;
 extern D3D9Hook *g_pD3D9Hook;
 extern Log      g_Log;
 extern Config   g_Config;
