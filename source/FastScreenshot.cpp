@@ -1,4 +1,4 @@
-#include "pch.h"
+Ôªø#include "pch.h"
 #include "FastScreenshot.h"
 
 // fix https://forum.gtarp.ru/threads/skrinshoty-utechka-pamjati.973479/
@@ -49,7 +49,7 @@ void TakeScreenshot() {
     if (SUCCEEDED(pDevice->GetFrontBufferData(0, pTemp))) {
 
         if (iCount == 999) {
-            g_pSAMP->addChatMessage(0x88'AA'62, "ƒÓÒÚË„ÌÛÚ ÎËÏËÚ ÍÓÎ-‚‡ ÒÍËÌ¯ÓÚÓ‚! œÓÊ‡ÎÛÈÒÚ‡, {FFA500}ÓÒ‚Ó·Ó‰ËÚÂ Ô‡ÔÍÛ{88AA62}.");
+            g_pSAMP->addChatMessage(0x88'AA'62, "–î–æ—Å—Ç–∏–≥–Ω—É—Ç –ª–∏–º–∏—Ç –∫–æ–ª-–≤–∞ —Å–∫—Ä–∏–Ω—à–æ—Ç–æ–≤! –ü–æ–∂–∞–ª—É–π—Å—Ç–∞, {FFA500}–æ—Å–≤–æ–±–æ–¥–∏—Ç–µ –ø–∞–ø–∫—É{88AA62}.");
         }
 
         POINT point{};
@@ -65,10 +65,10 @@ void TakeScreenshot() {
         std::thread thr(saveTexture, sFileName, pFrontBuff, pTemp, rect);
         thr.detach();
         g_pSAMP->addChatMessage(0x88'AA'62,
-                                "—ÍËÌ¯ÓÚ ÒÓı‡ÌÂÌ {FFA500}sa-mp-%03i.png {88AA62}(Ì‡ÊÏËÚÂ  {FFA500}œ Ã -> —ÍËÌ¯ÓÚ˚ {88AA62}Ì‡ ËÍÓÌÍÂ Î‡ÛÌ˜Â‡ ‚ ÚÂÂ)",
+                                "–°–∫—Ä–∏–Ω—à–æ—Ç —Å–æ—Ö—Ä–∞–Ω–µ–Ω {FFA500}sa-mp-%03i.png {88AA62}(–Ω–∞–∂–º–∏—Ç–µ  {FFA500}–ü–ö–ú -> –°–∫—Ä–∏–Ω—à–æ—Ç—ã {88AA62}–Ω–∞ –∏–∫–æ–Ω–∫–µ –ª–∞—É–Ω—á–µ—Ä–∞ –≤ —Ç—Ä–µ–µ)",
                                 iCount);
     } else {
-        g_pSAMP->addChatMessage(0x88'AA'62, "ÕÂ Û‰‡ÎÓÒ¸ ÒÓı‡ÌËÚ¸ ÒÍËÌ¯ÓÚ.");
+        g_pSAMP->addChatMessage(0x88'AA'62, "–ù–µ —É–¥–∞–ª–æ—Å—å —Å–æ—Ö—Ä–∞–Ω–∏—Ç—å —Å–∫—Ä–∏–Ω—à–æ—Ç.");
     }
 
     *LPBOOL(g_sampBase.getAddress(0x12DD3C)) = FALSE; // g_bTakeScreenshot
