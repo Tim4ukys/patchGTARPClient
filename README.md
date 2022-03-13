@@ -120,8 +120,9 @@ __Описание:__ ASI Plugin который патчит(латает)/ул�
 
 ## Как я могу отблагодарить автора?
 
-Донатом на DonationAlerts: https://www.donationalerts.com/r/tim4ukys</br>
-<img src="https://www.donationalerts.com/img/header/logo.svg" width="125" height="125">
+<img src="https://www.donationalerts.com/img/header/logo.svg" width="75" height="75">
+
+Донатом на DonationAlerts: https://www.donationalerts.com/r/tim4ukys
 
 ## Что он может?
 
