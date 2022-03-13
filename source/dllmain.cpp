@@ -30,6 +30,7 @@ const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 #include "SortScreenshot.h"
 #include "DisableSnowWindow.h"
 #include "CustomHelp.h"
+#include "FastScreenshot.h"
 
 // ----------------------------------------
 
@@ -80,7 +81,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         //for (const auto& fnc : cock)
             //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp),
+                           PROCESS(FastScreenshot)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS
@@ -94,7 +96,6 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 // ------------------------------
 
-SAMP*           g_pSAMP=nullptr;
 uint64_t        g_ui64GameLoopJumpTrampline;
 PLH::x86Detour* g_pGameLoopDetour = nullptr;
 NOINLINE void   gameLoopDetourFNC() {
