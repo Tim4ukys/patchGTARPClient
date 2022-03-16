@@ -14,7 +14,7 @@ __Описание:__ ASI Plugin который патчит(латает)/ул�
 [![Видео](https://img.youtube.com/vi/YC9oGw_tunQ/0.jpg)](https://www.youtube.com/watch?v=YC9oGw_tunQ)
 
 
-Чтобы установить последнию версию данного плагина, перейдите в [_Release_](https://github.com/Tim4ukys/patchGTARPClient/releases/latest) и скачайте _patchGTARPClientByTim4ukys.rar_.</br> 
+Чтобы установить последнию версию данного плагина, перейдите в [_Release_](https://github.com/Tim4ukys/patchGTARPClient/releases/latest) и скачайте _patchGTARPClientByTim4ukys.zip_.</br> 
 В этом архиве будет лежать два файла, Вам нужен именно _!000patchGTARPClientByTim4ukys.ASI_.</br>
 Этот файл нужно будет перенести в корневую папку игры *(эта та папка в которой лежит gta_sa.exe)*. 
 
