@@ -10,11 +10,12 @@
 ****************************************************/
 #include "pch.h"
 #include "offsets.hpp"
+#include <process.h>
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 
-#define CURRENT_VERSION "6.0.2"
+#define CURRENT_VERSION "6.1.0"
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
@@ -47,6 +48,19 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
     if (!wcscmp(_a1->pPluginName, L"gtarp_clientside.asi"))
     {
+        if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
+            auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+            auto vers = j["vers"].get<std::string>();
+            if (strcmp(vers.c_str(), CURRENT_VERSION) != NULL) {
+                //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
+                PROCESS_INFORMATION info;
+                STARTUPINFOA         infoStart{sizeof(STARTUPINFO)};
+                CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
+                //system("updater_patchGTARPclient.exe");
+                TerminateProcess(GetCurrentProcess(), -1);
+            }
+        }
+
         if (auto cmp = patch::getHEX(g_gtarpclientBase.getAddress(0xBABE), 10U); cmp != GTARP_CMP) {
             MessageBoxW(
                 NULL,
@@ -104,7 +118,7 @@ NOINLINE void   gameLoopDetourFNC() {
     static bool s_bIsInit = false;
     if (s_bIsInit || !g_pSAMP->isSAMPInit())
         return;
-
+    
     static auto s_oldTime = GetTickCount64();
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
     {
@@ -139,6 +153,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             g_Log.Write("[PC INFO]: Windows version: %s %u.%u build: %u | PlatformID - %u", vers.szCSDVersion, vers.dwMajorVersion,
                         vers.dwMinorVersion, vers.dwBuildNumber, vers.dwPlatformId);
         }
+
+        // ------------
+        //
+        
+
+        // ------------
 
         // ------------
         // Проверка на обновления
