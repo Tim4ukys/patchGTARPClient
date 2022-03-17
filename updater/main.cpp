@@ -8,6 +8,7 @@
 #include <fstream>
 #include <thread>
 #include <filesystem>
+#include "resource.h"
 
 #include <zip.h>
 
@@ -84,6 +85,13 @@ bool ProcessRunning(const wchar_t* name)
     return false;
 }
 
+struct stLogoDonate {
+    bool m_bState;
+    HANDLE m_hBitmap;
+    BITMAP m_bitMap;
+} g_logoDonate;
+HWND g_hButtonDonate;
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     while (ProcessRunning(L"gta_sa.exe")) {}
@@ -103,6 +111,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     InternetCloseHandle(interwebs);
     InternetCloseHandle(urlFile);
+
+    ////////////////////
+    
+    ZeroMemory(&g_logoDonate, sizeof(stLogoDonate));
+    g_logoDonate.m_hBitmap = LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDB_BITMAP1), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
+    GetObject(g_logoDonate.m_hBitmap, sizeof(BITMAP), &g_logoDonate.m_bitMap);
+
+    ////////////////////
 
     //auto it = resolve.find("\r\n\r\n");
     //if (it == resolve.npos)
@@ -137,9 +153,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     UpdateWindow(g_hWnd);
 
     auto thrProcess = []() {
+#ifdef NDEBUG
         g_sUpText = "Статус: cкачивание архива";
         InvalidateRect(g_hWnd, NULL, FALSE);
-        std::filesystem::path tempDir("./temp");
+        std::filesystem::path tempDir("./.temp");
         if (!std::filesystem::exists(tempDir)) {
             std::filesystem::create_directory(tempDir);
         }
@@ -149,14 +166,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         }
 
         DownloadProgress progress;
-        URLDownloadToFileA(NULL, fileURL.c_str(), "temp\\arhiv.zip", NULL, &progress);
+        URLDownloadToFileA(NULL, fileURL.c_str(), ".temp\\arhiv.zip", NULL, &progress);
 
         ////////////////////////////////
 
         g_sUpText = "Статус: разархивация плагина";
         InvalidateRect(g_hWnd, NULL, FALSE);
         int err{};
-        zip* p = zip_open("temp\\arhiv.zip", 0, &err);
+        zip* p = zip_open(".temp\\arhiv.zip", 0, &err);
         SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.5 * 100) + 100, 0);
         zip_stat_t st;
         zip_stat_init(&st);
@@ -197,8 +214,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
         g_sUpText = "Статус: обновление успешно завершено";
         InvalidateRect(g_hWnd, NULL, FALSE);
-        Sleep(3000);
-        TerminateProcess(GetCurrentProcess(), -1);
+        Sleep(1500);
+#endif
+        g_logoDonate.m_bState = true;
+        //CloseWindow(g_hProgress);
+        //DestroyWindow(g_hProgress);
+        //ShowWindow(g_hButtonDonate, 0);
+        SendMessage(g_hProgress, WM_CLOSE, 0, 0);
+        InvalidateRect(g_hWnd, nullptr, FALSE);
     };
     std::jthread thr{ thrProcess };
     thr.detach();
@@ -236,11 +259,51 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         return 0;
     }
+    case WM_COMMAND:
+    {
+        switch (LOWORD(wParam)) {
+        case 1337:
+        {
+            system("start https://www.donationalerts.com/r/tim4ukys");
+            PostQuitMessage(-1);
+            break;
+        }
+        }
+        return 0;
+    }
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
         auto hdc = BeginPaint(hWnd, &ps);
-        TextOutA(hdc, 10, 20, g_sUpText.c_str(), g_sUpText.length());
+        
+        if (g_logoDonate.m_bState) {
+
+            auto hCompatibleDC = CreateCompatibleDC(hdc);
+            auto hOldBitmap = SelectObject(hCompatibleDC, g_logoDonate.m_hBitmap);
+            StretchBlt(hdc, 10, 10, 42, 50, hCompatibleDC, 0, 0, g_logoDonate.m_bitMap.bmWidth,
+                g_logoDonate.m_bitMap.bmHeight, SRCCOPY);
+            SelectObject(hCompatibleDC, hOldBitmap);
+            DeleteDC(hCompatibleDC);
+
+            const char* msg[]{
+                "Если Вы хотите отблагодорить меня,",
+                "то можете сделать это задонатив мне."
+            };
+
+            int i{};
+            for (const auto& text : msg) {
+                TextOutA(hdc, 48 + 10, 15 + 15 * i++, text, strlen(text));
+            }
+            
+            if (static bool isCreate = false; !isCreate) {
+                RECT r;
+                GetClientRect(hWnd, &r);
+                g_hButtonDonate = CreateWindow(TEXT("BUTTON"), TEXT("Перейти на DonationAlerts"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+                    5, r.bottom - 25, r.right - r.left - 10, 20, hWnd, reinterpret_cast<HMENU>(1337), nullptr, nullptr);
+                isCreate = true;
+            }
+        }
+        else TextOutA(hdc, 10, 20, g_sUpText.c_str(), g_sUpText.length());
         EndPaint(hWnd, &ps);
         return 0;
     }
