@@ -85,6 +85,9 @@
     <ClInclude Include="FastScreenshot.h">
       <Filter>md\samp</Filter>
     </ClInclude>
+    <ClInclude Include="FSignal.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -141,6 +144,9 @@
     </ClCompile>
     <ClCompile Include="FastScreenshot.cpp">
       <Filter>md\samp</Filter>
+    </ClCompile>
+    <ClCompile Include="FSignal.cpp">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

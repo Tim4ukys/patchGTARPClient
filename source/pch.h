@@ -87,6 +87,7 @@
 
 
 // my library
+#include "FSignal.h"
 #include "patch.h" 
 #include "client.h"
 #include "snippets.h"
