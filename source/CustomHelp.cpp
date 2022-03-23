@@ -34,7 +34,7 @@ LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         }
         break;
     }
-    return CallWindowProcA(m_pWindowProc, hWnd, msg, wParam, lParam);
+    return m_pWindowProc(hWnd, msg, wParam, lParam);
 }
 
 void showHelpDialogHook() {
@@ -54,7 +54,8 @@ void CustomHelp::Process() {
                                          D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0xFF000000, NULL, NULL, &g_pTexture);
         D3DXCreateSprite(pDevice, &g_pSprite);
 
-        m_pWindowProc = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
+        //m_pWindowProc = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
+        snippets::WinProcHeader::regWinProc(WndProcHandler, &m_pWindowProc);
         plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x6B3C0), &showHelpDialogHook);
     };
     g_pD3D9Hook->onLostDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
