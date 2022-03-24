@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "FastScreenshot.h"
+#include "resource.h"
 
 // fix https://forum.gtarp.ru/threads/skrinshoty-utechka-pamjati.973479/
 
@@ -32,6 +33,13 @@ int GetScreenshotFileName(std::string& FileName) {
     FileName = Buf;
     return i;
 }
+
+struct stSoundData {
+    PCHAR m_pData;
+    size_t m_szLength;
+};
+
+stSoundData g_takeScreenshot;
 
 void TakeScreenshot() {
     auto            pDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(RwD3D9GetCurrentD3DDevice());
@@ -67,6 +75,10 @@ void TakeScreenshot() {
         g_pSAMP->addChatMessage(0x88'AA'62,
                                 "Скриншот сохранен {FFA500}sa-mp-%03i.png {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
                                 iCount);
+
+        static auto s_hTakeSound = BASS_StreamCreateFile(TRUE, g_takeScreenshot.m_pData, 0, g_takeScreenshot.m_szLength, 0);
+        BASS_ChannelSetAttribute(s_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
+        BASS_ChannelPlay(s_hTakeSound, TRUE);
     } else {
         g_pSAMP->addChatMessage(0x88'AA'62, "Не удалось сохранить скриншот.");
     }
@@ -77,4 +89,10 @@ void TakeScreenshot() {
 void FastScreenshot::Process() {
     g_bIsSortScreenshot = g_Config["samp"]["isSortingScreenshots"].get<bool>();
     plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x74EB0), &TakeScreenshot);
+
+    HMODULE&&   handle = GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI");
+    HRSRC     rc = FindResourceA(handle, MAKEINTRESOURCEA(IDR_WAVE1), MAKEINTRESOURCEA(RT_RCDATA));
+    HGLOBAL     rcData = LoadResource(handle, rc);
+    g_takeScreenshot.m_szLength = SizeofResource(handle, rc);
+    g_takeScreenshot.m_pData = static_cast<char*>(LockResource(rcData));
 }

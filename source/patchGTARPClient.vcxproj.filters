@@ -157,4 +157,14 @@
       <Filter>resource</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="screenshot.wav">
+      <Filter>resource</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="help_overlay.dds">
+      <Filter>resource</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
