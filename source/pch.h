@@ -84,6 +84,7 @@
 
 // third_party
 #include "json.hpp"
+#include "bass.h"
 
 
 // my library

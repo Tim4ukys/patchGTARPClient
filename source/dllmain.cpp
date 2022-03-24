@@ -87,6 +87,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         else
             g_Log << R"(Version "gtarp_clientside.asi" and "samp.dll" supported!!)";
 
+        BASS_Init(-1, 44100, 0, 0, nullptr);
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
 #define PROCESS(a) {std::thread(a::Process)}
@@ -155,12 +156,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         }
 
         // ------------
-        //
-        
-
-        // ------------
-
-        // ------------
         // Проверка на обновления
         g_pSAMP = new SAMP();
         PLH::CapstoneDisassembler dis(PLH::Mode::x86);
@@ -186,6 +181,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         SAFE_DELETE(g_pSAMP);
         SAFE_DELETE(g_pGameLoopDetour);
         g_Config.saveFile();
+        BASS_Free();
         break;
     }
     return TRUE;
