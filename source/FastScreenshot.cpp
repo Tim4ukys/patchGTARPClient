@@ -98,6 +98,9 @@ void TakeScreenshot() {
 }
 
 void FastScreenshot::Process() {
+    if (!g_Config["samp"]["isMakeQuickScreenshot"].get<bool>())
+        return;
+
     g_bIsSortScreenshot = g_Config["samp"]["isSortingScreenshots"].get<bool>();
     plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x74EB0), &TakeScreenshot);
 

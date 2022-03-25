@@ -47,7 +47,8 @@ void Config::loadDefaultConfig() {
             "isCustomFont": true,
             "isSortingScreenshots": true,
             "isWhiteID": true,
-            "isCustomF1": true
+            "isCustomF1": true,
+            "isMakeQuickScreenshot:" true
         },
         "serverIcon": {
             "state": false,
@@ -73,6 +74,7 @@ bool Config::isAllKeysCorrrect() {
         j["samp"].is_structured() &&
         j["samp"]["isWhiteID"].is_boolean() && j["samp"]["isCustomFont"].is_boolean() && j["samp"]["fontFaceName"].is_string() &&
         j["samp"]["isSortingScreenshots"].is_boolean() && j["samp"]["isCustomF1"].is_boolean() &&
+        j["samp"]["isMakeQuickScreenshot"].is_boolean() &&
 
         j["clock"].is_structured() &&
         j["clock"]["fixTimeZone"].is_boolean())
