@@ -48,7 +48,7 @@ void Config::loadDefaultConfig() {
             "isSortingScreenshots": true,
             "isWhiteID": true,
             "isCustomF1": true,
-            "isMakeQuickScreenshot:" true
+            "isMakeQuickScreenshot": true
         },
         "serverIcon": {
             "state": false,
