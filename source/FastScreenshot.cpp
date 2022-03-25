@@ -57,7 +57,7 @@ void TakeScreenshot() {
     std::string sFileName;
 
     int iCount = GetScreenshotFileName(sFileName); 
-    g_Log.Write("sFileName: %s", sFileName.c_str());
+    //g_Log.Write("sFileName: %s", sFileName.c_str());
 
     LPDIRECT3DTEXTURE9 pFrontBuff;
     LPDIRECT3DSURFACE9 pTemp;
