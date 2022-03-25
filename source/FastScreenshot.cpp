@@ -23,9 +23,10 @@ int GetScreenshotFileName(std::string& FileName) {
         sprintf(buff, "%d-%02d-%02d\\", t.wYear, t.wMonth, t.wDay);
         FileName += buff;
     }
+    FileName += "sa-mp-%03i.png";
     int i{};
     do {
-        sprintf(Buf, (FileName + "sa-mp-%03i.png").c_str(), i);
+        sprintf(Buf, FileName.c_str(), i);
         std::filesystem::path p(Buf);
         if (!std::filesystem::exists(p))
             break;
