@@ -87,7 +87,6 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         else
             g_Log << R"(Version "gtarp_clientside.asi" and "samp.dll" supported!!)";
 
-        BASS_Init(-1, 44100, 0, 0, nullptr);
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
 #define PROCESS(a) {std::thread(a::Process)}
@@ -137,6 +136,22 @@ NOINLINE void   gameLoopDetourFNC() {
 }
 
 // ------------------------------
+// Audio engine
+
+FSignal<void()> g_initAudioTracks;
+
+uint64_t g_uiOrigAudioInit;
+PLH::x86Detour *g_pAudioInitDetour;
+int __fastcall initSAMPDetour(PVOID pthis, PVOID trash, char* a2, int a3, const char* a4, int a5) {
+    BASS_Init(-1, 44100, 0, 0, nullptr);
+
+    for (auto& fnc : g_initAudioTracks)
+        fnc();
+
+    return FNC_CAST(initSAMPDetour, g_uiOrigAudioInit)(pthis, trash, a2, a3, a4, a5);
+}
+
+// ------------------------------
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     switch (ul_reason_for_call) {
@@ -173,6 +188,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
         g_pLdrpDereferenceModule = new patch::callHook(addr);
         g_pLdrpDereferenceModule->installHook(&loadModule, false);
+
+        g_pAudioInitDetour = new PLH::x86Detour(PCHAR(g_sampBase.getAddress(0xB5F0)), PCHAR(&initSAMPDetour), &g_uiOrigAudioInit, dis);
+        g_pAudioInitDetour->hook();
     }
         break;
     case DLL_PROCESS_DETACH:

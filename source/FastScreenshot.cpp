@@ -14,6 +14,8 @@
 
 // fix https://forum.gtarp.ru/threads/skrinshoty-utechka-pamjati.973479/
 
+//#define DEBUG_SOUND
+
 bool g_bIsSortScreenshot;
 void saveTexture(std::string szFileName, LPDIRECT3DTEXTURE9 frontBuff, LPDIRECT3DSURFACE9 pTemp, RECT r) {
     ((HRESULT(__stdcall*)(LPCSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DSURFACE9, CONST PALETTEENTRY*, CONST RECT*))g_sampBase.getAddress(0xC653A))(
@@ -51,8 +53,26 @@ struct stSoundData {
 };
 
 stSoundData g_takeScreenshot;
+DWORD       g_hTakeSound;
+
+void initTakeScreenshotTrack() {
+    HMODULE&& handle = GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI");
+    HRSRC     rc = FindResourceA(handle, MAKEINTRESOURCEA(IDR_WAVE1), MAKEINTRESOURCEA(RT_RCDATA));
+    HGLOBAL   rcData = LoadResource(handle, rc);
+    g_takeScreenshot.m_szLength = SizeofResource(handle, rc);
+    g_takeScreenshot.m_pData = static_cast<char*>(LockResource(rcData));
+    g_hTakeSound = BASS_StreamCreateFile(TRUE, g_takeScreenshot.m_pData, 0, g_takeScreenshot.m_szLength, 0);
+#ifdef DEBUG_SOUND
+    g_Log << "Sound is init, epta";
+#endif
+}
 
 void TakeScreenshot() {
+#ifdef DEBUG_SOUND
+    BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
+    BASS_ChannelPlay(g_hTakeSound, TRUE);
+    *LPBOOL(g_sampBase.getAddress(0x12DD3C)) = FALSE; // g_bTakeScreenshot
+#else
     auto            pDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(RwD3D9GetCurrentD3DDevice());
     std::string sFileName;
 
@@ -87,14 +107,14 @@ void TakeScreenshot() {
                                 "Скриншот сохранен {FFA500}sa-mp-%03i.png {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
                                 iCount);
 
-        static auto s_hTakeSound = BASS_StreamCreateFile(TRUE, g_takeScreenshot.m_pData, 0, g_takeScreenshot.m_szLength, 0);
-        BASS_ChannelSetAttribute(s_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
-        BASS_ChannelPlay(s_hTakeSound, TRUE);
+        BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
+        BASS_ChannelPlay(g_hTakeSound, TRUE);
     } else {
         g_pSAMP->addChatMessage(0x88'AA'62, "Не удалось сохранить скриншот.");
     }
 
     *LPBOOL(g_sampBase.getAddress(0x12DD3C)) = FALSE; // g_bTakeScreenshot
+#endif
 }
 
 void FastScreenshot::Process() {
@@ -103,10 +123,5 @@ void FastScreenshot::Process() {
 
     g_bIsSortScreenshot = g_Config["samp"]["isSortingScreenshots"].get<bool>();
     plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x74EB0), &TakeScreenshot);
-
-    HMODULE&&   handle = GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI");
-    HRSRC     rc = FindResourceA(handle, MAKEINTRESOURCEA(IDR_WAVE1), MAKEINTRESOURCEA(RT_RCDATA));
-    HGLOBAL     rcData = LoadResource(handle, rc);
-    g_takeScreenshot.m_szLength = SizeofResource(handle, rc);
-    g_takeScreenshot.m_pData = static_cast<char*>(LockResource(rcData));
+    g_initAudioTracks += initTakeScreenshotTrack;
 }
