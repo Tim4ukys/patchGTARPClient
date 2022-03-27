@@ -145,8 +145,16 @@ PLH::x86Detour *g_pAudioInitDetour;
 int __fastcall initSAMPDetour(PVOID pthis, PVOID trash, char* a2, int a3, const char* a4, int a5) {
     BASS_Init(-1, 44100, 0, 0, nullptr);
 
-    for (auto& fnc : g_initAudioTracks)
-        fnc();
+    size_t&&                 size_a_cocks = g_initAudioTracks.size();
+    std::vector<std::thread> cocks;
+    cocks.resize(size_a_cocks);
+    for (size_t i{}; i < size_a_cocks; ++i) {
+        cocks[i] = std::thread(g_initAudioTracks[i]);
+    }
+
+    for (auto& thr : cocks)
+        thr.join();
+
 
     return FNC_CAST(initSAMPDetour, g_uiOrigAudioInit)(pthis, trash, a2, a3, a4, a5);
 }
