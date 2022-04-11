@@ -80,7 +80,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         setThemeImgui();
 
         ImGuiIO& io = ImGui::GetIO();
-        io.Fonts->AddFontFromFileTTF("vga-8x16.ttf", 16.5f, NULL, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+        {
+            HMODULE&& handle = GetModuleHandleA(NULL);
+            HRSRC     rc = FindResourceA(NULL, MAKEINTRESOURCEA(IDR_VGAFONT), MAKEINTRESOURCEA(RT_RCDATA));
+            HGLOBAL   rcData = LoadResource(handle, rc);
+
+            auto&& sizeRes = SizeofResource(handle, rc);
+            LPBYTE mem = new BYTE[sizeRes];
+            memcpy(mem, LockResource(rcData), sizeRes);
+            UnlockResource(rc);
+
+            io.Fonts->AddFontFromMemoryTTF(mem, sizeRes, 16.5f, NULL, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+        }
 
         ImGui_ImplWin32_Init(g_hWnd);
         ImGui_ImplDX9_Init(pDevice);
@@ -101,8 +112,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         ImGui::Begin("Updater patchGTARPClient | DirectX9 version", &s_bIsClose, flags);
         auto window = ImGui::GetCurrentWindow();
         g_titleRect = window->TitleBarRect();
-
-        
 
         ImGui::Text(u8"Hello ёпта =))");
 
