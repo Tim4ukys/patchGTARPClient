@@ -67,9 +67,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     if (!RegisterClassExW(&g_wc))
         return EXIT_FAILURE;
 
+    const int widthWindow = 455;
+    const int heightWindow = 190;
+
     g_hWnd = CreateWindowW(g_wc.lpszClassName, L"Updater",
         WS_VISIBLE | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-        0, 0, 455, 190, nullptr, nullptr, g_wc.hInstance, nullptr);
+        GetSystemMetrics(SM_CXSCREEN) / 2 - widthWindow / 2, GetSystemMetrics(SM_CYSCREEN) / 2 - heightWindow / 2,
+        widthWindow, heightWindow, nullptr, nullptr, g_wc.hInstance, nullptr);
     if (g_hWnd == INVALID_HANDLE_VALUE)
         return EXIT_FAILURE;
 
