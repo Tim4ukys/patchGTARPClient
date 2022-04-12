@@ -34,10 +34,17 @@ CRender* g_pRender;
 
 ImRect g_titleRect;
 
+enum class STATE_PROG : unsigned char { PROGRESSBAR, ADVERTISE };
+STATE_PROG g_stateProgram = STATE_PROG::PROGRESSBAR;
+
 struct stProgressbarData {
-    bool m_bState; // true - render, false - no render ;(
-    float m_fProgress; // 0.0 .. 3.0
-};
+    float m_fProgress; // 0.0 .. 1.0; use by imgui
+
+    float m_fMaxRealProgress;
+    float m_fRealProgress; // 0.0 .. max
+
+    std::string m_sStatus;
+} g_progressbar{ 0.0f, 3.0f, 0.0f, u8"скачивание мамки Лядова" };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
@@ -68,7 +75,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return EXIT_FAILURE;
 
     const int widthWindow = 455;
-    const int heightWindow = 190;
+    const int heightWindow = 145;
 
     g_hWnd = CreateWindowW(g_wc.lpszClassName, L"Updater",
         WS_VISIBLE | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
@@ -117,7 +124,23 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         auto window = ImGui::GetCurrentWindow();
         g_titleRect = window->TitleBarRect();
 
-        ImGui::Text(u8"Hello ёпта =))");
+        auto myAddSpaceItem = [](float space) { ImGui::SetCursorPosY(ImGui::GetCursorPosY() + space); };
+        if (g_stateProgram == STATE_PROG::PROGRESSBAR) {
+            myAddSpaceItem(5.f);
+            ImGui::Text(u8"Статус: %s", g_progressbar.m_sStatus.c_str());
+            myAddSpaceItem(25.f);
+            ImGui::ProgressBar(g_progressbar.m_fProgress, {-1, 40.0f});
+            if (g_progressbar.m_fRealProgress / g_progressbar.m_fMaxRealProgress > g_progressbar.m_fProgress)
+                g_progressbar.m_fProgress += 0.01f;
+            if (g_progressbar.m_fProgress >= 1.0f) g_stateProgram = STATE_PROG::ADVERTISE;
+        }
+        else {
+
+        }
+
+        //ImGui::SliderFloat("progress", &g_progressbar.m_fRealProgress, 0.0f, g_progressbar.m_fMaxRealProgress);
+
+        //ImGui::ShowStyleEditor();
 
         ImGui::End();
 
@@ -240,7 +263,7 @@ void setThemeImgui() {
     //style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
     style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
     style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-    style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+    style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.412f, 0.412f, 0.412f, 1.00f);//ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
     style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
     style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
     style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
