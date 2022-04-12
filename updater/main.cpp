@@ -13,6 +13,9 @@
 
 #include <zip.h>
 
+#include "nanosvgrast.h"
+#include "nanosvg.h"
+
 #include "imgui.h"
 #include "imgui_impl_dx9.h"
 #include "imgui_impl_win32.h"
@@ -25,6 +28,7 @@ class DownloadProgress;
 bool ProcessRunning(const wchar_t* name);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void setThemeImgui();
+void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, LPDIRECT3DTEXTURE9* pTexture, float scale);
 
 std::string getLastVersion();
 
@@ -272,6 +276,47 @@ void setThemeImgui() {
     style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
     style.GrabRounding = style.FrameRounding = 2.3f;
+}
+
+void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, char* svg_source, LPDIRECT3DTEXTURE9* pTexture, float scale)
+{
+    NSVGimage* pImage;
+    pImage = nsvgParse(svg_source, "px", 96);
+    auto rast = nsvgCreateRasterizer();
+
+    int w{ static_cast<int>(pImage->width) }, h{ static_cast<int>(pImage->height) };
+    size_t newW{ static_cast<size_t>(scale * pImage->height) }, newH{ static_cast<size_t>(scale * pImage->height) };
+
+    PBYTE img = new BYTE[w * h * 4];
+    nsvgRasterize(rast, pImage, 0, 0, scale, img, w, h, w * 4);
+
+    pDevice->CreateTexture(newW, newH, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, pTexture, nullptr);
+
+    D3DLOCKED_RECT svgRect;
+    (*pTexture)->LockRect(0, &svgRect, nullptr, 0);
+
+    DWORD* pPoint = (DWORD*)svgRect.pBits;
+    for (size_t y = 0; y < newH && y < h; y++)
+    {
+        for (size_t x = 0; x < newW && x < w; x++)
+        {
+            auto n = y * (svgRect.Pitch / sizeof(DWORD)) + x;
+
+            unsigned char* point_1 = (unsigned char*)&pPoint[n];
+            unsigned char* point_2 = (unsigned char*)&img[(y * w + x) * 4];
+            point_1[0] /*b*/ = point_2[2] /*b*/;
+            point_1[1] /*g*/ = point_2[1] /*g*/;
+            point_1[2] /*r*/ = point_2[0] /*r*/;
+            point_1[3]/*alpha*/ = point_2[3] /* alpha */;
+        }
+    }
+
+    (*pTexture)->UnlockRect(0);
+
+    delete[] img;
+
+    nsvgDeleteRasterizer(rast);
+    nsvgDelete(pImage);
 }
 
 std::string getLastVersion() {
