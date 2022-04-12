@@ -55,10 +55,10 @@ IDR_VGAFONT             RCDATA                  "vga-8x16.ttf"
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// RC_DATA
+// SVG
 //
 
-IDR_DONATELOGO          RC_DATA                 "donate.svg"
+IDR_DONATELOGO          RCDATA                 "donate.svg"
 
 #endif    // Русский (Россия) resources
 /////////////////////////////////////////////////////////////////////////////
