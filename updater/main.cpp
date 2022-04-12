@@ -33,13 +33,14 @@ class DownloadProgress;
 bool ProcessRunning(const wchar_t* name);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void setThemeImgui();
-void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, LPDIRECT3DTEXTURE9* pTexture, float scale);
+void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, char* svg_source, LPDIRECT3DTEXTURE9* pTexture, float scale);
 
 std::string getLastVersion();
 
 WNDCLASSEXW g_wc{ sizeof(WNDCLASSEXW) };
 HWND g_hWnd{};
 CRender* g_pRender;
+LPDIRECT3DTEXTURE9 g_donateLogo = nullptr;
 
 ImRect g_titleRect;
 
@@ -99,9 +100,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         ImGui::StyleColorsDark();
         setThemeImgui();
 
-        auto loadRC = [](int rc_id)->std::pair<LPBYTE, size_t> {
+        auto loadRC = [](int rc_id, LPWSTR type)->std::pair<LPBYTE, size_t> {
             HMODULE&& handle = GetModuleHandleA(NULL);
-            HRSRC     rc = FindResource(NULL, MAKEINTRESOURCE(rc_id), MAKEINTRESOURCE(RT_RCDATA));
+            HRSRC     rc = FindResource(NULL, MAKEINTRESOURCE(rc_id), MAKEINTRESOURCE(type));
             HGLOBAL   rcData = LoadResource(handle, rc);
 
             auto&& sizeRes = SizeofResource(handle, rc);
@@ -112,8 +113,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         };
 
         ImGuiIO& io = ImGui::GetIO();
-        auto [fontMem, fontSizeMem] = loadRC(IDR_VGAFONT);
+        auto [fontMem, fontSizeMem] = loadRC(IDR_VGAFONT, RT_RCDATA);
         io.Fonts->AddFontFromMemoryTTF(fontMem, fontSizeMem, 16.5f, NULL, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+
+        auto [svgDonateLogoData, szSvgDonateLogoData] = loadRC(IDR_DONATELOGO, RT_RCDATA);
+        svgDonateLogoData[szSvgDonateLogoData - 1] = '\0';
+        loadSVGToD3DTexture9(pDevice, (char*)svgDonateLogoData, &g_donateLogo, 1.0f);
 
         ImGui_ImplWin32_Init(g_hWnd);
         ImGui_ImplDX9_Init(pDevice);
@@ -144,14 +149,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             if (g_progressbar.m_fRealProgress / g_progressbar.m_fMaxRealProgress > g_progressbar.m_fProgress)
                 g_progressbar.m_fProgress += 0.01f;
             if (g_progressbar.m_fProgress >= 1.0f) g_stateProgram = STATE_PROG::ADVERTISE;
+
+            //ImGui::SliderFloat("progress", &g_progressbar.m_fRealProgress, 0.0f, g_progressbar.m_fMaxRealProgress);
         }
         else {
+            ImGui::SetCursorPos({25, 35});
+            ImGui::Image(g_donateLogo, { 50, 50 });
+            ImGui::SameLine();
+            ImGui::Text(u8"Если вы хотете поддержать проект в финансовом плане,\n"
+                        u8"то можете сделать это, задонатив на DonationAlerts");
 
+            const auto buttonText = u8"Перейти на сайт";
+            auto &&widthButtonText = ImGui::CalcTextSize(buttonText);
+            ImGui::SetCursorPosX(pRParams->BackBufferWidth / 2 - widthButtonText.x / 2 - 10);
+            ImGui::Button(buttonText, ImVec2(widthButtonText.x + 20, 0));
         }
-
-        //ImGui::SliderFloat("progress", &g_progressbar.m_fRealProgress, 0.0f, g_progressbar.m_fMaxRealProgress);
-
-        //ImGui::ShowStyleEditor();
 
         ImGui::End();
 
@@ -303,9 +315,9 @@ void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, char* svg_source, LPDIRECT3
     (*pTexture)->LockRect(0, &svgRect, nullptr, 0);
 
     DWORD* pPoint = (DWORD*)svgRect.pBits;
-    for (size_t y = 0; y < newH && y < h; y++)
+    for (size_t y = 0; y < newH && y < (size_t)h; y++)
     {
-        for (size_t x = 0; x < newW && x < w; x++)
+        for (size_t x = 0; x < newW && x < (size_t)w; x++)
         {
             auto n = y * (svgRect.Pitch / sizeof(DWORD)) + x;
 
