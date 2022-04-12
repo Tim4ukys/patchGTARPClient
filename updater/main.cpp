@@ -13,8 +13,13 @@
 
 #include <zip.h>
 
-#include "nanosvgrast.h"
+#pragma warning ( push )
+#pragma warning ( disable : 4244 )
+#define NANOSVG_IMPLEMENTATION	
+#define NANOSVGRAST_IMPLEMENTATION
 #include "nanosvg.h"
+#include "nanosvgrast.h"
+#pragma warning ( pop )
 
 #include "imgui.h"
 #include "imgui_impl_dx9.h"
@@ -94,19 +99,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         ImGui::StyleColorsDark();
         setThemeImgui();
 
-        ImGuiIO& io = ImGui::GetIO();
-        {
+        auto loadRC = [](int rc_id)->std::pair<LPBYTE, size_t> {
             HMODULE&& handle = GetModuleHandleA(NULL);
-            HRSRC     rc = FindResourceA(NULL, MAKEINTRESOURCEA(IDR_VGAFONT), MAKEINTRESOURCEA(RT_RCDATA));
+            HRSRC     rc = FindResource(NULL, MAKEINTRESOURCE(rc_id), MAKEINTRESOURCE(RT_RCDATA));
             HGLOBAL   rcData = LoadResource(handle, rc);
 
             auto&& sizeRes = SizeofResource(handle, rc);
             LPBYTE mem = new BYTE[sizeRes];
             memcpy(mem, LockResource(rcData), sizeRes);
             UnlockResource(rc);
+            return { mem, sizeRes };
+        };
 
-            io.Fonts->AddFontFromMemoryTTF(mem, sizeRes, 16.5f, NULL, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
-        }
+        ImGuiIO& io = ImGui::GetIO();
+        auto [fontMem, fontSizeMem] = loadRC(IDR_VGAFONT);
+        io.Fonts->AddFontFromMemoryTTF(fontMem, fontSizeMem, 16.5f, NULL, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
 
         ImGui_ImplWin32_Init(g_hWnd);
         ImGui_ImplDX9_Init(pDevice);

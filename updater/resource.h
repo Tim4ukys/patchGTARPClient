@@ -2,8 +2,8 @@
 // Включаемый файл, созданный в Microsoft Visual C++.
 // Используется updater.rc
 //
-#define IDB_BITMAP1                     101
-#define IDR_VGAFONT						102
+#define IDR_VGAFONT                     101
+#define IDR_DONATELOGO					102
 
 // Next default values for new objects
 // 
