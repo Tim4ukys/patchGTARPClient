@@ -8,14 +8,17 @@
 *    License: GNU GPLv3                             *
 *                                                   *
 ****************************************************/
-#include "pch.h"
-#include "DisableSnowWindow.h"
-#include "offsets.hpp"
-
-/* Этот файл отключает заморозку окна на больших скоростях */
-
-void DisableSnowWindow::Process() {
-    if (g_Config["vehicleHud"]["isDisableSnowWindow"].get<bool>()) {
-        patch::setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLEWINTERWINDOW), "\xEB\x79" /* jmp 0x7b */, 2U);
+#pragma once
+template<typename T>
+class FSignal : public std::vector<std::function<T>> {
+public:
+    //FSignal();
+    inline FSignal& operator+=(std::function<T> func) {
+        std::lock_guard<std::mutex> lock(m_lock);
+        this->push_back(func);
+        return *this;
     }
-}
+
+private:
+    std::mutex m_lock;
+};

@@ -85,6 +85,9 @@
     <ClInclude Include="FastScreenshot.h">
       <Filter>md\samp</Filter>
     </ClInclude>
+    <ClInclude Include="FSignal.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -142,6 +145,9 @@
     <ClCompile Include="FastScreenshot.cpp">
       <Filter>md\samp</Filter>
     </ClCompile>
+    <ClCompile Include="FSignal.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -150,5 +156,15 @@
     <ResourceCompile Include="patchGTARPClient.rc">
       <Filter>resource</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="screenshot.wav">
+      <Filter>resource</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="help_overlay.dds">
+      <Filter>resource</Filter>
+    </Image>
   </ItemGroup>
 </Project>

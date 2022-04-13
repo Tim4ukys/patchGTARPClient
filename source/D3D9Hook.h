@@ -15,18 +15,10 @@ public:
 	D3D9Hook();
     ~D3D9Hook();
 
-    template<typename T>
-    struct stSignal : public std::vector<std::function<T>> {
-        stSignal& operator+=(std::function<T> func) {
-            this->push_back(func);
-            return *this;
-        }
-    };
-
-    stSignal<void(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*)> onPresentEvent;
-    stSignal<void(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*)>  onLostDevice;
-    stSignal<void(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*)> onResetDevice;
-    stSignal<void(LPDIRECT3DDEVICE9)> onInitDevice;
+    FSignal<void(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*)> onPresentEvent;
+    FSignal<void(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*)>                         onLostDevice;
+    FSignal<void(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*)>                         onResetDevice;
+    FSignal<void(LPDIRECT3DDEVICE9)>                                                 onInitDevice;
 
 private:
 

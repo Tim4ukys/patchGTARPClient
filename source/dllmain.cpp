@@ -15,7 +15,7 @@
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 
-#define CURRENT_VERSION "6.1.1"
+#define CURRENT_VERSION "6.2.0"
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
@@ -136,6 +136,30 @@ NOINLINE void   gameLoopDetourFNC() {
 }
 
 // ------------------------------
+// Audio engine
+
+FSignal<void()> g_initAudioTracks;
+
+uint64_t g_uiOrigAudioInit;
+PLH::x86Detour *g_pAudioInitDetour;
+int __fastcall initSAMPDetour(PVOID pthis, PVOID trash, char* a2, int a3, const char* a4, int a5) {
+    BASS_Init(-1, 44100, 0, 0, nullptr);
+
+    size_t&&                 size_a_cocks = g_initAudioTracks.size();
+    std::vector<std::thread> cocks;
+    cocks.resize(size_a_cocks);
+    for (size_t i{}; i < size_a_cocks; ++i) {
+        cocks[i] = std::thread(g_initAudioTracks[i]);
+    }
+
+    for (auto& thr : cocks)
+        thr.join();
+
+
+    return FNC_CAST(initSAMPDetour, g_uiOrigAudioInit)(pthis, trash, a2, a3, a4, a5);
+}
+
+// ------------------------------
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     switch (ul_reason_for_call) {
@@ -155,12 +179,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         }
 
         // ------------
-        //
-        
-
-        // ------------
-
-        // ------------
         // Проверка на обновления
         g_pSAMP = new SAMP();
         PLH::CapstoneDisassembler dis(PLH::Mode::x86);
@@ -178,6 +196,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
         g_pLdrpDereferenceModule = new patch::callHook(addr);
         g_pLdrpDereferenceModule->installHook(&loadModule, false);
+
+        g_pAudioInitDetour = new PLH::x86Detour(PCHAR(g_sampBase.getAddress(0xB5F0)), PCHAR(&initSAMPDetour), &g_uiOrigAudioInit, dis);
+        g_pAudioInitDetour->hook();
     }
         break;
     case DLL_PROCESS_DETACH:
@@ -186,6 +207,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         SAFE_DELETE(g_pSAMP);
         SAFE_DELETE(g_pGameLoopDetour);
         g_Config.saveFile();
+        BASS_Free();
         break;
     }
     return TRUE;

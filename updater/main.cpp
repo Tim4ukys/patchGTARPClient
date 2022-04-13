@@ -1,25 +1,410 @@
 #include <windows.h>
 #include <wininet.h>
-#include <CommCtrl.h>
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <algorithm>
 #include <fstream>
 #include <thread>
+#include <mutex>
+#include <tlhelp32.h>
 #include <filesystem>
 #include "resource.h"
+#include "CRender.h"
 
 #include <zip.h>
 
+#pragma warning ( push )
+#pragma warning ( disable : 4244 )
+#define NANOSVG_IMPLEMENTATION	
+#define NANOSVGRAST_IMPLEMENTATION
+#include "nanosvg.h"
+#include "nanosvgrast.h"
+#pragma warning ( pop )
+
+#include "imgui.h"
+#include "imgui_impl_dx9.h"
+#include "imgui_impl_win32.h"
+#include "imgui_stdlib.h"
+#include "imgui_internal.h"
+
 #include "json.hpp"
 
+bool ProcessRunning(const wchar_t* name);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void setThemeImgui();
+void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, char* svg_source, LPDIRECT3DTEXTURE9* pTexture, float scale);
 
-WNDCLASSEX g_wc{ sizeof(WNDCLASSEX) };
+std::string getLastVersion();
+
+void workerFnc();
+
+WNDCLASSEXW g_wc{ sizeof(WNDCLASSEXW) };
 HWND g_hWnd{};
-std::string g_sUpText = "Статус:";
-HWND g_hProgress;
+CRender* g_pRender;
+LPDIRECT3DTEXTURE9 g_donateLogo = nullptr;
+
+ImRect g_titleRect;
+
+enum class STATE_PROG : unsigned char { PROGRESSBAR, ADVERTISE };
+STATE_PROG g_stateProgram = STATE_PROG::PROGRESSBAR;
+
+struct stProgressbarData {
+    float m_fProgress; // 0.0 .. 1.0; use by imgui
+
+    float m_fMaxRealProgress;
+    float m_fRealProgress; // 0.0 .. max
+
+    struct stStatus {
+        bool m_bIsEdit; // true - changes; false - not changes
+        std::string m_sStatus;
+    } m_status;
+
+private:
+    std::mutex m_lock;
+
+public:
+    stProgressbarData(float progress, float maxRealProgress, float realProgress, const char* status = nullptr) :
+        m_fProgress(progress), m_fMaxRealProgress(maxRealProgress), m_fRealProgress(realProgress), m_status{false, !status ? "" : status}
+    {}
+
+    stStatus& getStatus(bool isOnlyRead = true) {
+        std::lock_guard<std::mutex> llock(m_lock);
+        while (m_status.m_bIsEdit) {}
+        m_status.m_bIsEdit = !isOnlyRead;
+        return m_status;
+    }
+    inline void endEditStatus() { m_status.m_bIsEdit = false; }
+    
+} g_progressbar{ 0.0f, 5.0f, 0.0f };
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+{
+    g_pRender = new CRender();
+
+#ifdef NDEBUG
+    while (ProcessRunning(L"gta_sa.exe")) {}
+#endif
+
+    ////////////////////
+
+    g_wc.cbClsExtra = 0;
+    g_wc.cbWndExtra = 0;
+    g_wc.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+    g_wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    g_wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+    g_wc.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
+    g_wc.hInstance = hInstance;
+    g_wc.lpfnWndProc = &WndProc;
+    g_wc.lpszClassName = L"updater";
+    g_wc.lpszMenuName = nullptr;
+    g_wc.style = CS_VREDRAW | CS_HREDRAW;
+
+    if (!RegisterClassExW(&g_wc))
+        return EXIT_FAILURE;
+
+    const int widthWindow = 455;
+    const int heightWindow = 145;
+
+    g_hWnd = CreateWindowW(g_wc.lpszClassName, L"Updater",
+        WS_VISIBLE | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+        GetSystemMetrics(SM_CXSCREEN) / 2 - widthWindow / 2, GetSystemMetrics(SM_CYSCREEN) / 2 - heightWindow / 2,
+        widthWindow, heightWindow, nullptr, nullptr, g_wc.hInstance, nullptr);
+    if (g_hWnd == INVALID_HANDLE_VALUE)
+        return EXIT_FAILURE;
+
+    g_pRender->m_eventInitD3D += [](LPDIRECT3DDEVICE9 pDevice) {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+        setThemeImgui();
+
+        auto loadRC = [](int rc_id, LPWSTR type)->std::pair<LPBYTE, size_t> {
+            HMODULE&& handle = GetModuleHandleA(NULL);
+            HRSRC     rc = FindResource(NULL, MAKEINTRESOURCE(rc_id), MAKEINTRESOURCE(type));
+            HGLOBAL   rcData = LoadResource(handle, rc);
+
+            auto&& sizeRes = SizeofResource(handle, rc);
+            LPBYTE mem = new BYTE[sizeRes];
+            memcpy(mem, LockResource(rcData), sizeRes);
+            UnlockResource(rc);
+            return { mem, sizeRes };
+        };
+
+        ImGuiIO& io = ImGui::GetIO();
+        auto [fontMem, fontSizeMem] = loadRC(IDR_VGAFONT, RT_RCDATA);
+        io.Fonts->AddFontFromMemoryTTF(fontMem, fontSizeMem, 16.5f, NULL, io.Fonts->GetGlyphRangesCyrillic());
+
+        auto [svgDonateLogoData, szSvgDonateLogoData] = loadRC(IDR_DONATELOGO, RT_RCDATA);
+        svgDonateLogoData[szSvgDonateLogoData - 1] = '\0';
+        loadSVGToD3DTexture9(pDevice, (char*)svgDonateLogoData, &g_donateLogo, 1.0f);
+
+        ImGui_ImplWin32_Init(g_hWnd);
+        ImGui_ImplDX9_Init(pDevice);
+    };
+    g_pRender->m_eventDraw += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pRParams) {
+        ImGui_ImplDX9_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        const ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
+
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
+
+        static bool s_bIsClose = true;
+        ImGui::Begin("Updater patchGTARPClient | DirectX9 version", &s_bIsClose, flags);
+        auto window = ImGui::GetCurrentWindow();
+        g_titleRect = window->TitleBarRect();
+
+        auto myAddSpaceItem = [](float space) { ImGui::SetCursorPosY(ImGui::GetCursorPosY() + space); };
+        if (g_stateProgram == STATE_PROG::PROGRESSBAR) {
+            myAddSpaceItem(5.f);
+            ImGui::Text(u8"Статус: %s", g_progressbar.getStatus().m_sStatus.c_str());
+            myAddSpaceItem(25.f);
+            ImGui::ProgressBar(g_progressbar.m_fProgress, {-1, 40.0f});
+            if (0.5f < g_progressbar.m_fRealProgress - g_progressbar.m_fProgress * g_progressbar.m_fMaxRealProgress)
+                g_progressbar.m_fProgress += 0.1f;
+            else if (g_progressbar.m_fRealProgress / g_progressbar.m_fMaxRealProgress > g_progressbar.m_fProgress)
+                g_progressbar.m_fProgress += 0.01f;
+
+            if (g_progressbar.m_fProgress >= 1.0f) g_stateProgram = STATE_PROG::ADVERTISE;
+        }
+        else {
+            ImGui::SetCursorPos({25, 35});
+            ImGui::Image(g_donateLogo, { 50, 50 });
+            ImGui::SameLine();
+            ImGui::Text(u8"Если вы хотете поддержать проект в финансовом плане,\n"
+                        u8"то можете сделать это, задонатив на DonationAlerts");
+
+            const auto buttonText = u8"Перейти на сайт";
+            auto &&widthButtonText = ImGui::CalcTextSize(buttonText);
+            ImGui::SetCursorPosX(pRParams->BackBufferWidth / 2 - widthButtonText.x / 2 - 10);
+            if (ImGui::Button(buttonText, ImVec2(widthButtonText.x + 20, 0))) {
+                system("start https://www.donationalerts.com/r/tim4ukys");
+                PostQuitMessage(EXIT_SUCCESS);
+            }
+        }
+
+        ImGui::End();
+
+        ImGui::EndFrame();
+        ImGui::Render();
+        ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+        if (!s_bIsClose) PostQuitMessage(EXIT_SUCCESS);
+    };
+    g_pRender->m_eventOnLostDevice += [](LPDIRECT3DDEVICE9 pDevice) { ImGui_ImplDX9_InvalidateDeviceObjects(); };
+    g_pRender->m_eventOnResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pRPParams) { ImGui_ImplDX9_CreateDeviceObjects(); };
+
+    g_pRender->initD3D(g_hWnd);
+
+    std::thread workerThr{ workerFnc };
+    workerThr.detach();
+
+    ShowWindow(g_hWnd, nCmdShow);
+    UpdateWindow(g_hWnd);
+     
+    MSG msg{};
+    while (GetMessage(&msg, nullptr, 0, 0))
+    {
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+
+    ImGui_ImplDX9_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    delete g_pRender;
+
+    return static_cast<int>(msg.wParam);
+}
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+        return true;
+
+    switch (uMsg)
+    {
+    case WM_DESTROY:
+    {
+        PostQuitMessage(EXIT_SUCCESS);
+        return 0;
+    }
+    case WM_ERASEBKGND:
+    {
+        return 0;
+    }
+    case WM_PAINT:
+        g_pRender->draw();
+        return 0;
+    case WM_SIZE:
+        g_pRender->onResize(LOWORD(lParam), HIWORD(lParam));
+        return 0;
+    case WM_NCHITTEST:
+    {
+        if (RECT r; GetWindowRect(hWnd, &r)) {
+            auto curX = LOWORD(lParam) - r.left;
+            auto curY = HIWORD(lParam) - r.top;
+            ImVec2 close_button;
+            {
+                auto& style = ImGui::GetStyle();
+                float pad_r = style.FramePadding.x;
+                float button_sz = ImGui::GetCurrentContext()->FontSize;
+
+                pad_r += button_sz;
+                close_button = ImVec2(g_titleRect.Max.x - pad_r - style.FramePadding.x, g_titleRect.Min.y);
+            }
+            if (curY < g_titleRect.GetHeight() && curX < g_titleRect.GetWidth()
+                && curX < close_button.x)
+                return HTCAPTION;
+        }
+    }
+    }
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+void setThemeImgui() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
+    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
+    style.Colors[ImGuiCol_PopupBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
+    style.Colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
+    style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+    style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+    style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+    style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
+    style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
+    style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.08f, 0.50f, 0.72f, 1.00f);
+    style.Colors[ImGuiCol_Button] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.22f, 0.22f, 0.22f, 1.00f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
+    style.Colors[ImGuiCol_Separator] = style.Colors[ImGuiCol_Border];
+    style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.41f, 0.42f, 0.44f, 1.00f);
+    style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.29f, 0.30f, 0.31f, 0.67f);
+    style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    style.Colors[ImGuiCol_Tab] = ImVec4(0.08f, 0.08f, 0.09f, 0.83f);
+    style.Colors[ImGuiCol_TabHovered] = ImVec4(0.33f, 0.34f, 0.36f, 0.83f);
+    style.Colors[ImGuiCol_TabActive] = ImVec4(0.23f, 0.23f, 0.24f, 1.00f);
+    style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
+    style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
+    //style.Colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
+    //style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+    style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+    style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+    style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.412f, 0.412f, 0.412f, 1.00f);//ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+    style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+    style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+    style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
+    style.Colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+    style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+    style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+    style.GrabRounding = style.FrameRounding = 2.3f;
+}
+
+void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, char* svg_source, LPDIRECT3DTEXTURE9* pTexture, float scale)
+{
+    NSVGimage* pImage;
+    pImage = nsvgParse(svg_source, "px", 96);
+    auto rast = nsvgCreateRasterizer();
+
+    int w{ static_cast<int>(pImage->width) }, h{ static_cast<int>(pImage->height) };
+    size_t newW{ static_cast<size_t>(scale * pImage->height) }, newH{ static_cast<size_t>(scale * pImage->height) };
+
+    PBYTE img = new BYTE[w * h * 4];
+    nsvgRasterize(rast, pImage, 0, 0, scale, img, w, h, w * 4);
+
+    pDevice->CreateTexture(newW, newH, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, pTexture, nullptr);
+
+    D3DLOCKED_RECT svgRect;
+    (*pTexture)->LockRect(0, &svgRect, nullptr, 0);
+
+    DWORD* pPoint = (DWORD*)svgRect.pBits;
+    for (size_t y = 0; y < newH && y < (size_t)h; y++)
+    {
+        for (size_t x = 0; x < newW && x < (size_t)w; x++)
+        {
+            auto n = y * (svgRect.Pitch / sizeof(DWORD)) + x;
+
+            unsigned char* point_1 = (unsigned char*)&pPoint[n];
+            unsigned char* point_2 = (unsigned char*)&img[(y * w + x) * 4];
+            point_1[0] /*b*/ = point_2[2] /*b*/;
+            point_1[1] /*g*/ = point_2[1] /*g*/;
+            point_1[2] /*r*/ = point_2[0] /*r*/;
+            point_1[3]/*alpha*/ = point_2[3] /* alpha */;
+        }
+    }
+
+    (*pTexture)->UnlockRect(0);
+
+    delete[] img;
+
+    nsvgDeleteRasterizer(rast);
+    nsvgDelete(pImage);
+}
+
+std::string getLastVersion() {
+    HINTERNET interwebs = InternetOpenA("Mozilla/5.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
+    HINTERNET urlFile = InternetOpenUrlA(interwebs, "https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json",
+        NULL, NULL, NULL, NULL);
+
+    std::string resolve;
+    char* buff = new char[512];
+    DWORD bytesRead;
+    do {
+        InternetReadFile(urlFile, buff, 512, &bytesRead);
+        resolve.append(buff, bytesRead);
+    } while (bytesRead);
+    delete[] buff;
+
+    InternetCloseHandle(interwebs);
+    InternetCloseHandle(urlFile);
+
+    return nlohmann::json::parse(resolve)["vers"].get<std::string>();
+}
+
+bool ProcessRunning(const wchar_t* name)
+{
+    HANDLE SnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (SnapShot == INVALID_HANDLE_VALUE)
+        return false;
+
+    PROCESSENTRY32 procEntry;
+    procEntry.dwSize = sizeof(PROCESSENTRY32);
+
+    if (!Process32First(SnapShot, &procEntry))
+        return false;
+
+    do
+    {
+        if (wcscmp(procEntry.szExeFile, name) == NULL)
+            return true;
+    } while (Process32Next(SnapShot, &procEntry));
+
+    return false;
+}
 
 class DownloadProgress : public IBindStatusCallback {
 public:
@@ -56,257 +441,74 @@ public:
 
     virtual HRESULT __stdcall OnProgress(ULONG ulProgress, ULONG ulProgressMax, ULONG ulStatusCode, LPCWSTR szStatusText)
     {
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(ulProgressMax > 0 ? ulProgress / ulProgressMax * 100 : 0), 0);
+        //SendMessage(g_hProgress, PBM_SETPOS, ULONG(ulProgressMax > 0 ? ulProgress / ulProgressMax * 100 : 0), 0);
+        if (ulProgressMax > 0)
+        {
+            thread_local static float START_PROGRESS = -1.0f;
+            if (START_PROGRESS == -1.0f) START_PROGRESS = g_progressbar.m_fRealProgress;
+            g_progressbar.m_fRealProgress = START_PROGRESS + ulProgress / ulProgressMax;
+            if (ulProgress / ulProgressMax == 1) START_PROGRESS = -1.0f;
+        }
         return S_OK;
     }
 };
 
-#include <tlhelp32.h>
-
-bool ProcessRunning(const wchar_t* name)
+void workerFnc()
 {
-    HANDLE SnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    auto changeStatus = [](const char* msg) { g_progressbar.getStatus(false).m_sStatus = msg; g_progressbar.endEditStatus(); };
 
-    if (SnapShot == INVALID_HANDLE_VALUE)
-        return false;
+    changeStatus(u8"создание временного хранилища");
 
-    PROCESSENTRY32 procEntry;
-    procEntry.dwSize = sizeof(PROCESSENTRY32);
+    using namespace std::filesystem;
+    path tempDir{ "./.temp" };
+    if (!exists(tempDir)) {
+        create_directory(tempDir);
+    }
 
-    if (!Process32First(SnapShot, &procEntry))
-        return false;
+    g_progressbar.m_fRealProgress = 1.0f;
 
-    do
-    {
-        if (wcscmp(procEntry.szExeFile, name) == NULL)
-            return true;
-    } while (Process32Next(SnapShot, &procEntry));
+    ///////////
 
-    return false;
-}
+    changeStatus(u8"скачивание архива");
 
-struct stLogoDonate {
-    bool m_bState;
-    HANDLE m_hBitmap;
-    BITMAP m_bitMap;
-} g_logoDonate;
-HWND g_hButtonDonate;
+    const std::string fileURL = R"(https://github.com/Tim4ukys/patchGTARPClient/releases/download/v)" +
+        getLastVersion() + R"(/patchGTARPClientByTim4ukys.zip)";
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
-{
-    while (ProcessRunning(L"gta_sa.exe")) {}
+    DownloadProgress progress;
+    URLDownloadToFileA(NULL, fileURL.c_str(), (canonical(tempDir).string() + "\\arhiv.zip").c_str(), NULL, &progress);
 
-    HINTERNET interwebs = InternetOpenA("Mozilla/5.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
-    HINTERNET urlFile = InternetOpenUrlA(interwebs, "https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json",
-        NULL, NULL, NULL, NULL);
+    //g_progressbar.m_fRealProgress = 2.0f;
 
-    std::string resolve;
-    char* buff = new char[512];
-    DWORD bytesRead;
-    do {
-        InternetReadFile(urlFile, buff, 512, &bytesRead);
-        resolve.append(buff, bytesRead);
-    } while (bytesRead);
-    delete[] buff;
+    ////////////
 
-    InternetCloseHandle(interwebs);
-    InternetCloseHandle(urlFile);
+    changeStatus(u8"распаковка архива");
 
-    ////////////////////
-    
-    ZeroMemory(&g_logoDonate, sizeof(stLogoDonate));
-    g_logoDonate.m_hBitmap = LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDB_BITMAP1), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
-    GetObject(g_logoDonate.m_hBitmap, sizeof(BITMAP), &g_logoDonate.m_bitMap);
-
-    ////////////////////
-
-    //auto it = resolve.find("\r\n\r\n");
-    //if (it == resolve.npos)
-        //return EXIT_FAILURE;
-    //resolve.erase(0, it + 4);
-    nlohmann::json j_res = nlohmann::json::parse(resolve);
-    static std::string fileURL = R"(https://github.com/Tim4ukys/patchGTARPClient/releases/download/v)" +
-        j_res["vers"].get<std::string>() + R"(/patchGTARPClientByTim4ukys.zip)";
-
-    MSG msg{};
-    g_wc.cbClsExtra = 0;
-    g_wc.cbWndExtra = 0;
-    g_wc.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
-    g_wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    g_wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    g_wc.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
-    g_wc.hInstance = hInstance;
-    g_wc.lpfnWndProc = &WndProc;
-    g_wc.lpszClassName = TEXT("UpdateMyPatch");
-    g_wc.lpszMenuName = nullptr;
-    g_wc.style = CS_VREDRAW | CS_HREDRAW;
-
-    if (!RegisterClassEx(&g_wc))
-        return EXIT_FAILURE;
-
-    g_hWnd = CreateWindow(g_wc.lpszClassName, TEXT("Updater patchGTARPClient"), WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,
-        0, 0, 355, 130, nullptr, nullptr, g_wc.hInstance, nullptr);
-    if (g_hWnd == INVALID_HANDLE_VALUE)
-        return EXIT_FAILURE;
-
-    ShowWindow(g_hWnd, nCmdShow);
-    UpdateWindow(g_hWnd);
-
-    auto thrProcess = []() {
-#ifdef NDEBUG
-        g_sUpText = "Статус: cкачивание архива";
-        InvalidateRect(g_hWnd, NULL, FALSE);
-        std::filesystem::path tempDir("./.temp");
-        if (!std::filesystem::exists(tempDir)) {
-            std::filesystem::create_directory(tempDir);
-        }
-        else if (!std::filesystem::is_directory(tempDir)) {
-            std::filesystem::remove(tempDir);
-            std::filesystem::create_directory(tempDir);
-        }
-
-        DownloadProgress progress;
-        URLDownloadToFileA(NULL, fileURL.c_str(), ".temp\\arhiv.zip", NULL, &progress);
-
-        ////////////////////////////////
-
-        g_sUpText = "Статус: разархивация плагина";
-        InvalidateRect(g_hWnd, NULL, FALSE);
-        int err{};
-        zip* p = zip_open(".temp\\arhiv.zip", 0, &err);
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.5 * 100) + 100, 0);
+    auto unpackedFileFromAhrive = [](char* name, zip* p/*, float offsetProgress = 0.0f*/) {
         zip_stat_t st;
         zip_stat_init(&st);
-        zip_stat(p, "!000patchGTARPClientByTim4ukys.ASI", 0, &st);
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.25 * 100) + 100, 0);
+        zip_stat(p, name, 0, &st);
 
         PCHAR cont = new char[st.size];
-        zip_file* f = zip_fopen(p, "!000patchGTARPClientByTim4ukys.ASI", 0);
+        zip_file* f = zip_fopen(p, name, 0);
         zip_fread(f, cont, st.size);
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.40 * 100) + 100, 0);
         zip_fclose(f);
-        std::ofstream("!000patchGTARPClientByTim4ukys.ASI", std::ios_base::binary).write(cont, st.size);
+
+        std::ofstream(name, std::ios_base::binary).write(cont, st.size);
         delete[] cont;
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.50 * 100) + 100, 0);
-
-        zip_stat_init(&st);
-        zip_stat(p, "gtarp_clientside.asi", 0, &st);
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.75 * 100) + 100, 0);
-        cont = new char[st.size];
-        f = zip_fopen(p, "gtarp_clientside.asi", 0);
-        zip_fread(f, cont, st.size);
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(0.90 * 100) + 100, 0);
-        zip_fclose(f);
-        std::ofstream("gtarp_clientside.asi", std::ios_base::binary).write(cont, st.size);
-        delete[] cont;
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(1.00 * 100) + 100, 0);
-
-        zip_close(p);
-
-        ////////////////////////////////
-
-        g_sUpText = "Статус: удаление временных файлов";
-        InvalidateRect(g_hWnd, NULL, FALSE);
-        std::filesystem::remove_all(tempDir);
-        SendMessage(g_hProgress, PBM_SETPOS, ULONG(1.00 * 100) + 200, 0);
-
-        ////////////////////////////////
-
-        g_sUpText = "Статус: обновление успешно завершено";
-        InvalidateRect(g_hWnd, NULL, FALSE);
-        Sleep(1500);
-#endif
-        g_logoDonate.m_bState = true;
-        //CloseWindow(g_hProgress);
-        //DestroyWindow(g_hProgress);
-        //ShowWindow(g_hButtonDonate, 0);
-        SendMessage(g_hProgress, WM_CLOSE, 0, 0);
-        InvalidateRect(g_hWnd, nullptr, FALSE);
     };
-    std::jthread thr{ thrProcess };
-    thr.detach();
 
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        TranslateMessage(&msg);
-        DispatchMessageA(&msg);
-    }
+    int err{};
+    zip* p = zip_open(".temp\\arhiv.zip", 0, &err);
+    g_progressbar.m_fRealProgress = 3.0f;
+    unpackedFileFromAhrive("!000patchGTARPClientByTim4ukys.ASI", p);
+    g_progressbar.m_fRealProgress = 4.0f;
+    unpackedFileFromAhrive("gtarp_clientside.asi", p);
+    zip_close(p);
+    g_progressbar.m_fRealProgress = 4.5f;
 
-    return static_cast<int>(msg.wParam);
-}
+    ////////////
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    //SendMessage(g_hProgress, PBM_STEPIT, 0, 0);
-    switch (uMsg)
-    {
-    case WM_CREATE:
-    {
-        RECT r;
-        GetClientRect(hWnd, &r);
-        g_hProgress = CreateWindowEx(0, PROGRESS_CLASS, nullptr, WS_CHILD | WS_VISIBLE | PBS_SMOOTH, 5,
-            r.bottom - 25, r.right - r.left - 10, 20, hWnd, NULL, g_wc.hInstance, NULL);
-        SendMessage(g_hProgress, PBM_SETRANGE, 0, MAKELPARAM(0, 300));
-        SendMessage(g_hProgress, PBM_SETSTEP, 1, 0);
-        return 0;
-    }
-    case WM_DESTROY:
-    {
-        PostQuitMessage(EXIT_SUCCESS);
-        return 0;
-    }
-    case WM_ERASEBKGND:
-    {
-        return 0;
-    }
-    case WM_COMMAND:
-    {
-        switch (LOWORD(wParam)) {
-        case 1337:
-        {
-            system("start https://www.donationalerts.com/r/tim4ukys");
-            PostQuitMessage(-1);
-            break;
-        }
-        }
-        return 0;
-    }
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        auto hdc = BeginPaint(hWnd, &ps);
-        
-        if (g_logoDonate.m_bState) {
-
-            auto hCompatibleDC = CreateCompatibleDC(hdc);
-            auto hOldBitmap = SelectObject(hCompatibleDC, g_logoDonate.m_hBitmap);
-            StretchBlt(hdc, 10, 10, 42, 50, hCompatibleDC, 0, 0, g_logoDonate.m_bitMap.bmWidth,
-                g_logoDonate.m_bitMap.bmHeight, SRCCOPY);
-            SelectObject(hCompatibleDC, hOldBitmap);
-            DeleteDC(hCompatibleDC);
-
-            const char* msg[]{
-                "Если Вы хотите отблагодорить меня,",
-                "то можете сделать это задонатив мне."
-            };
-
-            int i{};
-            for (const auto& text : msg) {
-                TextOutA(hdc, 48 + 10, 15 + 15 * i++, text, strlen(text));
-            }
-            
-            if (static bool isCreate = false; !isCreate) {
-                RECT r;
-                GetClientRect(hWnd, &r);
-                g_hButtonDonate = CreateWindow(TEXT("BUTTON"), TEXT("Перейти на DonationAlerts"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                    5, r.bottom - 25, r.right - r.left - 10, 20, hWnd, reinterpret_cast<HMENU>(1337), nullptr, nullptr);
-                isCreate = true;
-            }
-        }
-        else TextOutA(hdc, 10, 20, g_sUpText.c_str(), g_sUpText.length());
-        EndPaint(hWnd, &ps);
-        return 0;
-    }
-    }
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    changeStatus(u8"удаление временных файлов");
+    remove_all(tempDir);
+    g_progressbar.m_fRealProgress = 5.0f;
 }

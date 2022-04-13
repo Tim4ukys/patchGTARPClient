@@ -1,9 +1,23 @@
-﻿#include "pch.h"
+﻿/****************************************************
+*                                                   *
+*    Developer: Tim4ukys                            *
+*                                                   *
+*    email: tim4ukys.dev@yandex.ru                  *
+*    vk: vk.com/tim4ukys                            *
+*                                                   *
+*    License: GNU GPLv3                             *
+*                                                   *
+****************************************************/
+#include "pch.h"
 #include "FastScreenshot.h"
+#include "resource.h"
 
 // fix https://forum.gtarp.ru/threads/skrinshoty-utechka-pamjati.973479/
 
+//#define DEBUG_SOUND
+
 bool g_bIsSortScreenshot;
+bool g_bIsPlaySound;
 void saveTexture(std::string szFileName, LPDIRECT3DTEXTURE9 frontBuff, LPDIRECT3DSURFACE9 pTemp, RECT r) {
     ((HRESULT(__stdcall*)(LPCSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DSURFACE9, CONST PALETTEENTRY*, CONST RECT*))g_sampBase.getAddress(0xC653A))(
         szFileName.c_str(), D3DXIFF_PNG, pTemp, NULL, &r);
@@ -22,9 +36,10 @@ int GetScreenshotFileName(std::string& FileName) {
         sprintf(buff, "%d-%02d-%02d\\", t.wYear, t.wMonth, t.wDay);
         FileName += buff;
     }
+    FileName += "sa-mp-%03i.png";
     int i{};
     do {
-        sprintf(Buf, (FileName + "sa-mp-%03i.png").c_str(), i);
+        sprintf(Buf, FileName.c_str(), i);
         std::filesystem::path p(Buf);
         if (!std::filesystem::exists(p))
             break;
@@ -33,12 +48,37 @@ int GetScreenshotFileName(std::string& FileName) {
     return i;
 }
 
+struct stSoundData {
+    PCHAR m_pData;
+    size_t m_szLength;
+};
+
+stSoundData g_takeScreenshot;
+DWORD       g_hTakeSound;
+
+void initTakeScreenshotTrack() {
+    HMODULE&& handle = GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI");
+    HRSRC     rc = FindResourceA(handle, MAKEINTRESOURCEA(IDR_WAVE1), MAKEINTRESOURCEA(RT_RCDATA));
+    HGLOBAL   rcData = LoadResource(handle, rc);
+    g_takeScreenshot.m_szLength = SizeofResource(handle, rc);
+    g_takeScreenshot.m_pData = static_cast<char*>(LockResource(rcData));
+    g_hTakeSound = BASS_StreamCreateFile(TRUE, g_takeScreenshot.m_pData, 0, g_takeScreenshot.m_szLength, 0);
+#ifdef DEBUG_SOUND
+    g_Log << "Sound is init, epta";
+#endif
+}
+
 void TakeScreenshot() {
+#ifdef DEBUG_SOUND
+    BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
+    BASS_ChannelPlay(g_hTakeSound, TRUE);
+    *LPBOOL(g_sampBase.getAddress(0x12DD3C)) = FALSE; // g_bTakeScreenshot
+#else
     auto            pDevice = reinterpret_cast<LPDIRECT3DDEVICE9>(RwD3D9GetCurrentD3DDevice());
     std::string sFileName;
 
     int iCount = GetScreenshotFileName(sFileName); 
-    g_Log.Write("sFileName: %s", sFileName.c_str());
+    //g_Log.Write("sFileName: %s", sFileName.c_str());
 
     LPDIRECT3DTEXTURE9 pFrontBuff;
     LPDIRECT3DSURFACE9 pTemp;
@@ -67,14 +107,25 @@ void TakeScreenshot() {
         g_pSAMP->addChatMessage(0x88'AA'62,
                                 "Скриншот сохранен {FFA500}sa-mp-%03i.png {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
                                 iCount);
+        if (g_bIsPlaySound) {
+            BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
+            BASS_ChannelPlay(g_hTakeSound, TRUE);
+        }
     } else {
         g_pSAMP->addChatMessage(0x88'AA'62, "Не удалось сохранить скриншот.");
     }
 
     *LPBOOL(g_sampBase.getAddress(0x12DD3C)) = FALSE; // g_bTakeScreenshot
+#endif
 }
 
 void FastScreenshot::Process() {
+    if (!g_Config["samp"]["isMakeQuickScreenshot"].get<bool>())
+        return;
+
     g_bIsSortScreenshot = g_Config["samp"]["isSortingScreenshots"].get<bool>();
     plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x74EB0), &TakeScreenshot);
+
+    if (g_bIsPlaySound = g_Config["samp"]["isPlaySoundAfterMakeScreenshot"].get<bool>())
+        g_initAudioTracks += initTakeScreenshotTrack;
 }
