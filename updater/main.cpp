@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <thread>
+#include <mutex>
 #include <tlhelp32.h>
 #include <filesystem>
 #include "resource.h"
@@ -29,13 +30,14 @@
 
 #include "json.hpp"
 
-class DownloadProgress;
 bool ProcessRunning(const wchar_t* name);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void setThemeImgui();
 void loadSVGToD3DTexture9(LPDIRECT3DDEVICE9 pDevice, char* svg_source, LPDIRECT3DTEXTURE9* pTexture, float scale);
 
 std::string getLastVersion();
+
+void workerFnc();
 
 WNDCLASSEXW g_wc{ sizeof(WNDCLASSEXW) };
 HWND g_hWnd{};
@@ -53,8 +55,28 @@ struct stProgressbarData {
     float m_fMaxRealProgress;
     float m_fRealProgress; // 0.0 .. max
 
-    std::string m_sStatus;
-} g_progressbar{ 0.0f, 3.0f, 0.0f, u8"скачивание мамки Лядова" };
+    struct stStatus {
+        bool m_bIsEdit; // true - changes; false - not changes
+        std::string m_sStatus;
+    } m_status;
+
+private:
+    std::mutex m_lock;
+
+public:
+    stProgressbarData(float progress, float maxRealProgress, float realProgress, const char* status = nullptr) :
+        m_fProgress(progress), m_fMaxRealProgress(maxRealProgress), m_fRealProgress(realProgress), m_status{false, !status ? "" : status}
+    {}
+
+    stStatus& getStatus(bool isOnlyRead = true) {
+        std::lock_guard<std::mutex> llock(m_lock);
+        while (m_status.m_bIsEdit) {}
+        m_status.m_bIsEdit = !isOnlyRead;
+        return m_status;
+    }
+    inline void endEditStatus() { m_status.m_bIsEdit = false; }
+    
+} g_progressbar{ 0.0f, 5.0f, 0.0f };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
@@ -62,9 +84,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
 #ifdef NDEBUG
     while (ProcessRunning(L"gta_sa.exe")) {}
-
-    static std::string fileURL = R"(https://github.com/Tim4ukys/patchGTARPClient/releases/download/v)" +
-        getLastVersion() + R"(/patchGTARPClientByTim4ukys.zip)";
 #endif
 
     ////////////////////
@@ -114,7 +133,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
         ImGuiIO& io = ImGui::GetIO();
         auto [fontMem, fontSizeMem] = loadRC(IDR_VGAFONT, RT_RCDATA);
-        io.Fonts->AddFontFromMemoryTTF(fontMem, fontSizeMem, 16.5f, NULL, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+        io.Fonts->AddFontFromMemoryTTF(fontMem, fontSizeMem, 16.5f, NULL, io.Fonts->GetGlyphRangesCyrillic());
 
         auto [svgDonateLogoData, szSvgDonateLogoData] = loadRC(IDR_DONATELOGO, RT_RCDATA);
         svgDonateLogoData[szSvgDonateLogoData - 1] = '\0';
@@ -143,14 +162,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         auto myAddSpaceItem = [](float space) { ImGui::SetCursorPosY(ImGui::GetCursorPosY() + space); };
         if (g_stateProgram == STATE_PROG::PROGRESSBAR) {
             myAddSpaceItem(5.f);
-            ImGui::Text(u8"Статус: %s", g_progressbar.m_sStatus.c_str());
+            ImGui::Text(u8"Статус: %s", g_progressbar.getStatus().m_sStatus.c_str());
             myAddSpaceItem(25.f);
             ImGui::ProgressBar(g_progressbar.m_fProgress, {-1, 40.0f});
-            if (g_progressbar.m_fRealProgress / g_progressbar.m_fMaxRealProgress > g_progressbar.m_fProgress)
+            if (0.5f < g_progressbar.m_fRealProgress - g_progressbar.m_fProgress * g_progressbar.m_fMaxRealProgress)
+                g_progressbar.m_fProgress += 0.1f;
+            else if (g_progressbar.m_fRealProgress / g_progressbar.m_fMaxRealProgress > g_progressbar.m_fProgress)
                 g_progressbar.m_fProgress += 0.01f;
-            if (g_progressbar.m_fProgress >= 1.0f) g_stateProgram = STATE_PROG::ADVERTISE;
 
-            //ImGui::SliderFloat("progress", &g_progressbar.m_fRealProgress, 0.0f, g_progressbar.m_fMaxRealProgress);
+            if (g_progressbar.m_fProgress >= 1.0f) g_stateProgram = STATE_PROG::ADVERTISE;
         }
         else {
             ImGui::SetCursorPos({25, 35});
@@ -162,7 +182,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             const auto buttonText = u8"Перейти на сайт";
             auto &&widthButtonText = ImGui::CalcTextSize(buttonText);
             ImGui::SetCursorPosX(pRParams->BackBufferWidth / 2 - widthButtonText.x / 2 - 10);
-            ImGui::Button(buttonText, ImVec2(widthButtonText.x + 20, 0));
+            if (ImGui::Button(buttonText, ImVec2(widthButtonText.x + 20, 0))) {
+                system("start https://www.donationalerts.com/r/tim4ukys");
+                PostQuitMessage(EXIT_SUCCESS);
+            }
         }
 
         ImGui::End();
@@ -176,6 +199,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     g_pRender->m_eventOnResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pRPParams) { ImGui_ImplDX9_CreateDeviceObjects(); };
 
     g_pRender->initD3D(g_hWnd);
+
+    std::thread workerThr{ workerFnc };
+    workerThr.detach();
 
     ShowWindow(g_hWnd, nCmdShow);
     UpdateWindow(g_hWnd);
@@ -416,6 +442,73 @@ public:
     virtual HRESULT __stdcall OnProgress(ULONG ulProgress, ULONG ulProgressMax, ULONG ulStatusCode, LPCWSTR szStatusText)
     {
         //SendMessage(g_hProgress, PBM_SETPOS, ULONG(ulProgressMax > 0 ? ulProgress / ulProgressMax * 100 : 0), 0);
+        if (ulProgressMax > 0)
+        {
+            thread_local static float START_PROGRESS = -1.0f;
+            if (START_PROGRESS == -1.0f) START_PROGRESS = g_progressbar.m_fRealProgress;
+            g_progressbar.m_fRealProgress = START_PROGRESS + ulProgress / ulProgressMax;
+            if (ulProgress / ulProgressMax == 1) START_PROGRESS = -1.0f;
+        }
         return S_OK;
     }
 };
+
+void workerFnc()
+{
+    auto changeStatus = [](const char* msg) { g_progressbar.getStatus(false).m_sStatus = msg; g_progressbar.endEditStatus(); };
+
+    changeStatus(u8"создание временного хранилища");
+
+    using namespace std::filesystem;
+    path tempDir{ "./.temp" };
+    if (!exists(tempDir)) {
+        create_directory(tempDir);
+    }
+
+    g_progressbar.m_fRealProgress = 1.0f;
+
+    ///////////
+
+    changeStatus(u8"скачивание архива");
+
+    const std::string fileURL = R"(https://github.com/Tim4ukys/patchGTARPClient/releases/download/v)" +
+        getLastVersion() + R"(/patchGTARPClientByTim4ukys.zip)";
+
+    DownloadProgress progress;
+    URLDownloadToFileA(NULL, fileURL.c_str(), (canonical(tempDir).string() + "\\arhiv.zip").c_str(), NULL, &progress);
+
+    //g_progressbar.m_fRealProgress = 2.0f;
+
+    ////////////
+
+    changeStatus(u8"распаковка архива");
+
+    auto unpackedFileFromAhrive = [](char* name, zip* p/*, float offsetProgress = 0.0f*/) {
+        zip_stat_t st;
+        zip_stat_init(&st);
+        zip_stat(p, name, 0, &st);
+
+        PCHAR cont = new char[st.size];
+        zip_file* f = zip_fopen(p, name, 0);
+        zip_fread(f, cont, st.size);
+        zip_fclose(f);
+
+        std::ofstream(name, std::ios_base::binary).write(cont, st.size);
+        delete[] cont;
+    };
+
+    int err{};
+    zip* p = zip_open(".temp\\arhiv.zip", 0, &err);
+    g_progressbar.m_fRealProgress = 3.0f;
+    unpackedFileFromAhrive("!000patchGTARPClientByTim4ukys.ASI", p);
+    g_progressbar.m_fRealProgress = 4.0f;
+    unpackedFileFromAhrive("gtarp_clientside.asi", p);
+    zip_close(p);
+    g_progressbar.m_fRealProgress = 4.5f;
+
+    ////////////
+
+    changeStatus(u8"удаление временных файлов");
+    remove_all(tempDir);
+    g_progressbar.m_fRealProgress = 5.0f;
+}
