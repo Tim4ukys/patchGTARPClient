@@ -17,6 +17,7 @@
 //#define DEBUG_SOUND
 
 bool g_bIsSortScreenshot;
+bool g_bIsPlaySound;
 void saveTexture(std::string szFileName, LPDIRECT3DTEXTURE9 frontBuff, LPDIRECT3DSURFACE9 pTemp, RECT r) {
     ((HRESULT(__stdcall*)(LPCSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DSURFACE9, CONST PALETTEENTRY*, CONST RECT*))g_sampBase.getAddress(0xC653A))(
         szFileName.c_str(), D3DXIFF_PNG, pTemp, NULL, &r);
@@ -106,9 +107,10 @@ void TakeScreenshot() {
         g_pSAMP->addChatMessage(0x88'AA'62,
                                 "Скриншот сохранен {FFA500}sa-mp-%03i.png {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
                                 iCount);
-
-        BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
-        BASS_ChannelPlay(g_hTakeSound, TRUE);
+        if (g_bIsPlaySound) {
+            BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
+            BASS_ChannelPlay(g_hTakeSound, TRUE);
+        }
     } else {
         g_pSAMP->addChatMessage(0x88'AA'62, "Не удалось сохранить скриншот.");
     }
@@ -123,5 +125,7 @@ void FastScreenshot::Process() {
 
     g_bIsSortScreenshot = g_Config["samp"]["isSortingScreenshots"].get<bool>();
     plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x74EB0), &TakeScreenshot);
-    g_initAudioTracks += initTakeScreenshotTrack;
+
+    if (g_bIsPlaySound = g_Config["samp"]["isPlaySoundAfterMakeScreenshot"].get<bool>())
+        g_initAudioTracks += initTakeScreenshotTrack;
 }
