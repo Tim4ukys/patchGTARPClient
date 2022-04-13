@@ -176,7 +176,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             ImGui::SetCursorPos({25, 35});
             ImGui::Image(g_donateLogo, { 50, 50 });
             ImGui::SameLine();
-            ImGui::Text(u8"Если вы хотете поддержать проект в финансовом плане,\n"
+            ImGui::Text(u8"Если вы хотите поддержать проект в финансовом плане,\n"
                         u8"то можете сделать это, задонатив на DonationAlerts");
 
             const auto buttonText = u8"Перейти на сайт";
