@@ -56,4 +56,6 @@ namespace snippets
         static WNDPROC s_pOrig;
         static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     };
+
+    std::array<int, 3> versionParse(const std::string& vers);
 };
