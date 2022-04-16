@@ -109,7 +109,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;capstone.lib;bass.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,7 +133,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;capstone.lib;bass.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -178,6 +178,8 @@
     <ClInclude Include="D3D9Hook.h" />
     <ClInclude Include="DelCarTable.h" />
     <ClInclude Include="DisableSnowWindow.h" />
+    <ClInclude Include="FastScreenshot.h" />
+    <ClInclude Include="FSignal.h" />
     <ClInclude Include="OldHUD.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="offsets.hpp" />
@@ -199,6 +201,8 @@
     <ClCompile Include="D3D9Hook.cpp" />
     <ClCompile Include="DelCarTable.cpp" />
     <ClCompile Include="DisableSnowWindow.cpp" />
+    <ClCompile Include="FastScreenshot.cpp" />
+    <ClCompile Include="FSignal.cpp" />
     <ClCompile Include="OldHUD.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -224,6 +228,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="help_overlay.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="screenshot.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

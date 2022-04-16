@@ -14,21 +14,21 @@ class OFFSETS {
 public:
 
 	enum class GTARP : unsigned int {
-        LOCKCONNECTTOOTHERSERVER = 0x494C,
-        INITTEXTURE_INITHOOK = 0x1BD3D,
-        INITTEXTURE_FNC = 0x1B710,
+        LOCKCONNECTTOOTHERSERVER = 0x5119,
+        INITTEXTURE_INITHOOK = 0x1C83D,
+        INITTEXTURE_FNC = 0x1C210,
 
-        ARRAYSERVERLOGO = 0xDAC2C, /* 01 - +0h, 02 - +4h, test - +8h*/
-        SERVERID = 0xCF990,
+        ARRAYSERVERLOGO = 0xD9DAC, /* 01 - +0h, 02 - +4h, test - +8h*/
+        SERVERID = 0xCEB20,
 
-        DRAWHUD = 0x1C100,
-        DRAWSPEEDOMETER_DRAWRAMKA = 0x25A22,
+        DRAWHUD = 0x1CC00,
+        DRAWSPEEDOMETER_DRAWRAMKA = 0x26412,
 
-        WANTEDLEVEL = 0xDAB1C,
+        WANTEDLEVEL = 0xD9B60,
 
-        DISABLECHECKTXD = 0xE6E4,
+        DISABLECHECKTXD = 0xF134,
 
-        DISABLEWINTERWINDOW = 0x25994
+        DISABLEWINTERWINDOW = 0x26384
 	};
 
     enum class SAMP : unsigned int {

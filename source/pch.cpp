@@ -10,6 +10,7 @@
 ****************************************************/
 #include "pch.h"
 
+SAMP* g_pSAMP = nullptr;
 D3D9Hook *g_pD3D9Hook = nullptr;
 Log g_Log("!000patchGTARPClientByTim4ukys.log");
 Config g_Config("!000patchGTARPClientByTim4ukys.json");

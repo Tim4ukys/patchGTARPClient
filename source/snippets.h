@@ -23,6 +23,8 @@ namespace snippets
     
     private:
         
+        std::mutex m_lock;
+
         char* m_pModuleName;
         union {
             HANDLE pHandl;
@@ -43,4 +45,15 @@ namespace snippets
     * @return char строка
     */
     std::string ConvertWideToANSI(const wchar_t* wstr);
+
+    class WinProcHeader {
+    public:
+
+        static void Init();
+        static PLH::x86Detour* regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader);
+
+    private:
+        static WNDPROC s_pOrig;
+        static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    };
 };

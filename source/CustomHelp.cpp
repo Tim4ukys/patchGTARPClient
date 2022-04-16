@@ -17,8 +17,7 @@
 D3DXIMAGE_INFO     g_ImageInfo;
 LPDIRECT3DTEXTURE9 g_pTexture;
 LPD3DXSPRITE g_pSprite;
-//RECT               g_windowRect;
-DWORD g_dwWindowSize[2];
+UINT g_uiWindowSize[2];
 
 // ---------------------------
 
@@ -34,14 +33,8 @@ LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
         }
         break;
-    case WM_SIZING:
-        //LPRECT(lParam)
-        //memcpy(&g_windowRect, PVOID(lParam), sizeof(RECT));
-        g_dwWindowSize[0] = LPRECT(lParam)->right - LPRECT(lParam)->left;
-        g_dwWindowSize[1] = LPRECT(lParam)->bottom - LPRECT(lParam)->top;
-        break;
     }
-    return CallWindowProcA(m_pWindowProc, hWnd, msg, wParam, lParam);
+    return m_pWindowProc(hWnd, msg, wParam, lParam);
 }
 
 void showHelpDialogHook() {
@@ -61,18 +54,16 @@ void CustomHelp::Process() {
                                          D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0xFF000000, NULL, NULL, &g_pTexture);
         D3DXCreateSprite(pDevice, &g_pSprite);
 
-        RECT r;
-        GetClientRect(**(HWND**)0xC17054, &r);
-        g_dwWindowSize[0] = r.right - r.left;
-        g_dwWindowSize[1] = r.bottom - r.top;
-
-        m_pWindowProc = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
+        //m_pWindowProc = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
+        snippets::WinProcHeader::regWinProc(WndProcHandler, &m_pWindowProc);
         plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x6B3C0), &showHelpDialogHook);
     };
     g_pD3D9Hook->onLostDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
         g_pSprite->OnLostDevice();
     };
     g_pD3D9Hook->onResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
+        memcpy(g_uiWindowSize, pPresentParams, sizeof(UINT) * 2);
+        g_Log.Write("[CustomHelp]: <DeviceReset> g_uiWindowSize: %u.%u", g_uiWindowSize[0], g_uiWindowSize[1]);
         g_pSprite->OnResetDevice();
     };
     g_pD3D9Hook->onPresentEvent += [](IDirect3DDevice9* pDevice, const RECT* pSrcRect, const RECT* pDestRect,
@@ -81,8 +72,8 @@ void CustomHelp::Process() {
 
         if (SUCCEEDED(g_pSprite->Begin(D3DXSPRITE_ALPHABLEND))) {
             D3DXMATRIX matWH;
-            D3DXMatrixScaling(&matWH, FLOAT(g_dwWindowSize[0]) / FLOAT(g_ImageInfo.Width),
-                              FLOAT(g_dwWindowSize[1]) / FLOAT(g_ImageInfo.Height), 0.0f);
+            D3DXMatrixScaling(&matWH, FLOAT(g_uiWindowSize[0]) / FLOAT(g_ImageInfo.Width),
+                              FLOAT(g_uiWindowSize[1]) / FLOAT(g_ImageInfo.Height), 0.0f);
             g_pSprite->SetTransform(&matWH);
             g_pSprite->Draw(g_pTexture, 0, 0, 0, -1);
             g_pSprite->End();

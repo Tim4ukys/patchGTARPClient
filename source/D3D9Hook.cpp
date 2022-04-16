@@ -62,6 +62,7 @@ void D3D9Hook::initHooks() {
     }
 }
 void D3D9Hook::initDeviceHook() {
+    snippets::WinProcHeader::Init();
     g_pD3D9Hook->initHooks();
     return ((void (*)())g_pD3D9Hook->m_pInitDevice->getOriginal())();
 }

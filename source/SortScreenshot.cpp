@@ -12,7 +12,7 @@
 #include "SortScreenshot.h"
 #include "offsets.hpp"
 
-/* Этот файл сортирует скриншоты по датам */
+/* Р­С‚РѕС‚ С„Р°Р№Р» СЃРѕСЂС‚РёСЂСѓРµС‚ СЃРєСЂРёРЅС€РѕС‚С‹ РїРѕ РґР°С‚Р°Рј */
 
 void SortScreenshot::Process() {
     if (g_Config["samp"]["isSortingScreenshots"].get<bool>()) {
@@ -23,7 +23,7 @@ void SortScreenshot::Process() {
         auto t = time(0);
         auto pLocalTime = localtime(&t);
         
-        SYSTEMTIME - быстрее в ~7 раз
+        SYSTEMTIME - Р±С‹СЃС‚СЂРµРµ РІ ~7 СЂР°Р·
         */
 
         SYSTEMTIME timeInfo;

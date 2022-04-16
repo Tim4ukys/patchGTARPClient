@@ -10,11 +10,12 @@
 ****************************************************/
 #include "pch.h"
 #include "offsets.hpp"
+#include <process.h>
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
-const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
+const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
 
-#define CURRENT_VERSION "6.0.0"
+#define CURRENT_VERSION "7.0.0"
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
@@ -30,6 +31,7 @@ const char GTARP_CMP[] = "5E5DC20400CCCCCCCCCC";
 #include "SortScreenshot.h"
 #include "DisableSnowWindow.h"
 #include "CustomHelp.h"
+#include "FastScreenshot.h"
 
 // ----------------------------------------
 
@@ -46,6 +48,19 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
     if (!wcscmp(_a1->pPluginName, L"gtarp_clientside.asi"))
     {
+        if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
+            auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+            auto vers = j["vers"].get<std::string>();
+            if (strcmp(vers.c_str(), CURRENT_VERSION) != NULL) {
+                //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
+                PROCESS_INFORMATION info;
+                STARTUPINFOA         infoStart{sizeof(STARTUPINFO)};
+                CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
+                //system("updater_patchGTARPclient.exe");
+                TerminateProcess(GetCurrentProcess(), -1);
+            }
+        }
+
         if (auto cmp = patch::getHEX(g_gtarpclientBase.getAddress(0xBABE), 10U); cmp != GTARP_CMP) {
             MessageBoxW(
                 NULL,
@@ -74,11 +89,16 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
-#define PROCESS(a) {a::Process}
-        std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                                     PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
-        for (const auto& fnc : cock)
-            fnc();
+#define PROCESS(a) {std::thread(a::Process)}
+        //std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
+                                     //PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
+        //for (const auto& fnc : cock)
+            //fnc();
+        std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp),
+                           PROCESS(FastScreenshot)};
+        for (auto& thr : cock)
+            thr.join();
 #undef PROCESS
 
         g_Log << "[loader]: end patching. Destroy 'LdrpDereferenceModule' hook.";
@@ -90,7 +110,6 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 // ------------------------------
 
-SAMP*           g_pSAMP=nullptr;
 uint64_t        g_ui64GameLoopJumpTrampline;
 PLH::x86Detour* g_pGameLoopDetour = nullptr;
 NOINLINE void   gameLoopDetourFNC() {
@@ -99,7 +118,7 @@ NOINLINE void   gameLoopDetourFNC() {
     static bool s_bIsInit = false;
     if (s_bIsInit || !g_pSAMP->isSAMPInit())
         return;
-
+    
     static auto s_oldTime = GetTickCount64();
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
     {
@@ -114,6 +133,30 @@ NOINLINE void   gameLoopDetourFNC() {
         g_Log.Write("[UPDATE]: Last version: %s", vers.c_str());
         s_bIsInit = true;
     }
+}
+
+// ------------------------------
+// Audio engine
+
+FSignal<void()> g_initAudioTracks;
+
+uint64_t g_uiOrigAudioInit;
+PLH::x86Detour *g_pAudioInitDetour;
+int __fastcall initSAMPDetour(PVOID pthis, PVOID trash, char* a2, int a3, const char* a4, int a5) {
+    BASS_Init(-1, 44100, 0, 0, nullptr);
+
+    size_t&&                 size_a_cocks = g_initAudioTracks.size();
+    std::vector<std::thread> cocks;
+    cocks.resize(size_a_cocks);
+    for (size_t i{}; i < size_a_cocks; ++i) {
+        cocks[i] = std::thread(g_initAudioTracks[i]);
+    }
+
+    for (auto& thr : cocks)
+        thr.join();
+
+
+    return FNC_CAST(initSAMPDetour, g_uiOrigAudioInit)(pthis, trash, a2, a3, a4, a5);
 }
 
 // ------------------------------
@@ -153,6 +196,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
         g_pLdrpDereferenceModule = new patch::callHook(addr);
         g_pLdrpDereferenceModule->installHook(&loadModule, false);
+
+        g_pAudioInitDetour = new PLH::x86Detour(PCHAR(g_sampBase.getAddress(0xB5F0)), PCHAR(&initSAMPDetour), &g_uiOrigAudioInit, dis);
+        g_pAudioInitDetour->hook();
     }
         break;
     case DLL_PROCESS_DETACH:
@@ -161,6 +207,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         SAFE_DELETE(g_pSAMP);
         SAFE_DELETE(g_pGameLoopDetour);
         g_Config.saveFile();
+        BASS_Free();
         break;
     }
     return TRUE;

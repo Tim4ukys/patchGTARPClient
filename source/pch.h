@@ -11,6 +11,8 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define FNC_CAST(fnc, addr) ((decltype(fnc)*)addr)
+
 #define SAFE_DELETE(p) \
     if (p) { \
         delete p; \
@@ -41,6 +43,8 @@
 #include <regex>
 #include <filesystem>
 #include <fstream>
+#include <thread>
+#include <mutex>
 
 
 // C (Old-Library)
@@ -82,9 +86,11 @@
 
 // third_party
 #include "json.hpp"
+#include "bass.h"
 
 
 // my library
+#include "FSignal.h"
 #include "patch.h" 
 #include "client.h"
 #include "snippets.h"
@@ -93,10 +99,13 @@
 #include "SAMP.h"
 #include "D3D9Hook.h"
 
+extern SAMP*    g_pSAMP;
 extern D3D9Hook *g_pD3D9Hook;
 extern Log      g_Log;
 extern Config   g_Config;
 extern snippets::DynamicLibrary g_gtarpclientBase;
 extern snippets::DynamicLibrary g_sampBase;
+
+extern FSignal<void()> g_initAudioTracks;
 
 #endif //PCH_H
