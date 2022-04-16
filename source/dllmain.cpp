@@ -15,7 +15,18 @@
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
 
-#define CURRENT_VERSION "7.0.0"
+#define DECLARATION_VERSION(v_maj, v_min, v_patch) \
+    const int CURRENT_VERSION_MAJ = v_maj; \
+    const int CURRENT_VERSION_MIN = v_min; \
+    const int CURRENT_VERSION_PAT = v_patch;
+
+DECLARATION_VERSION(7, 0, 1)
+#define CURRENT_VERSION "7.0.1"
+#define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
+    (NEW_MAJ > old_maj ||  \
+    (NEW_MAJ == old_maj && NEW_MIN > old_min) || \
+    (NEW_MAJ == old_maj && NEW_MIN == old_min && NEW_PATCH > old_patch))
+
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
@@ -50,8 +61,10 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
     {
         if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
             auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-            auto vers = j["vers"].get<std::string>();
-            if (strcmp(vers.c_str(), CURRENT_VERSION) != NULL) {
+            auto [vMaj, vMin, vPatch] = snippets::versionParse(j["vers"].get<std::string>());
+
+            if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
+            {
                 //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
                 PROCESS_INFORMATION info;
                 STARTUPINFOA         infoStart{sizeof(STARTUPINFO)};
@@ -123,14 +136,14 @@ NOINLINE void   gameLoopDetourFNC() {
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
     {
         auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-        auto vers = j["vers"].get<std::string>();
-        if (strcmp(vers.c_str(), CURRENT_VERSION) != NULL)
+        auto [vMaj, vMin, vPatch] = snippets::versionParse(j["vers"].get<std::string>());
+        if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
         {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}ВНИМАНИЕ: {FF9900}Вышло обновление!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
-        g_Log.Write("[UPDATE]: Last version: %s", vers.c_str());
+        g_Log.Write("[UPDATE]: Last version: %d.%d.%d", vMaj, vMin, vPatch);
         s_bIsInit = true;
     }
 }
