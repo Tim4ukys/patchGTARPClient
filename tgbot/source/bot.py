@@ -67,7 +67,7 @@ def checkingUdpdateThread(v_pacth):
 
             arrPhoto = []
             isMedia = False
-            d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/changelogs.json').text)
+            d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/last_changelog.json').text)
             if len(d['img']) != 0:
                 arrImg = d['img']
                 arrPhoto = [ InputMediaPhoto(arrImg[0], caption=d['msg']['text'], parse_mode=d['msg']['style']) ]
