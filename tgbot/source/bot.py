@@ -61,7 +61,7 @@ versPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/
 def checkingUdpdateThread(v_pacth):
     while 1:
         sleep(60)
-        newVersPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)["vers"]
+        newVersPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/beta/update.json').text)["vers"]
         if v_pacth != newVersPatch:
             v_pacth = newVersPatch
 
