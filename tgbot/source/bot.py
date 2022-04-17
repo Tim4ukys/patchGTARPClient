@@ -27,7 +27,7 @@ def get_text_messages(message):
                     arrPhoto.append(InputMediaPhoto(raw))
             bot.send_media_group(message.from_user.id, arrPhoto)
         else:
-            bot.send_message(message.from_user.id, caption=d['msg']['text'] + "\n\nto be continued", parse_mode=d['msg']['style'])
+            bot.send_message(message.from_user.id, d['msg']['text'] + "\n\nto be continued", parse_mode=d['msg']['style'])
 
     elif message.text == "/help":
         bot.send_message(message.from_user.id, 
@@ -61,7 +61,7 @@ versPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/
 def checkingUdpdateThread(v_pacth):
     while 1:
         sleep(60)
-        newVersPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/beta/update.json').text)["vers"]
+        newVersPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)["vers"]
         if v_pacth != newVersPatch:
             v_pacth = newVersPatch
 
@@ -82,7 +82,7 @@ def checkingUdpdateThread(v_pacth):
                     if isMedia == True:
                         bot.send_media_group(row[0], arrPhoto)
                     else:
-                        bot.send_message(row[0], caption=d['msg']['text'], parse_mode=d['msg']['style'])
+                        bot.send_message(row[0], d['msg']['text'], parse_mode=d['msg']['style'])
                 except:
                     db.set_active(row[0], 0)
 
