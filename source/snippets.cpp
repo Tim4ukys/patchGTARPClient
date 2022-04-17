@@ -86,3 +86,18 @@ PLH::x86Detour* snippets::WinProcHeader::regWinProc(WNDPROC pNewHeader, WNDPROC*
 LRESULT __stdcall snippets::WinProcHeader::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return CallWindowProcA(s_pOrig, hWnd, msg, wParam, lParam);
 }
+
+// -------------------------
+
+std::array<int, 3> snippets::versionParse(const std::string& vers) {
+    const std::regex r{R"(([\w]+)\.([\w]+)\.([\w]+))"};
+    std::smatch      m;
+
+    std::array<int, 3> resolve;
+    if (std::regex_search(vers, m, r)) {
+        for (size_t i{0}; i < 3;) {
+            resolve[i++] = std::atoi(m[i + 1].str().c_str());
+        }
+    }
+    return resolve;
+}
