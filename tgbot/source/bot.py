@@ -4,6 +4,7 @@ import json
 import requests
 import threading
 import tk
+from telebot.types import InputMediaPhoto
 
 from db import Database
 db = Database('database.db')
@@ -17,9 +18,17 @@ def get_text_messages(message):
         d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)
         bot.send_message(message.from_user.id, "*Последняя версия плагина:* _" + d['vers'] + "_")
     elif message.text == "/last_changelog":
-        bot.send_message(message.from_user.id,
-            requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/changelogs.txt').text + 
-            "\n\n...\nto be continued")
+        d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/changelogs.json').text)
+        if len(d['img']) != 0:
+            arrImg = d['img']
+            arrPhoto = [ InputMediaPhoto(arrImg[0], caption=d['msg']['text'] + "\n\nto be continued", parse_mode=d['msg']['style']) ]
+            if len(d['img']) > 1:
+                for raw in arrImg[1:]:
+                    arrPhoto.append(InputMediaPhoto(raw))
+            bot.send_media_group(message.from_user.id, arrPhoto)
+        else:
+            bot.send_message(message.from_user.id, caption=d['msg']['text'] + "\n\nto be continued", parse_mode=d['msg']['style'])
+
     elif message.text == "/help":
         bot.send_message(message.from_user.id, 
             "*/check_version* - Узнать актуальную версию плагина на данный момент\n"
@@ -53,14 +62,27 @@ def checkingUdpdateThread(v_pacth):
     while 1:
         sleep(60)
         newVersPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)["vers"]
-        if not v_pacth == newVersPatch:
+        if v_pacth != newVersPatch:
             v_pacth = newVersPatch
 
-            lastChangelog = requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/last_changelog.txt').text
+            arrPhoto = []
+            isMedia = False
+            d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/changelogs.json').text)
+            if len(d['img']) != 0:
+                arrImg = d['img']
+                arrPhoto = [ InputMediaPhoto(arrImg[0], caption=d['msg']['text'], parse_mode=d['msg']['style']) ]
+                if len(d['img']) > 1:
+                    for raw in arrImg[1:]:
+                        arrPhoto.append(InputMediaPhoto(raw))
+                isMedia = True
+
             users = db.get_active_users()
             for row in users:
                 try:
-                    bot.send_message(row[0], "❗️ОБНОВЛЕНИЕ❗️\n\nНовая версия " + lastChangelog)
+                    if isMedia == True:
+                        bot.send_media_group(row[0], arrPhoto)
+                    else:
+                        bot.send_message(row[0], caption=d['msg']['text'], parse_mode=d['msg']['style'])
                 except:
                     db.set_active(row[0], 0)
 
