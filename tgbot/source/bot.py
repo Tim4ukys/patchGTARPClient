@@ -3,11 +3,12 @@ import telebot
 import json
 import requests
 import threading
+import tk
 
 from db import Database
 db = Database('database.db')
 
-bot = telebot.TeleBot('TOP-SECRET', parse_mode='MARKDOWN');
+bot = telebot.TeleBot(tk.TOKEN_MY_BOT, parse_mode='MARKDOWN');
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
