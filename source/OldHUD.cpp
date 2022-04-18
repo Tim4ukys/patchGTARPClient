@@ -18,6 +18,8 @@
 * 2) Фиксит время на часах(показывает время по МСК)
 * 3) Исправляет уровень розыска
 * 4) Фиксит положение иконки сервера и его размер
+* 
+* 5) Возвращает старый радар
 */
 
 // ----------------------------------------------------------
@@ -102,42 +104,62 @@ NOINLINE void   loadTextureHudDetourFNC() {
 }
 
 // -----------------------------
+// return old path TXD
+
+patch::callHook *g_pDetourFmtDirPath;
+
+int fmtDirPath(char* a1 /*obuf*/, char* a2 /*fmt*/, char* a3 /*currPath*/, int a4 /*idTXDArhive*/) {
+    return ((int (*)(char*, const char*, ...))g_pDetourFmtDirPath->getOriginal())(a1,
+                                                                                  g_Config["oldHud"]["pathToTXDhud"].get<std::string>().c_str(),
+                                                                                  a3);
+}
+
+// -----------------------------
 
 void OldHUD::Process() {
+    if (g_Config["oldHud"]["hud"].get<bool>()) {
+        bFixTimeZone = g_Config["clock"]["fixTimeZone"].get<bool>();
 
-    bFixTimeZone = g_Config["clock"]["fixTimeZone"].get<bool>();
+        g_serverIcon.m_bState = g_Config["serverIcon"]["state"].get<bool>();
+        g_serverIcon.m_fIconPos[0] = g_Config["serverIcon"]["x"].get<float>();
+        g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
 
-    g_serverIcon.m_bState = g_Config["serverIcon"]["state"].get<bool>();
-    g_serverIcon.m_fIconPos[0] = g_Config["serverIcon"]["x"].get<float>();
-    g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
+        // --------
 
-    // --------
+        auto dis = PLH::CapstoneDisassembler(PLH::Mode::x86);
 
-    auto dis = PLH::CapstoneDisassembler(PLH::Mode::x86);
+        /*
+            Возрващает самповский худ
+            .text:0002B81D - start nop
+            .text:0002B97A - end
+            ---
+            size = 0x168
+        */
+        patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x15D, 0x90);
 
-    /*
-        Возрващает самповский худ
-        .text:0002B81D - start nop
-        .text:0002B97A - end
-        ---
-        size = 0x168
-    */
-    patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x15D, 0x90);
+        /* Возвращает часы */
+        patch::fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);
 
-    /* Возвращает часы */
-    patch::fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);
-    
-    /* Фиксит время на часах */
-    plugin::patch::ReplaceFunctionCall(static_cast<uint32_t>(OFFSETS::GTA_SA::DRAWHUD_CLOCK_SPRINTF), &drawClockSprintfDetourFNC);
+        /* Фиксит время на часах */
+        plugin::patch::ReplaceFunctionCall(static_cast<uint32_t>(OFFSETS::GTA_SA::DRAWHUD_CLOCK_SPRINTF), &drawClockSprintfDetourFNC);
 
-    /* Исправляет уровень розыска */
-    g_pDrawWantedDetour = new PLH::x86Detour(reinterpret_cast<PCHAR>(OFFSETS::GTA_SA::DRAWWANTED), reinterpret_cast<PCHAR>(&drawWantedDetourFNC), 
-        &g_ui64DrawWantedJumpTrampline, dis);
-    g_pDrawWantedDetour->hook();
+        /* Исправляет уровень розыска */
+        g_pDrawWantedDetour = new PLH::x86Detour(reinterpret_cast<PCHAR>(OFFSETS::GTA_SA::DRAWWANTED), reinterpret_cast<PCHAR>(&drawWantedDetourFNC),
+                                                 &g_ui64DrawWantedJumpTrampline, dis);
+        g_pDrawWantedDetour->hook();
 
-    /* Фиксит положение иконки сервера */
-    g_pLoadTextureHudDetour = new PLH::x86Detour(
-        reinterpret_cast<PCHAR>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_FNC)), reinterpret_cast<PCHAR>(&loadTextureHudDetourFNC),
-        &g_ui64LoadTextureHudJumpTrampline, dis);
-    g_pLoadTextureHudDetour->hook();
+        /* Фиксит положение иконки сервера */
+        g_pLoadTextureHudDetour = new PLH::x86Detour(
+            reinterpret_cast<PCHAR>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_FNC)), reinterpret_cast<PCHAR>(&loadTextureHudDetourFNC),
+            &g_ui64LoadTextureHudJumpTrampline, dis);
+        g_pLoadTextureHudDetour->hook();
+    }
+    if (g_Config["oldHud"]["radar"].get<bool>()) {
+        /* Возвращает радар */
+        patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_CALL_SET_CUSTOM_RADAR), 0x5, 0x90);
+    }
+    if (strcmp(g_Config["oldHud"]["pathToTXDhud"].get<std::string>().c_str(), "NONE") != 0) {
+        g_pDetourFmtDirPath = new patch::callHook(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::CUSTOM_PATH_TXD_HUD));
+        g_pDetourFmtDirPath->installHook(PVOID(&fmtDirPath), false);
+    }
 }
