@@ -25,6 +25,6 @@ private:
 	json        j;
     std::string m_fileName;
 
-	bool isAllKeysCorrrect();
-    void loadDefaultConfig();
+	void restoreAndCheckKeysCorrect();
+    //void loadDefaultConfig();
 };

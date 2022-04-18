@@ -18,13 +18,10 @@ Config::Config(std::string fileName)
     if (std::filesystem::exists(cfile)) {
         std::ifstream fconf{m_fileName};
         fconf >> j;
-
-        if (isAllKeysCorrrect())
-            return;
-        g_Log << "[Config]: Broken JSON config. Recreate..";
     } else
         g_Log << "[Config]: file don't exists. Recreate..";
-    loadDefaultConfig();
+
+    restoreAndCheckKeysCorrect();
     saveFile();
 }
 Config::~Config() {
@@ -36,52 +33,64 @@ void Config::saveFile() {
     oFile << j.dump(4);
 }
 
-void Config::loadDefaultConfig() {
-    j = R"(
-    {
-        "clock": {
-            "fixTimeZone": true
-        },
-        "samp": {
-            "fontFaceName": "Comic Sans MS",
-            "isCustomFont": true,
-            "isSortingScreenshots": true,
-            "isWhiteID": true,
-            "isCustomF1": true,
-            "isMakeQuickScreenshot": true,
-            "isPlaySoundAfterMakeScreenshot": true
-        },
-        "serverIcon": {
-            "state": false,
-            "x": 656.0,
-            "y": 28.0
-        },
-        "vehicleHud": {
-            "isDrawHelpTablet": false,
-            "isDisableSnowWindow": true
-        }
+#define SET_DEFAULT_STR(js, str_key, str_def) \
+    if (!(js)[str_key].is_string()) { \
+        (js)[str_key] = str_def; \
     }
-    )"_json;
-}
 
-bool Config::isAllKeysCorrrect() {
-    if (
-        j["serverIcon"].is_structured() &&
-        j["serverIcon"]["state"].is_boolean() && j["serverIcon"]["x"].is_number_float() && j["serverIcon"]["y"].is_number_float() &&
+#define SET_DEFAULT_INT(js, str_key, int_def) \
+    if (!(js)[str_key].is_number_integer()) { \
+        (js)[str_key] = int_def; \
+    }
 
-        j["vehicleHud"].is_structured() &&
-        j["vehicleHud"]["isDrawHelpTablet"].is_boolean() && j["vehicleHud"]["isDisableSnowWindow"].is_boolean() &&
+#define SET_DEFAULT_FLT(js, str_key, flt_def) \
+    if (!(js)[str_key].is_number_float()) { \
+        (js)[str_key] = flt_def; \
+    }
 
-        j["samp"].is_structured() &&
-        j["samp"]["isWhiteID"].is_boolean() && j["samp"]["isCustomFont"].is_boolean() && j["samp"]["fontFaceName"].is_string() &&
-        j["samp"]["isSortingScreenshots"].is_boolean() && j["samp"]["isCustomF1"].is_boolean() &&
-        j["samp"]["isMakeQuickScreenshot"].is_boolean() && j["samp"]["isPlaySoundAfterMakeScreenshot"].is_boolean() &&
+#define SET_DEFAULT_BOOL(js, str_key, bool_def) \
+    if (!(js)[str_key].is_boolean()) { \
+        (js)[str_key] = bool_def; \
+    }
 
-        j["clock"].is_structured() &&
-        j["clock"]["fixTimeZone"].is_boolean())
-        return true;
-    else
-        return false;
+void Config::restoreAndCheckKeysCorrect() {
+    auto safeLoadStruct = [](nlohmann::json* jch, std::function<void()> fnc) -> void {
+        if (!jch->is_structured()) {
+            jch->clear();
+        }
+        fnc();
+    };
+    nlohmann::json* chkJs = &j["oldHud"];
+    safeLoadStruct(chkJs, [chkJs]() {
+        SET_DEFAULT_BOOL(*chkJs, "radar", false)
+        SET_DEFAULT_BOOL(*chkJs, "hud", true)
+        SET_DEFAULT_STR(*chkJs, "pathToTXDhud", "NONE")
+    });
+    chkJs = &j["clock"];
+    safeLoadStruct(chkJs, [chkJs]() {
+        SET_DEFAULT_BOOL(*chkJs, "fixTimeZone", true)
+    });
+    chkJs = &j["samp"];
+    safeLoadStruct(chkJs, [chkJs]() {
+        SET_DEFAULT_STR(*chkJs, "fontFaceName", "Comic Sans MS")
+        SET_DEFAULT_BOOL(*chkJs, "isCustomFont", false)
+        SET_DEFAULT_BOOL(*chkJs, "isSortingScreenshots", true)
+        SET_DEFAULT_BOOL(*chkJs, "isWhiteID", true)
+        SET_DEFAULT_BOOL(*chkJs, "isCustomF1", true)
+        SET_DEFAULT_BOOL(*chkJs, "isMakeQuickScreenshot", true)
+        SET_DEFAULT_BOOL(*chkJs, "isPlaySoundAfterMakeScreenshot", true)
+    });
+    chkJs = &j["serverIcon"];
+    safeLoadStruct(chkJs, [chkJs]() {
+        SET_DEFAULT_BOOL(*chkJs, "state", false)
+        SET_DEFAULT_FLT(*chkJs, "x", 656.0)
+        SET_DEFAULT_FLT(*chkJs, "y", 28.0)
+    });
+    chkJs = &j["vehicleHud"];
+    safeLoadStruct(chkJs, [chkJs]() {
+        SET_DEFAULT_BOOL(*chkJs, "isDrawHelpTablet", false)
+        SET_DEFAULT_BOOL(*chkJs, "isDisableSnowWindow", true)
+    });
 }
 
 nlohmann::json& Config::getJSON() {
