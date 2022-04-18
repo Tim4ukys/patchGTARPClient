@@ -54,42 +54,38 @@ void Config::saveFile() {
     }
 
 void Config::restoreAndCheckKeysCorrect() {
-    auto safeLoadStruct = [](nlohmann::json* jch, std::function<void()> fnc) -> void {
-        if (!jch->is_structured()) {
-            jch->clear();
+    auto safeLoadStruct = [](nlohmann::json& jch, const char* key, std::function<void(nlohmann::json&)> fnc) -> void {
+        if (!jch[key].is_structured()) {
+            //g_Log.Write("type: %s", jch.type_name());
+            jch.erase(key);
         }
-        fnc();
+        fnc(jch[key]);
     };
-    nlohmann::json* chkJs = &j["oldHud"];
-    safeLoadStruct(chkJs, [chkJs]() {
-        SET_DEFAULT_BOOL(*chkJs, "radar", false)
-        SET_DEFAULT_BOOL(*chkJs, "hud", true)
-        SET_DEFAULT_STR(*chkJs, "pathToTXDhud", "NONE")
+    safeLoadStruct(j, "oldHud", [](nlohmann::json &jn) {
+        SET_DEFAULT_BOOL(jn, "radar", false)
+        SET_DEFAULT_BOOL(jn, "hud", true)
+        SET_DEFAULT_STR(jn, "pathToTXDhud", "NONE")
     });
-    chkJs = &j["clock"];
-    safeLoadStruct(chkJs, [chkJs]() {
-        SET_DEFAULT_BOOL(*chkJs, "fixTimeZone", true)
+    safeLoadStruct(j, "clock", [](nlohmann::json& jn) {
+        SET_DEFAULT_BOOL(jn, "fixTimeZone", true)
     });
-    chkJs = &j["samp"];
-    safeLoadStruct(chkJs, [chkJs]() {
-        SET_DEFAULT_STR(*chkJs, "fontFaceName", "Comic Sans MS")
-        SET_DEFAULT_BOOL(*chkJs, "isCustomFont", false)
-        SET_DEFAULT_BOOL(*chkJs, "isSortingScreenshots", true)
-        SET_DEFAULT_BOOL(*chkJs, "isWhiteID", true)
-        SET_DEFAULT_BOOL(*chkJs, "isCustomF1", true)
-        SET_DEFAULT_BOOL(*chkJs, "isMakeQuickScreenshot", true)
-        SET_DEFAULT_BOOL(*chkJs, "isPlaySoundAfterMakeScreenshot", true)
+    safeLoadStruct(j, "samp", [](nlohmann::json& jn) {
+        SET_DEFAULT_STR(jn, "fontFaceName", "Comic Sans MS")
+        SET_DEFAULT_BOOL(jn, "isCustomFont", false)
+        SET_DEFAULT_BOOL(jn, "isSortingScreenshots", true)
+        SET_DEFAULT_BOOL(jn, "isWhiteID", true)
+        SET_DEFAULT_BOOL(jn, "isCustomF1", true)
+        SET_DEFAULT_BOOL(jn, "isMakeQuickScreenshot", true)
+        SET_DEFAULT_BOOL(jn, "isPlaySoundAfterMakeScreenshot", true)
     });
-    chkJs = &j["serverIcon"];
-    safeLoadStruct(chkJs, [chkJs]() {
-        SET_DEFAULT_BOOL(*chkJs, "state", false)
-        SET_DEFAULT_FLT(*chkJs, "x", 656.0)
-        SET_DEFAULT_FLT(*chkJs, "y", 28.0)
+    safeLoadStruct(j, "serverIcon", [](nlohmann::json& jn) {
+        SET_DEFAULT_BOOL(jn, "state", false)
+        SET_DEFAULT_FLT(jn, "x", 656.0)
+        SET_DEFAULT_FLT(jn, "y", 28.0)
     });
-    chkJs = &j["vehicleHud"];
-    safeLoadStruct(chkJs, [chkJs]() {
-        SET_DEFAULT_BOOL(*chkJs, "isDrawHelpTablet", false)
-        SET_DEFAULT_BOOL(*chkJs, "isDisableSnowWindow", true)
+    safeLoadStruct(j, "vehicleHud", [](nlohmann::json& jn) {
+        SET_DEFAULT_BOOL(jn, "isDrawHelpTablet", false)
+        SET_DEFAULT_BOOL(jn, "isDisableSnowWindow", true)
     });
 }
 
