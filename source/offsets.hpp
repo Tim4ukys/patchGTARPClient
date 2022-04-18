@@ -28,7 +28,10 @@ public:
 
         DISABLECHECKTXD = 0xF134,
 
-        DISABLEWINTERWINDOW = 0x26384
+        DISABLEWINTERWINDOW = 0x26384,
+
+        DISABLE_CALL_SET_CUSTOM_RADAR = 0xF486,
+        CUSTOM_PATH_TXD_HUD = 0x2F626
 	};
 
     enum class SAMP : unsigned int {
