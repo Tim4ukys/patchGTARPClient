@@ -106,17 +106,25 @@ NOINLINE void   loadTextureHudDetourFNC() {
 // -----------------------------
 // return old path TXD
 
-patch::callHook *g_pDetourFmtDirPath;
-
 int fmtDirPath(char* a1 /*obuf*/, char* a2 /*fmt*/, char* a3 /*currPath*/, int a4 /*idTXDArhive*/) {
-    return ((int (*)(char*, const char*, ...))g_pDetourFmtDirPath->getOriginal())(a1,
-                                                                                  g_Config["oldHud"]["pathToTXDhud"].get<std::string>().c_str(),
-                                                                                  a3);
+    return wsprintfA(a1, g_Config["oldHud"]["pathToTXDhud"].get<std::string>().c_str(), a3);
+}
+
+// -----------------------------
+// scale fix
+
+uint64_t        g_ui64HudScaleFixDetourJumpTrampline;
+PLH::x86Detour* g_pHudScaleFixDetourDetour = nullptr;
+bool*           g_pSAMPHudScale;
+void hudScaleFixDetour(PCHAR a1) {
+    FNC_CAST(hudScaleFixDetour, g_ui64HudScaleFixDetourJumpTrampline)(a1);
+    g_Config["oldHud"]["radarScaleFix"] = *g_pSAMPHudScale/* ^ true*/;
 }
 
 // -----------------------------
 
 void OldHUD::Process() {
+    auto dis = PLH::CapstoneDisassembler(PLH::Mode::x86);
     if (g_Config["oldHud"]["hud"].get<bool>()) {
         bFixTimeZone = g_Config["clock"]["fixTimeZone"].get<bool>();
 
@@ -125,8 +133,6 @@ void OldHUD::Process() {
         g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
 
         // --------
-
-        auto dis = PLH::CapstoneDisassembler(PLH::Mode::x86);
 
         /*
             Возрващает самповский худ
@@ -159,7 +165,20 @@ void OldHUD::Process() {
         patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_CALL_SET_CUSTOM_RADAR), 0x5, 0x90);
     }
     if (strcmp(g_Config["oldHud"]["pathToTXDhud"].get<std::string>().c_str(), "NONE") != 0) {
-        g_pDetourFmtDirPath = new patch::callHook(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::CUSTOM_PATH_TXD_HUD));
-        g_pDetourFmtDirPath->installHook(PVOID(&fmtDirPath), false);
+        const DWORD addrPatch = g_gtarpclientBase.getAddress((DWORD)OFFSETS::GTARP::CUSTOM_PATH_TXD_HUD);
+        //patch::setRaw(g_gtarpclientBase.getAddress(addrPatch), "\x90\x90", 2u);
+        patch::fill(addrPatch, 2u, 0x90);
+        patch::setJump(addrPatch, DWORD(&fmtDirPath), 0u, true);
     }
+
+    g_pSAMPHudScale = (bool*)g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX_STATE);
+    g_Log.Write("g_pSAMPHudScale: %p | nop: 0x%X", g_pSAMPHudScale, g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE));
+    g_pHudScaleFixDetourDetour = new PLH::x86Detour(
+        PCHAR(g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX)),
+        PCHAR(&hudScaleFixDetour),
+        &g_ui64HudScaleFixDetourJumpTrampline,
+        dis);
+    *g_pSAMPHudScale = g_Config["oldHud"]["radarScaleFix"].get<bool>();
+    patch::fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE), 7u, 0x90);
+    patch::setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_RECHANGE_SCALE_STATE), "\xEB\x23", 2u); /*jmp $+0x23*/
 }
