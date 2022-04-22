@@ -4,6 +4,7 @@ import json
 import requests
 import threading
 import tk
+import conf
 from telebot.types import InputMediaPhoto
 
 from db import Database
@@ -15,10 +16,10 @@ bot = telebot.TeleBot(tk.TOKEN_MY_BOT, parse_mode='MARKDOWN');
 def get_text_messages(message):
     # print(message.text)
     if message.text == '/check_version':
-        d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)
+        d = json.loads(requests.get(conf.URL.UPDATE_JSON).text)
         bot.send_message(message.from_user.id, "*Последняя версия плагина:* _" + d['vers'] + "_")
     elif message.text == "/last_changelog":
-        d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/changelogs.json').text)
+        d = json.loads(requests.get(conf.URL.CHANGESLOG).text)
         if len(d['img']) != 0:
             arrImg = d['img']
             arrPhoto = [ InputMediaPhoto(arrImg[0], caption=d['msg']['text'] + "\n\nto be continued", parse_mode=d['msg']['style']) ]
@@ -44,7 +45,7 @@ def get_text_messages(message):
             bot.send_message(message.from_user.id, "Вы подписались на рассылку о выходе обновлений.")
     elif message.text == "/vers_info":
         bot.send_message(message.from_user.id, 
-            requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/version.txt').text, 
+            requests.get(conf.URL.VERSION_INFO).text, 
             parse_mode='MarkdownV2')
     elif message.text == "/start":
         if not db.user_exists(message.from_user.id):
@@ -57,17 +58,17 @@ def get_text_messages(message):
 
 ##########################
     
-versPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)["vers"]
+versPatch = json.loads(requests.get(conf.URL.UPDATE_JSON).text)["vers"]
 def checkingUdpdateThread(v_pacth):
     while 1:
         sleep(60)
-        newVersPatch = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json').text)["vers"]
+        newVersPatch = json.loads(requests.get(conf.URL.UPDATE_JSON).text)["vers"]
         if v_pacth != newVersPatch:
             v_pacth = newVersPatch
 
             arrPhoto = []
             isMedia = False
-            d = json.loads(requests.get('https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/tgbot/last_changelog.json').text)
+            d = json.loads(requests.get(conf.URL.LAST_UPDATE_CHANGES).text)
             if len(d['img']) != 0:
                 arrImg = d['img']
                 arrPhoto = [ InputMediaPhoto(arrImg[0], caption=d['msg']['text'], parse_mode=d['msg']['style']) ]

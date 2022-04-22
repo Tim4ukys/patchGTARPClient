@@ -31,7 +31,9 @@ public:
         DISABLEWINTERWINDOW = 0x26384,
 
         DISABLE_CALL_SET_CUSTOM_RADAR = 0xF486,
-        CUSTOM_PATH_TXD_HUD = 0x2F626
+        CUSTOM_PATH_TXD_HUD = 0x2F5CF, 
+
+        DISABLE_RECHANGE_SCALE_STATE = 0x2FBF9
 	};
 
     enum class SAMP : unsigned int {
@@ -44,7 +46,11 @@ public:
         RENDERPLAYERTAG_PUSHBUFF_2 = 0x74E80,
 
         FORMATPATHSCREENSHOT = 0x61B52,
-        FORMATFULLPATHSCREENSHOT = 0xC4573
+        FORMATFULLPATHSCREENSHOT = 0xC4573,
+
+        SCALE_HUD_FIX = 0x68'100,
+        SCALE_HUD_FIX_STATE = 0x117'478,
+        DISABLE_LOAD_SCALE_STATE = 0xC5'23B
     };
     
     enum class GTA_SA : unsigned int {

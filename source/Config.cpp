@@ -65,6 +65,7 @@ void Config::restoreAndCheckKeysCorrect() {
         SET_DEFAULT_BOOL(jn, "radar", false)
         SET_DEFAULT_BOOL(jn, "hud", true)
         SET_DEFAULT_STR(jn, "pathToTXDhud", "NONE")
+        SET_DEFAULT_BOOL(jn, "radarScaleFix", false)
     });
     safeLoadStruct(j, "clock", [](nlohmann::json& jn) {
         SET_DEFAULT_BOOL(jn, "fixTimeZone", true)
