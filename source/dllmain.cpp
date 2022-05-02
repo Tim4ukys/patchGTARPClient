@@ -20,8 +20,8 @@ const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(7, 0, 2)
-#define CURRENT_VERSION "7.0.2"
+DECLARATION_VERSION(8, 0, 0)
+#define CURRENT_VERSION "8.0.0"
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
     (NEW_MAJ == old_maj && NEW_MIN > old_min) || \
