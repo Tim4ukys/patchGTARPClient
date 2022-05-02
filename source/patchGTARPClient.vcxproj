@@ -177,7 +177,6 @@
     <ClInclude Include="CustomHelp.h" />
     <ClInclude Include="D3D9Hook.h" />
     <ClInclude Include="DelCarTable.h" />
-    <ClInclude Include="DisableSnowWindow.h" />
     <ClInclude Include="FastScreenshot.h" />
     <ClInclude Include="FSignal.h" />
     <ClInclude Include="OldHUD.h" />
@@ -200,7 +199,6 @@
     <ClCompile Include="CustomHelp.cpp" />
     <ClCompile Include="D3D9Hook.cpp" />
     <ClCompile Include="DelCarTable.cpp" />
-    <ClCompile Include="DisableSnowWindow.cpp" />
     <ClCompile Include="FastScreenshot.cpp" />
     <ClCompile Include="FSignal.cpp" />
     <ClCompile Include="OldHUD.cpp" />

@@ -20,8 +20,8 @@ const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(7, 0, 2)
-#define CURRENT_VERSION "7.0.2"
+DECLARATION_VERSION(8, 0, 0)
+#define CURRENT_VERSION "8.0.0"
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
     (NEW_MAJ == old_maj && NEW_MIN > old_min) || \
@@ -40,7 +40,6 @@ DECLARATION_VERSION(7, 0, 2)
 #include "ReplaceableTXD.h"
 #include "DelCarTable.h"
 #include "SortScreenshot.h"
-#include "DisableSnowWindow.h"
 #include "CustomHelp.h"
 #include "FastScreenshot.h"
 
@@ -108,8 +107,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         //for (const auto& fnc : cock)
             //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp),
-                           PROCESS(FastScreenshot)};
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS

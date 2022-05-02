@@ -15,25 +15,25 @@ public:
 
 	enum class GTARP : unsigned int {
         LOCKCONNECTTOOTHERSERVER = 0x5119,
-        INITTEXTURE_INITHOOK = 0x1C83D,
-        INITTEXTURE_FNC = 0x1C210,
+        INITTEXTURE_INITHOOK = 0x1C4DD,
+        INITTEXTURE_FNC = 0x1BEB0,
 
-        ARRAYSERVERLOGO = 0xD9DAC, /* 01 - +0h, 02 - +4h, test - +8h*/
-        SERVERID = 0xCEB20,
+        ARRAYSERVERLOGO = 0xD8DAC, /* 01 - +0h, 02 - +4h, test - +8h*/
+        SERVERID = 0xCDB20, // 2 - test server
 
-        DRAWHUD = 0x1CC00,
-        DRAWSPEEDOMETER_DRAWRAMKA = 0x26412,
+        DRAWHUD = 0x1C8A0,
+        DRAWSPEEDOMETER_DRAWRAMKA = 0x25DCA,
 
-        WANTEDLEVEL = 0xD9B60,
+        WANTEDLEVEL = 0xD8B60,
 
         DISABLECHECKTXD = 0xF134,
 
-        DISABLEWINTERWINDOW = 0x26384,
+        //DISABLEWINTERWINDOW = 0x26384, goodbay epta
 
         DISABLE_CALL_SET_CUSTOM_RADAR = 0xF486,
-        CUSTOM_PATH_TXD_HUD = 0x2F5CF, 
+        CUSTOM_PATH_TXD_HUD = 0x2ECAF, 
 
-        DISABLE_RECHANGE_SCALE_STATE = 0x2FBF9
+        DISABLE_RECHANGE_SCALE_STATE = 0x2F2D9
 	};
 
     enum class SAMP : unsigned int {

@@ -70,9 +70,6 @@
     <ClInclude Include="SortScreenshot.h">
       <Filter>md\samp</Filter>
     </ClInclude>
-    <ClInclude Include="DisableSnowWindow.h">
-      <Filter>md\gtarp</Filter>
-    </ClInclude>
     <ClInclude Include="D3D9Hook.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -132,9 +129,6 @@
     </ClCompile>
     <ClCompile Include="SortScreenshot.cpp">
       <Filter>md\samp</Filter>
-    </ClCompile>
-    <ClCompile Include="DisableSnowWindow.cpp">
-      <Filter>md\gtarp</Filter>
     </ClCompile>
     <ClCompile Include="D3D9Hook.cpp">
       <Filter>core</Filter>
