@@ -40,7 +40,6 @@ DECLARATION_VERSION(7, 0, 2)
 #include "ReplaceableTXD.h"
 #include "DelCarTable.h"
 #include "SortScreenshot.h"
-#include "DisableSnowWindow.h"
 #include "CustomHelp.h"
 #include "FastScreenshot.h"
 
@@ -108,8 +107,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         //for (const auto& fnc : cock)
             //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp),
-                           PROCESS(FastScreenshot)};
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS
