@@ -161,4 +161,9 @@
       <Filter>resource</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="effects\blur.hlsl">
+      <Filter>resource</Filter>
+    </FxCompile>
+  </ItemGroup>
 </Project>
