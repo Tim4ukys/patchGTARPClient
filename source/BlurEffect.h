@@ -43,7 +43,7 @@ private:
     void Draw(const RECT &r) const noexcept;
 
 private:
-    IDirect3DDevice9* const pDevice;
+    IDirect3DDevice9* pDevice;
 
     IDirect3DSurface9* pDeviceBackBuffer{nullptr};
 

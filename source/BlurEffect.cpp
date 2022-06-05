@@ -19,7 +19,7 @@ BlurEffect::BlurEffect(IDirect3DDevice9* const pDevice)
 
     ID3DXBuffer* pErrorBuffer{};
     D3DXCreateEffectFromResourceW(pDevice, GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI"), MAKEINTRESOURCE(IDR_BLUR1),
-                                  NULL, NULL, D3DXFX_DONOTSAVESTATE | D3DXFX_NOT_CLONEABLE | D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY,
+                                  NULL, NULL, D3DXFX_NOT_CLONEABLE | D3DXSHADER_OPTIMIZATION_LEVEL3,
                                   NULL, &this->pEffect, &pErrorBuffer);
 
     const D3DVERTEXELEMENT9 vertexElements[] =
@@ -55,6 +55,7 @@ void BlurEffect::onLostDevice() {
     SAFE_RELEASE(pFrontBufferTexture);
 }
 void BlurEffect::onResetDevice(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
+    this->pDevice = pDevice;
     pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &this->pDeviceBackBuffer);
     
     HRESULT hr;

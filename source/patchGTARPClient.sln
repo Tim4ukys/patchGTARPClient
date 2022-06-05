@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31717.71
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "patchGTARPClient", "patchGTARPClient.vcxproj", "{DF7CBE2E-03BD-4EF9-B271-5482133A0731}"
+	ProjectSection(ProjectDependencies) = postProject
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00} = {850A97F7-B2D8-4A5D-9FEE-29B71F367B00}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "updater", "..\updater\updater.vcxproj", "{C7318485-9BD6-4F54-B9C6-5C527440512D}"
 EndProject
