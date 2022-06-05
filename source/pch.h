@@ -109,5 +109,6 @@ extern snippets::DynamicLibrary g_gtarpclientBase;
 extern snippets::DynamicLibrary g_sampBase;
 
 extern FSignal<void()> g_initAudioTracks;
+extern FSignal<void()> g_onDetachPlugin;
 
 #endif //PCH_H

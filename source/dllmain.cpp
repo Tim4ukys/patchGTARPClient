@@ -12,6 +12,8 @@
 #include "offsets.hpp"
 #include <process.h>
 
+FSignal<void()> g_onDetachPlugin;
+
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
 
@@ -42,6 +44,8 @@ DECLARATION_VERSION(8, 0, 0)
 #include "SortScreenshot.h"
 #include "CustomHelp.h"
 #include "FastScreenshot.h"
+
+#include "Menu.h"
 
 // ----------------------------------------
 
@@ -107,7 +111,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         //for (const auto& fnc : cock)
             //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot)};
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
+                           PROCESS(Menu)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS
@@ -215,6 +220,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     }
         break;
     case DLL_PROCESS_DETACH:
+        for (const auto& fnc : g_onDetachPlugin) {
+            fnc();
+        }
+
         SAFE_DELETE(g_pD3D9Hook);
         SAFE_DELETE(g_pLdrpDereferenceModule);
         SAFE_DELETE(g_pSAMP);
