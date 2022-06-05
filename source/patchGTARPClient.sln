@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "patchGTARPClient", "patchGT
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "updater", "..\updater\updater.vcxproj", "{C7318485-9BD6-4F54-B9C6-5C527440512D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui\imgui.vcxproj", "{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Release|x64.Build.0 = Release|x64
 		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Release|x86.ActiveCfg = Release|Win32
 		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Release|x86.Build.0 = Release|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x64.ActiveCfg = Debug|x64
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x64.Build.0 = Debug|x64
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x86.ActiveCfg = Debug|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x86.Build.0 = Debug|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x64.ActiveCfg = Release|x64
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x64.Build.0 = Release|x64
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x86.ActiveCfg = Release|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
