@@ -85,6 +85,12 @@
     <ClInclude Include="FSignal.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="BlurEffect.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="Menu.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -140,6 +146,12 @@
       <Filter>md\samp</Filter>
     </ClCompile>
     <ClCompile Include="FSignal.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="BlurEffect.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="Menu.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

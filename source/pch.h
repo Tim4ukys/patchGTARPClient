@@ -50,6 +50,7 @@
 // C (Old-Library)
 #include <cstring>
 #include <cstdint>
+#include <cassert>
 
 
 // WIN-API
@@ -87,6 +88,7 @@
 // third_party
 #include "json.hpp"
 #include "bass.h"
+#include "BlurEffect.h"
 
 
 // my library
