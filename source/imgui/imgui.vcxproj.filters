@@ -61,5 +61,8 @@
     <ClCompile Include="imgui_stdlib.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="imgui_demo.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
