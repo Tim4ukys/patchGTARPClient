@@ -19,7 +19,7 @@ BlurEffect::BlurEffect(IDirect3DDevice9* const pDevice)
 
     ID3DXBuffer* pErrorBuffer{};
     D3DXCreateEffectFromResourceW(pDevice, GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI"), MAKEINTRESOURCE(IDR_BLUR1),
-                                  NULL, NULL, D3DXFX_NOT_CLONEABLE | D3DXSHADER_OPTIMIZATION_LEVEL3,
+                                  NULL, NULL, D3DXFX_DONOTSAVESTATE | D3DXFX_NOT_CLONEABLE | D3DXSHADER_OPTIMIZATION_LEVEL3,
                                   NULL, &this->pEffect, &pErrorBuffer);
 
     const D3DVERTEXELEMENT9 vertexElements[] =
