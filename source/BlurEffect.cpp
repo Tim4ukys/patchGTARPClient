@@ -148,10 +148,10 @@ void BlurEffect::Draw(const RECT& r) const noexcept {
         const float screenHeight = static_cast<const float>(this->backBufferHeight);
 
         float uv[4];
-        uv[0] = r.left > 0 ? 1 / (screenWidth / r.left) : 0;
-        uv[1] = r.top > 0 ? 1 / (screenHeight / r.top) : 0;
-        uv[2] = r.right > 0 ? 1 / (screenWidth / r.right) : 0;
-        uv[3] = r.bottom > 0 ? 1 / (screenHeight / r.bottom) : 0;
+        uv[0] = r.left != 0 ? 1 / (screenWidth / r.left) : 0;
+        uv[1] = r.top != 0 ? 1 / (screenHeight / r.top) : 0;
+        uv[2] = r.right != 0 ? 1 / (screenWidth / r.right) : 0;
+        uv[3] = r.bottom != 0 ? 1 / (screenHeight / r.bottom) : 0;
 
         const EffectVertex quad[] = {
             {float(r.left), float(r.top), 0.5f, uv[0], uv[1]},
