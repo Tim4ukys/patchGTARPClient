@@ -44,6 +44,8 @@ BlurEffect::~BlurEffect() noexcept {
 }
 
 void BlurEffect::onLostDevice() {
+    this->pEffect->OnLostDevice();
+
     SAFE_RELEASE(pDeviceBackBuffer);
 
     SAFE_RELEASE(pBackBufferSurface);
@@ -56,6 +58,8 @@ void BlurEffect::onLostDevice() {
 }
 void BlurEffect::onResetDevice(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
     this->pDevice = pDevice;
+    this->pEffect->OnResetDevice();
+
     pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &this->pDeviceBackBuffer);
     
     HRESULT hr;
