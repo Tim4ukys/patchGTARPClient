@@ -24,6 +24,7 @@ const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
 
 DECLARATION_VERSION(8, 0, 0)
 #define CURRENT_VERSION "8.0.0"
+const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
     (NEW_MAJ == old_maj && NEW_MIN > old_min) || \

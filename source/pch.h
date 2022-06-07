@@ -111,4 +111,6 @@ extern snippets::DynamicLibrary g_sampBase;
 extern FSignal<void()> g_initAudioTracks;
 extern FSignal<void()> g_onDetachPlugin;
 
+extern const char* g_szCurrentVersion;
+
 #endif //PCH_H
