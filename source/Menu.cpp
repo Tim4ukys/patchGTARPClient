@@ -2,6 +2,7 @@
 #include "Menu.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx9.h"
 
@@ -9,10 +10,12 @@ BlurEffect* g_pBlurEffect{};
 
 struct stMenuData {
     bool m_bOpen;
+    int  m_iSelected;
 
 public:
     stMenuData()
-        : m_bOpen(false) {
+        : m_bOpen(false),
+          m_iSelected(0) {
     }
 } g_menuData;
 
@@ -46,6 +49,36 @@ static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPAR
     return g_pWindowProc(hWnd, msg, wParam, lParam);
 }
 
+enum eTitles {
+    eTitles_News = 0,
+    eTitles_SAMP,
+    eTitles_GTASA,
+    eTitles_GTARP
+};
+
+void Menu::title_menu() {
+    std::array<const char*, 3> TITLES{
+        "SA-MP", "GTA SA", "GTA RP"
+    };
+    constexpr float HEIGHT_TITLEMENU = 40.f;
+    auto            width = ImGui::GetWindowWidth();
+
+    auto oldWindowPadding = ImGui::GetStyle().WindowPadding.y;
+    ImGui::GetStyle().WindowPadding.y = 0;
+
+    ImGui::SetCursorPos({0, ImGui::GetCurrentWindow()->TitleBarHeight()});
+    ImGui::BeginChild("select_item", ImVec2(width, HEIGHT_TITLEMENU), true, ImGuiWindowFlags_NoScrollbar);
+    for (size_t i{}, off{static_cast<size_t>(width / TITLES.size())}; i < TITLES.size(); ++i) {
+        ImGui::SetCursorPos({static_cast<float>(off * i), 0});
+        if (ImGui::Button(TITLES[i], ImVec2(static_cast<float>(off), HEIGHT_TITLEMENU))) {
+            g_menuData.m_iSelected = i + 1;
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::GetStyle().WindowPadding.y = oldWindowPadding;
+}
+
 void Menu::Process() {
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
@@ -66,31 +99,41 @@ void Menu::Process() {
     g_pD3D9Hook->onResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
         ImGui_ImplDX9_CreateDeviceObjects();
         g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect->onResetDevice(pPresentParams);
+        g_pBlurEffect->onResetDevice(pDevice, pPresentParams);
     };
     g_pD3D9Hook->onPresentEvent += [](IDirect3DDevice9* pDevice, const RECT*, const RECT*, HWND, const RGNDATA*) {
+        ImGui_ImplDX9_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
         if (g_menuData.m_bOpen) {
-            g_pBlurEffect->Render({0, 0, RsGlobal.maximumWidth, RsGlobal.maximumHeight}, 75.f);
+            ImGui::SetNextWindowSize({670.f, 342.f});
+            ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
+            title_menu();
+            switch (g_menuData.m_iSelected) {
+            case eTitles_News:
+                ImGui::Text(u8"Новости типа");
+                break;
+            case eTitles_SAMP:
+                ImGui::Text(u8"Типа самп");
+                break;
+            case eTitles_GTASA:
+                ImGui::Text(u8"Типа гта");
+                break;
+            case eTitles_GTARP:
+                ImGui::Text(u8"Типа гта рп");
+                break;
+            }
+            background();
+            ImGui::End();
         }
-        //ImGui_ImplDX9_NewFrame();
-        //ImGui_ImplWin32_NewFrame();
-        //ImGui::NewFrame();
 
-        //if (g_menuData.m_bOpen) {
-            //ImGui::Begin("test_title1", &g_menuData.m_bOpen);
-            //ImGui::Text(u8"Залупа");
-            //ImGui::Separator();
-            //ImGui::ShowStyleEditor();
-            //background();
-            //ImGui::End();
-        //}
-
-        //ImGui::EndFrame();
-        //ImGui::Render();
-        //ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+        ImGui::EndFrame();
+        ImGui::Render();
+        ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
     };
     g_onDetachPlugin += []() {
-        delete g_pBlurEffect;
+        SAFE_DELETE(g_pBlurEffect);
         ImGui_ImplDX9_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
@@ -140,7 +183,7 @@ void Menu::set_style() {
     auto colors = style.Colors;
     colors[ImGuiCol_Text] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.f, 0.f, 0.f, 0.f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, /*1.000f*/ 0.f);
     colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.000f);
     colors[ImGuiCol_PopupBg] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
     colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);

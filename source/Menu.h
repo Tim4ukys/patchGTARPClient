@@ -5,4 +5,5 @@ public:
     static void show_cursor(bool show);
     static void set_style();
     static void background();
+    static void title_menu();
 };
