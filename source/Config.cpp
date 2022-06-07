@@ -61,6 +61,7 @@ void Config::restoreAndCheckKeysCorrect() {
         }
         fnc(jch[key]);
     };
+    SET_DEFAULT_STR(j, "version", g_szCurrentVersion);
     safeLoadStruct(j, "oldHud", [](nlohmann::json &jn) {
         SET_DEFAULT_BOOL(jn, "radar", false)
         SET_DEFAULT_BOOL(jn, "hud", true)
