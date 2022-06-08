@@ -32,6 +32,7 @@ public:
     bool isSAMPInit();
 
     void addChatMessage(D3DCOLOR color, const char* fmt, ...);
+    void cmdRect(const char* szCmdName, CMDPROC pCmdProc);
 
 private:
 
