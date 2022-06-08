@@ -127,6 +127,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 // ------------------------------
 
+FSignal<void()> g_onInitSamp;
+
 uint64_t        g_ui64GameLoopJumpTrampline;
 PLH::x86Detour* g_pGameLoopDetour = nullptr;
 NOINLINE void   gameLoopDetourFNC() {
@@ -135,6 +137,14 @@ NOINLINE void   gameLoopDetourFNC() {
     static bool s_bIsInit = false;
     if (s_bIsInit || !g_pSAMP->isSAMPInit())
         return;
+
+    static bool s_bIsRunSignals = false;
+    if (!s_bIsRunSignals) {
+        for (auto& fnc : g_onInitSamp) {
+            fnc();
+        }
+        s_bIsRunSignals = true;
+    }
     
     static auto s_oldTime = GetTickCount64();
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)

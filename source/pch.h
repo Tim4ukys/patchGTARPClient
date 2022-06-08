@@ -110,6 +110,7 @@ extern snippets::DynamicLibrary g_sampBase;
 
 extern FSignal<void()> g_initAudioTracks;
 extern FSignal<void()> g_onDetachPlugin;
+extern FSignal<void()> g_onInitSamp;
 
 extern const char* g_szCurrentVersion;
 
