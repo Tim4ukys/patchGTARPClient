@@ -55,13 +55,13 @@ void Config::saveFile() {
 
 void Config::restoreAndCheckKeysCorrect() {
     auto safeLoadStruct = [](nlohmann::json& jch, const char* key, std::function<void(nlohmann::json&)> fnc) -> void {
-        if (!jch[key].is_structured()) {
+        if (!jch[key].is_structured() && !jch[key].is_null()) {
             //g_Log.Write("type: %s", jch.type_name());
             jch.erase(key);
         }
         fnc(jch[key]);
     };
-    SET_DEFAULT_STR(j, "version", g_szCurrentVersion);
+    //SET_DEFAULT_STR(j, "version", g_szCurrentVersion);
     safeLoadStruct(j, "oldHud", [](nlohmann::json &jn) {
         SET_DEFAULT_BOOL(jn, "radar", false)
         SET_DEFAULT_BOOL(jn, "hud", true)
