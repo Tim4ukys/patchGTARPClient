@@ -1,28 +1,45 @@
+/****************************************************
+*                                                   *
+*    Developer: Tim4ukys                            *
+*                                                   *
+*    email: tim4ukys.dev@yandex.ru                  *
+*    vk: vk.com/tim4ukys                            *
+*                                                   *
+*    License: GNU GPLv3                             *
+*                                                   *
+****************************************************/
 #include "pch.h"
 #include "Menu.h"
 
 #include "imgui.h"
+#include "imgui_stdlib.h"
 #include "imgui_internal.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx9.h"
 
 BlurEffect* g_pBlurEffect{};
 
+//#define DEBUG_NEWS
+
 struct stMenuData {
     bool m_bOpen;
     int  m_iSelected;
 
+    std::string                                                   m_sOldVersion;
+    std::vector<std::pair<std::string, std::vector<std::string>>> m_arrNews;
+
 public:
     stMenuData()
         : m_bOpen(false),
-          m_iSelected(0) {
+          m_iSelected(1),
+          m_arrNews() {
     }
 } g_menuData;
 
 static WNDPROC g_pWindowProc;
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
+    /*switch (msg) {
     case WM_KEYUP:
     case WM_SYSKEYUP:
         switch (wParam) {
@@ -31,7 +48,7 @@ static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPAR
             break;
         }
         break;
-    }
+    }*/
 
     if (static bool popen = false; g_menuData.m_bOpen) {
         if (!popen) {
@@ -53,7 +70,9 @@ enum eTitles {
     eTitles_News = 0,
     eTitles_SAMP,
     eTitles_GTASA,
-    eTitles_GTARP
+    eTitles_GTARP,
+
+    eTitles_INFO
 };
 
 void Menu::title_menu() {
@@ -80,6 +99,14 @@ void Menu::title_menu() {
 }
 
 void Menu::Process() {
+    g_onInitSamp += []() {
+        g_pSAMP->cmdRect("patch_open",
+                         [](const char* param) {
+                             g_menuData.m_bOpen = true;
+                         });
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}Напоминаем{FF9900}, что команда открытия меню: {606060}/patch_open");
+    };
+
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
         g_pBlurEffect = new BlurEffect(pDevice);
@@ -88,6 +115,51 @@ void Menu::Process() {
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
         set_style();
+
+        auto fnc_downloadNews = []() {
+            using json = nlohmann::json;
+            auto j = json::parse(client::downloadStringFromURL("https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/news.json"));
+
+            for (json::iterator i = j.begin(); i != j.end(); ++i) {;
+                if (auto& key = i.key(); key > g_menuData.m_sOldVersion) {
+                    std::pair<std::string, std::vector<std::string>> t;
+                    t.first = i.key();
+                    auto& arr = i.value();
+                    t.second.resize(arr.size());
+                    //g_Log.Write("key=%s;arr.size()=%d", key.c_str(), j[i.key()].size());
+                    for (size_t i{}; i < arr.size(); ++i) {
+                        t.second[i] = arr[i].get<std::string>();
+                    }
+                    g_menuData.m_arrNews.push_back(t);
+                }
+            }
+
+            g_menuData.m_iSelected = eTitles_News;
+        };
+
+        #ifndef DEBUG_NEWS
+        if (!g_Config["vers"].is_string()) {
+            if (!g_Config["vers"].is_null())
+                g_Config.getJSON().erase("vers");
+            g_Config["vers"] = g_szCurrentVersion;
+            g_menuData.m_sOldVersion = "8.0.0";
+            g_Config.saveFile();
+            fnc_downloadNews();
+        } else if (g_Config["vers"] < g_szCurrentVersion) {
+            //g_Log << R"(g_Config["vers"] < g_szCurrentVersion)";
+            g_menuData.m_sOldVersion = g_Config["vers"];
+            g_Config["vers"] = g_szCurrentVersion;
+        #else 
+        {
+            g_menuData.m_sOldVersion = "8.0.0";
+        #endif
+            fnc_downloadNews();
+        }
+        #ifndef DEBUG_NEWS
+        else {
+            g_menuData.m_iSelected = eTitles_INFO;
+        }
+        #endif
 
         ImGui_ImplWin32_Init(**(HWND**)0xC17054);
         ImGui_ImplDX9_Init(pDevice);
@@ -110,21 +182,109 @@ void Menu::Process() {
             ImGui::SetNextWindowSize({670.f, 342.f});
             ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
             title_menu();
+
+            auto checkbox = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
+                if (ImGui::Checkbox(label, j.get_ptr<bool*>())) {
+                    g_Config.saveFile();
+                }
+                if (desc && ImGui::IsItemHovered())
+                    ImGui::SetTooltip(desc);
+            };
+            auto textInput = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
+                if (ImGui::InputText(label, j.get_ptr<std::string*>())) {
+                    g_Config.saveFile();
+                }
+                if (desc && ImGui::IsItemHovered()) 
+                    ImGui::SetTooltip(desc);
+            };
+            auto doubleInput = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
+                if (ImGui::InputDouble(label, j.get_ptr<double*>())) {
+                    g_Config.saveFile();
+                }
+                if (desc && ImGui::IsItemHovered())
+                    ImGui::SetTooltip(desc);
+            };
+
+            constexpr auto TAB_SIZE = 20;
+
             switch (g_menuData.m_iSelected) {
+            case eTitles_INFO:
+                render_doska();
+                ImGui::Separator();
+                ImGui::Text(u8"Сайт проекта GitHub: github.com/Tim4ukys/patchGTARPClient\n"
+                            u8"DonationAlerts: www.donationalerts.com/r/tim4ukys");
+                break;
             case eTitles_News:
-                ImGui::Text(u8"Новости типа");
+                ImGui::Text(u8"Все изменения, которые произошли пока Вы не обновляли плагин:");
+                for (const auto& news : g_menuData.m_arrNews) {
+                    ImGui::Text("%s:", news.first.c_str());
+                    for (size_t i{}; i < news.second.size(); ++i) {
+                        ImGui::Text("\t%d) %s", i + 1, news.second[i].c_str());
+                    }
+                }
                 break;
             case eTitles_SAMP:
-                ImGui::Text(u8"Типа самп");
+                checkbox(u8"Новое меню на F1", g_Config["samp"]["isCustomF1"]);
+                checkbox(u8"Белые ID", g_Config["samp"]["isWhiteID"],
+                         u8"ID легче читать. Очень полезно в тех случаях когда чел, на которого\n"
+                         u8"нужно написать донос в репорт, одел маску.");
+                
+                checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"],
+                         u8"Заменяет стандартный шрифт");
+                if (g_Config["samp"]["isCustomFont"].get<bool>()) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    textInput(u8"Название шрифта", g_Config["samp"]["fontFaceName"], 
+                              u8"Например: \tSegoe UI Light\n"
+                              u8"\t\t\t\t\t\tComic Sans MS\n"
+                              u8"\t\t\t\t\t\tJetBrains Mono");
+                }
+                checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"],
+                         u8"Ускоряет создание скриншотов в несколько раз.");
+                if (g_Config["samp"]["isMakeQuickScreenshot"].get<bool>()) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"],
+                             u8"После создания скриншота будет проигрываться мелодия(копипаста из STEAM).");
+                }
+
+                checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"],
+                         u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\\\n"
+                         u8"Например:\t screens\\2005-11-29");
+                
                 break;
             case eTitles_GTASA:
-                ImGui::Text(u8"Типа гта");
+                ImGui::Text(u8"Пока пусто=(");
                 break;
             case eTitles_GTARP:
-                ImGui::Text(u8"Типа гта рп");
+                checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"],
+                         u8"Подсказка с клавишами, которая появляется, когда персонаж садится в авто.");
+                checkbox(u8"Старый худ", g_Config["oldHud"]["hud"],
+                         u8"Возвращает старый худ из GTA SA");
+                if (g_Config["oldHud"]["hud"].get<bool>()) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    checkbox(u8"Часовой пояс начасах МСК", g_Config["clock"]["fixTimeZone"],
+                             u8"Подстраивает время на часах относительно московского часового пояса.");
+                }
+                checkbox(u8"Старый радар", g_Config["oldHud"]["radar"],
+                         u8"Возвращает радар из GTA SA");
+                textInput(u8"Путь до \"HUD.TXD\"", g_Config["oldHud"]["pathToTXDhud"],
+                          u8"Путь относительно корневой папки игры.\n"
+                          u8"Например(Как в настройках->Как в итоге):\n\t"
+                          u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
+                          u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
+                
+                checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"],
+                         u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
+                if (g_Config["serverIcon"]["state"].get<bool>()) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    doubleInput(u8"X", g_Config["serverIcon"]["x"]);
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    doubleInput(u8"Y", g_Config["serverIcon"]["y"]);
+                }
                 break;
             }
             background();
+            render_warning();
+
             ImGui::End();
         }
 
@@ -138,6 +298,46 @@ void Menu::Process() {
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
     };
+}
+
+ImVec2 operator+(ImVec2& a, ImVec2& b) {
+    return {a.x + b.x, a.y + b.y};
+}
+ImVec2 operator-(ImVec2& a, ImVec2& b) {
+    return {a.x - b.x, a.y - b.y};
+}
+ImVec2 operator/(ImVec2& a, int b) {
+    return {a.x / b, a.y /*/ b*/};
+}
+
+void Menu::render_doska() {
+    const char* brend = "~~~ D0SKA P040TA ~~~";
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - ImGui::CalcTextSize(brend).x / 2);
+    ImGui::Text(brend);
+    ImGui::Text(u8"Автор: Tim4ukys(vk.com/tim4ukys)\n"
+                u8"Ранняя помощь: Дмитрий Макаров(vk.com/molodoy_diman), Шамиль Макаров(vk.com/shamilqq)\n"
+                u8"Топ донатеров: пусто =(");
+}
+
+void Menu::render_warning() {
+    if (g_menuData.m_iSelected == eTitles_News || g_menuData.m_iSelected == eTitles_INFO) return;
+
+    const char msg[] = u8"Внимание: все изменённые настройки вступят в силу только после перезагрузки игры";
+    auto&& size = ImGui::CalcTextSize(msg);
+    auto&& pos = (ImGui::GetWindowPos() + ImGui::GetWindowSize() / 2) - size / 2;
+
+    static D3DXCOLOR s_color = 0xFF'FF'FF'FF;
+    static auto s_Tick = GetTickCount64();
+    static auto      a = 0.05f;
+    if (auto&& t = GetTickCount64(); t - s_Tick > 50) {
+        s_Tick = t;
+        if (s_color.a >= 1.0f || s_color.a <= 0.0f) {
+            a *= -1;
+        }
+        s_color.a += a;
+    }
+
+    ImGui::GetWindowDrawList()->AddText(pos, s_color, msg);
 }
 
 void Menu::background() {
