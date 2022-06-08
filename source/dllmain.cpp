@@ -12,6 +12,8 @@
 #include "offsets.hpp"
 #include <process.h>
 
+FSignal<void()> g_onDetachPlugin;
+
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
 
@@ -22,6 +24,7 @@ const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
 
 DECLARATION_VERSION(8, 0, 0)
 #define CURRENT_VERSION "8.0.0"
+const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
     (NEW_MAJ == old_maj && NEW_MIN > old_min) || \
@@ -42,6 +45,8 @@ DECLARATION_VERSION(8, 0, 0)
 #include "SortScreenshot.h"
 #include "CustomHelp.h"
 #include "FastScreenshot.h"
+
+#include "Menu.h"
 
 // ----------------------------------------
 
@@ -107,7 +112,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         //for (const auto& fnc : cock)
             //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot)};
+                           PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
+                           PROCESS(Menu)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS
@@ -121,6 +127,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 // ------------------------------
 
+FSignal<void()> g_onInitSamp;
+
 uint64_t        g_ui64GameLoopJumpTrampline;
 PLH::x86Detour* g_pGameLoopDetour = nullptr;
 NOINLINE void   gameLoopDetourFNC() {
@@ -129,6 +137,14 @@ NOINLINE void   gameLoopDetourFNC() {
     static bool s_bIsInit = false;
     if (s_bIsInit || !g_pSAMP->isSAMPInit())
         return;
+
+    static bool s_bIsRunSignals = false;
+    if (!s_bIsRunSignals) {
+        for (auto& fnc : g_onInitSamp) {
+            fnc();
+        }
+        s_bIsRunSignals = true;
+    }
     
     static auto s_oldTime = GetTickCount64();
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
@@ -215,6 +231,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     }
         break;
     case DLL_PROCESS_DETACH:
+        for (const auto& fnc : g_onDetachPlugin) {
+            fnc();
+        }
+
         SAFE_DELETE(g_pD3D9Hook);
         SAFE_DELETE(g_pLdrpDereferenceModule);
         SAFE_DELETE(g_pSAMP);

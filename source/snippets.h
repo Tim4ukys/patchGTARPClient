@@ -46,6 +46,13 @@ namespace snippets
     */
     std::string ConvertWideToANSI(const wchar_t* wstr);
 
+    /**
+    * @brief Путь до шрифта
+    * @param faceName Название шрифта
+    * @return Полный путь до шрифта
+    */
+    std::string GetSystemFontPath(const std::string& faceName);
+
     class WinProcHeader {
     public:
 

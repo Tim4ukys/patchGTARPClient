@@ -22,8 +22,8 @@ UINT g_uiWindowSize[2];
 // ---------------------------
 
 bool    stateRenderHelp = false;
-WNDPROC m_pWindowProc;
-LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+static WNDPROC m_pWindowProc;
+static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_KEYUP:
     case WM_SYSKEYUP:

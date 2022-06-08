@@ -21,6 +21,7 @@ bool g_bIsPlaySound;
 void saveTexture(std::string szFileName, LPDIRECT3DTEXTURE9 frontBuff, LPDIRECT3DSURFACE9 pTemp, RECT r) {
     ((HRESULT(__stdcall*)(LPCSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DSURFACE9, CONST PALETTEENTRY*, CONST RECT*))g_sampBase.getAddress(0xC653A))(
         szFileName.c_str(), D3DXIFF_PNG, pTemp, NULL, &r);
+    pTemp->Release();
     frontBuff->Release();
 }
 

@@ -50,6 +50,7 @@
 // C (Old-Library)
 #include <cstring>
 #include <cstdint>
+#include <cassert>
 
 
 // WIN-API
@@ -87,6 +88,7 @@
 // third_party
 #include "json.hpp"
 #include "bass.h"
+#include "BlurEffect.h"
 
 
 // my library
@@ -107,5 +109,9 @@ extern snippets::DynamicLibrary g_gtarpclientBase;
 extern snippets::DynamicLibrary g_sampBase;
 
 extern FSignal<void()> g_initAudioTracks;
+extern FSignal<void()> g_onDetachPlugin;
+extern FSignal<void()> g_onInitSamp;
+
+extern const char* g_szCurrentVersion;
 
 #endif //PCH_H

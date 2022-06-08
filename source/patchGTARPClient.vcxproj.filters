@@ -85,6 +85,12 @@
     <ClInclude Include="FSignal.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="BlurEffect.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="Menu.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -142,6 +148,12 @@
     <ClCompile Include="FSignal.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="BlurEffect.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="Menu.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -160,5 +172,10 @@
     <Image Include="help_overlay.dds">
       <Filter>resource</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="effects\blur.hlsl">
+      <Filter>resource</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

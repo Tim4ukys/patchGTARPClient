@@ -42,3 +42,9 @@ void SAMP::addChatMessage(D3DCOLOR color, const char* fmt, ...) {
 
     g_fncAddEntry(g_pChat, CHAT_TYPE_DEBUG, buff, nullptr, color, NULL);
 }
+
+void SAMP::cmdRect(const char* szCmdName, CMDPROC pCmdProc) {
+    if (!g_pNetGame || !g_pInput || !g_fncAddCmdProc) return;
+
+    g_fncAddCmdProc(g_pInput, szCmdName, pCmdProc);
+}
