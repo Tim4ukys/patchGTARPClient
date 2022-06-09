@@ -18,9 +18,14 @@
 
 bool g_bIsSortScreenshot;
 bool g_bIsPlaySound;
+struct stImgFormat {
+    D3DXIMAGE_FILEFORMAT m_d3dFormat;
+    const char*          m_pFormat;
+} g_imgFormat;
+
 void saveTexture(std::string szFileName, LPDIRECT3DTEXTURE9 frontBuff, LPDIRECT3DSURFACE9 pTemp, RECT r) {
     ((HRESULT(__stdcall*)(LPCSTR, D3DXIMAGE_FILEFORMAT, LPDIRECT3DSURFACE9, CONST PALETTEENTRY*, CONST RECT*))g_sampBase.getAddress(0xC653A))(
-        szFileName.c_str(), D3DXIFF_PNG, pTemp, NULL, &r);
+        szFileName.c_str(), g_imgFormat.m_d3dFormat, pTemp, NULL, &r);
     pTemp->Release();
     frontBuff->Release();
 }
@@ -37,10 +42,10 @@ int GetScreenshotFileName(std::string& FileName) {
         sprintf(buff, "%d-%02d-%02d\\", t.wYear, t.wMonth, t.wDay);
         FileName += buff;
     }
-    FileName += "sa-mp-%03i.png";
+    FileName += "sa-mp-%03i.%s";
     int i{};
     do {
-        sprintf(Buf, FileName.c_str(), i);
+        sprintf(Buf, FileName.c_str(), i, g_imgFormat.m_pFormat);
         std::filesystem::path p(Buf);
         if (!std::filesystem::exists(p))
             break;
@@ -106,8 +111,8 @@ void TakeScreenshot() {
         std::thread thr(saveTexture, sFileName, pFrontBuff, pTemp, rect);
         thr.detach();
         g_pSAMP->addChatMessage(0x88'AA'62,
-                                "Скриншот сохранен {FFA500}sa-mp-%03i.png {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
-                                iCount);
+                                "Скриншот сохранен {FFA500}sa-mp-%03i.%s {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
+                                iCount, g_imgFormat.m_pFormat);
         if (g_bIsPlaySound) {
             BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
             BASS_ChannelPlay(g_hTakeSound, TRUE);
@@ -123,6 +128,17 @@ void TakeScreenshot() {
 void FastScreenshot::Process() {
     if (!g_Config["samp"]["isMakeQuickScreenshot"].get<bool>())
         return;
+
+    if (g_Config["samp"]["formatScreenshotIMG"].get<std::string>() == "JPEG") {
+        g_imgFormat.m_d3dFormat = D3DXIFF_JPG;
+        g_imgFormat.m_pFormat = "jpg";
+    } else if (g_Config["samp"]["formatScreenshotIMG"].get<std::string>() == "TGA") {
+        g_imgFormat.m_d3dFormat = D3DXIFF_TGA;
+        g_imgFormat.m_pFormat = "tga";
+    } else {
+        g_imgFormat.m_d3dFormat = D3DXIFF_PNG;
+        g_imgFormat.m_pFormat = "png";
+    }
 
     g_bIsSortScreenshot = g_Config["samp"]["isSortingScreenshots"].get<bool>();
     plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x74EB0), &TakeScreenshot);
