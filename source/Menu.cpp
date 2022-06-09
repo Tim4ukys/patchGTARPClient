@@ -204,6 +204,24 @@ void Menu::Process() {
                 if (desc && ImGui::IsItemHovered())
                     ImGui::SetTooltip(desc);
             };
+            auto combo = [](const char* label, nlohmann::json& j, const char const* params[], int count, const char* desc = nullptr) {
+                static std::map<const char*, int> s_labels;
+                if (s_labels.find(label) == s_labels.end()) {
+                    if (auto find_str = std::find_if(params, params + count, [&](const char* fstr) -> bool { return j.get<std::string>() == fstr; });
+                        find_str != params + count) 
+                    {
+                        s_labels.emplace(label, int(DWORD(find_str) - DWORD(params)) / int(sizeof(sizeof(const char*))));
+                    } else {
+                        s_labels.emplace(label, 0);
+                    }
+                }
+                if (ImGui::Combo(label, &s_labels[label], params, count)) {
+                    j = params[s_labels[label]];
+                    g_Config.saveFile();
+                }
+                if (desc && ImGui::IsItemHovered())
+                    ImGui::SetTooltip(desc);
+            };
 
             constexpr auto TAB_SIZE = 20;
 
@@ -244,6 +262,12 @@ void Menu::Process() {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
                     checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"],
                              u8"После создания скриншота будет проигрываться мелодия(копипаста из STEAM).");
+
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+
+                    const char* fmtIMG[]{"PNG", "JPEG", "TGA"};
+                    combo(u8"Формат изображения", g_Config["samp"]["formatScreenshotIMG"], fmtIMG, ARRAYSIZE(fmtIMG),
+                          u8"Формат, в котором будут сохраняться скриншоты");
                 }
 
                 checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"],
@@ -252,7 +276,9 @@ void Menu::Process() {
                 
                 break;
             case eTitles_GTASA:
-                ImGui::Text(u8"Пока пусто=(");
+                checkbox(u8"Turn Fucking Radio Off", g_Config["gtasa"]["tfro"],
+                         u8"При посадке в авто радио будет автоматически выключенно.\n"
+                         u8"Автор оригинала: NarutoUA (blast.hk/members/2504)");
                 break;
             case eTitles_GTARP:
                 checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"],
