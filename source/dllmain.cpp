@@ -45,6 +45,7 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 #include "SortScreenshot.h"
 #include "CustomHelp.h"
 #include "FastScreenshot.h"
+#include "tfro.h"
 
 #include "Menu.h"
 
@@ -113,7 +114,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
             //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
                            PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
-                           PROCESS(Menu)};
+                           PROCESS(Menu), PROCESS(TFRO)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS
