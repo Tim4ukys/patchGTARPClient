@@ -23,6 +23,14 @@ enum eChatMessageType {
     CHAT_TYPE_DEBUG = 8
 };
 
+enum CursorMode {
+    CURSOR_NONE,
+    CURSOR_LOCKKEYS_NOCURSOR,
+    CURSOR_LOCKCAMANDCONTROL,
+    CURSOR_LOCKCAM,
+    CURSOR_LOCKCAM_NOCURSOR
+};
+
 class SAMP {
 public:
     
@@ -34,12 +42,15 @@ public:
     void addChatMessage(D3DCOLOR color, const char* fmt, ...);
     void cmdRect(const char* szCmdName, CMDPROC pCmdProc);
 
+    void setCursorMode(int nMode, BOOL bImmediatelyHideCursor);
+
 private:
 
     void initPointerList();
 
-    PVOID g_pNetGame = nullptr, g_pChat = nullptr, g_pInput = nullptr;
+    PVOID g_pNetGame = nullptr, g_pChat = nullptr, g_pInput = nullptr, g_pGame = nullptr;
 
     void(__thiscall* g_fncAddEntry)(PVOID pChat, char eType, const char* szString, const char* szNick, D3DCOLOR dwTextColor, D3DCOLOR dwNickColor) = nullptr;
     void(__thiscall* g_fncAddCmdProc)(PVOID pInput, const char* szCmdName, CMDPROC cmdHandler) = nullptr;
+    void(__thiscall* g_fncSetCursorMode)(PVOID pGame, int nMode, BOOL bImmediatelyHideCursor) = nullptr;
 };
