@@ -275,7 +275,7 @@ void Menu::Process() {
                 }
 
                 checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"],
-                         u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\\\n"
+                         u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\n"
                          u8"Например:\t screens\\2005-11-29");
                 
                 break;
