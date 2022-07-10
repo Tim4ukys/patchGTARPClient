@@ -39,17 +39,6 @@ public:
 static WNDPROC g_pWindowProc;
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    /*switch (msg) {
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-        switch (wParam) {
-        case VK_F4:
-            g_menuData.m_bOpen ^= true;
-            break;
-        }
-        break;
-    }*/
-
     if (static bool popen = false; g_menuData.m_bOpen) {
         if (!popen) {
             Menu::show_cursor(true);
@@ -102,7 +91,7 @@ void Menu::Process() {
     g_onInitSamp += []() {
         g_pSAMP->cmdRect("patch_open",
                          [](const char* param) {
-                             g_menuData.m_bOpen = true;
+                             g_menuData.m_bOpen ^= true;
                          });
         g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}Ќапоминаем{FF9900}, что команда открыти€ меню: {606060}/patch_open");
     };
@@ -120,8 +109,23 @@ void Menu::Process() {
             using json = nlohmann::json;
             auto j = json::parse(client::downloadStringFromURL("https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/news.json"));
 
+            auto fnc_versToList = [](const std::string& v) -> std::array<int, 3u> {
+                std::regex  r{R"([0-9]+).([0-9]+).([0-9]+)"};
+                std::smatch m;
+                std::regex_search(v, m, r);
+                return std::array<int, 3u>{std::atoi(m[0].str().c_str()),
+                                           std::atoi(m[1].str().c_str()),
+                                           std::atoi(m[2].str().c_str())};
+            };
+            auto oldVers = fnc_versToList(g_menuData.m_sOldVersion);
+            g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
+
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
-                if (auto& key = i.key(); key > g_menuData.m_sOldVersion) {
+                auto& key = fnc_versToList(i.key());
+                if (key[0] > oldVers[0] 
+                    || (key[0] == oldVers[0] && key[1] > oldVers[1]) 
+                    || (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2])) 
+                {
                     std::pair<std::string, std::vector<std::string>> t;
                     t.first = i.key();
                     auto& arr = i.value();
@@ -377,27 +381,13 @@ void Menu::background() {
 // thx imring
 void Menu::show_cursor(bool show) {
     if (show) {
-        plugin::patch::Nop(0x541DF5, 5);                        // don't call CControllerConfigManager::AffectPadFromKeyBoard
-        plugin::patch::Nop(0x53F417, 5);                        // don't call CPad__getMouseState
-        plugin::patch::SetRaw(0x53F41F, "\x33\xC0\x0F\x84", 4); // test eax, eax -> xor eax, eax
-                                                                // jl loc_53F526 -> jz loc_53F526
-        plugin::patch::PutRetn(0x6194A0);                       // disable RsMouseSetPos (ret)
-
+        g_pSAMP->setCursorMode(CURSOR_LOCKKEYS_NOCURSOR, TRUE);
+        g_pSAMP->setCursorMode(CURSOR_LOCKCAM_NOCURSOR, TRUE);
         ImGui::GetIO().MouseDrawCursor = true;
     } else {
-        plugin::patch::SetRaw(0x541DF5, "\xE8\x46\xF3\xFE\xFF", 5); // call CControllerConfigManager::AffectPadFromKeyBoard
-        plugin::patch::SetRaw(0x53F417, "\xE8\xB4\x7A\x20\x00", 5); // call CPad__getMouseState
-        plugin::patch::SetRaw(0x53F41F, "\x85\xC0\x0F\x8C", 4);     // xor eax, eax -> test eax, eax
-                                                                    // jz loc_53F526 -> jl loc_53F526
-        plugin::patch::SetUChar(0x6194A0, 0xE9);                    // jmp setup
-
+        g_pSAMP->setCursorMode(CURSOR_NONE, TRUE);
         ImGui::GetIO().MouseDrawCursor = false;
     }
-
-    (*reinterpret_cast<CMouseControllerState*>(0xB73418)).X = 0.0f;
-    (*reinterpret_cast<CMouseControllerState*>(0xB73418)).Y = 0.0f;
-    ((void(__cdecl*)())(0x541BD0))(); // CPad::ClearMouseHistory
-    ((void(__cdecl*)())(0x541DD0))(); // CPad::UpdatePads
 }
 
 void Menu::set_style() {
