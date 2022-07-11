@@ -109,22 +109,15 @@ void Menu::Process() {
             using json = nlohmann::json;
             auto j = json::parse(client::downloadStringFromURL("https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/news.json"));
 
-            auto fnc_versToList = [](const std::string& v) -> std::array<int, 3u> {
-                std::regex  r{R"([0-9]+).([0-9]+).([0-9]+)"};
-                std::smatch m;
-                std::regex_search(v, m, r);
-                return std::array<int, 3u>{std::atoi(m[0].str().c_str()),
-                                           std::atoi(m[1].str().c_str()),
-                                           std::atoi(m[2].str().c_str())};
-            };
-            auto oldVers = fnc_versToList(g_menuData.m_sOldVersion);
+            auto oldVers = snippets::versionParse(g_menuData.m_sOldVersion);
+            auto curVers = snippets::versionParse(g_szCurrentVersion);
             g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
 
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
-                auto& key = fnc_versToList(i.key());
-                if (key[0] > oldVers[0] 
-                    || (key[0] == oldVers[0] && key[1] > oldVers[1]) 
-                    || (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2])) 
+                auto key = snippets::versionParse(i.key());
+                if (key[0] <= curVers[0] && key[0] > oldVers[0] 
+                    || ((key[0] <= curVers[0] && key[1] <= curVers[1]) && (key[0] == oldVers[0] && key[1] > oldVers[1])) 
+                    || ((key[0] <= curVers[0] && key[1] <= curVers[1] && key[2] <= curVers[2]) && (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2]))) 
                 {
                     std::pair<std::string, std::vector<std::string>> t;
                     t.first = i.key();
