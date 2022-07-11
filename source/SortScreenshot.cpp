@@ -34,7 +34,7 @@ void SortScreenshot::Process() {
         strcat(s_fullPathScreenshot, s_pathScreenshot);
         strcat(s_pathScreenshot, "\\sa-mp-%03i.png");
 
-        patch::setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::FORMATPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_pathScreenshot));
-        patch::setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::FORMATFULLPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_fullPathScreenshot));
+        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::FORMATPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_pathScreenshot));
+        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::FORMATFULLPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_fullPathScreenshot));
     }
 }

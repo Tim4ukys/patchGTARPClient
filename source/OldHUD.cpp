@@ -141,10 +141,10 @@ void OldHUD::Process() {
             ---
             size = 0x168
         */
-        patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x15D, 0x90);
+        patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x15D, 0x90);
 
         /* Возвращает часы */
-        patch::fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);
+        patch__fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);
 
         /* Фиксит время на часах */
         plugin::patch::ReplaceFunctionCall(static_cast<uint32_t>(OFFSETS::GTA_SA::DRAWHUD_CLOCK_SPRINTF), &drawClockSprintfDetourFNC);
@@ -162,13 +162,13 @@ void OldHUD::Process() {
     }
     if (g_Config["oldHud"]["radar"].get<bool>()) {
         /* Возвращает радар */
-        patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_CALL_SET_CUSTOM_RADAR), 0x5, 0x90);
+        patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_CALL_SET_CUSTOM_RADAR), 0x5, 0x90);
     }
     if (strcmp(g_Config["oldHud"]["pathToTXDhud"].get<std::string>().c_str(), "NONE") != 0) {
         const DWORD addrPatch = g_gtarpclientBase.getAddress((DWORD)OFFSETS::GTARP::CUSTOM_PATH_TXD_HUD);
         //patch::setRaw(g_gtarpclientBase.getAddress(addrPatch), "\x90\x90", 2u);
-        patch::fill(addrPatch, 2u, 0x90);
-        patch::setJump(addrPatch, DWORD(&fmtDirPath), 0u, true);
+        patch__fill(addrPatch, 2u, 0x90);
+        patch__setJump(addrPatch, uint32_t(&fmtDirPath), 0u, TRUE);
     }
 
     g_pSAMPHudScale = (bool*)g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX_STATE);
@@ -179,6 +179,6 @@ void OldHUD::Process() {
         &g_ui64HudScaleFixDetourJumpTrampline,
         dis);
     *g_pSAMPHudScale = g_Config["oldHud"]["radarScaleFix"].get<bool>();
-    patch::fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE), 7u, 0x90);
-    patch::setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_RECHANGE_SCALE_STATE), "\xEB\x23", 2u); /*jmp $+0x23*/
+    patch__fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE), 7u, 0x90);
+    patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_RECHANGE_SCALE_STATE), "\xEB\x23", 2u); /*jmp $+0x23*/
 }

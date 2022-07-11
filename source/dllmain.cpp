@@ -79,7 +79,10 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
             }
         }
 
-        if (auto cmp = patch::getHEX(g_gtarpclientBase.getAddress(0xBABE), 10U); cmp != GTARP_CMP) {
+        char hexBuff[10 * 2 + 1]{};
+
+        if (patch__getHEX(g_gtarpclientBase.getAddress(0xBABE), hexBuff, 10U); 
+            strcmp(hexBuff, GTARP_CMP)) {
             MessageBoxW(
                 NULL,
                 L"ERROR: Эта версия плагина ещё не поддерживает эту версию клиента игры.\n\n"
@@ -88,10 +91,11 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
                 L"!000patchGTARPClientByTim4ukys.ASI",
                 MB_ICONERROR
             );
-            g_Log.Write("gtarp_cmp: %s", cmp.c_str());
-            TerminateProcess(GetCurrentProcess(), -1);
+            g_Log.Write("gtarp_cmp: %s", hexBuff);
+            TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
         } 
-        else if (cmp = patch::getHEX(g_sampBase.getAddress(0xBABE), 10); cmp != SAMP_CMP) {
+        else if (patch__getHEX(g_sampBase.getAddress(0xBABE), hexBuff, 10); 
+            strcmp(hexBuff, SAMP_CMP)) {
             MessageBoxW(
                 NULL,
                 L"ERROR: Эта версия плагина ещё не поддерживает эту версию SAMP.\n\n"
@@ -99,8 +103,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
                 L"GitHub: " GITHUB_URL,
                 L"!000patchGTARPClientByTim4ukys.ASI",
                 MB_ICONERROR);
-            g_Log.Write("samp_cmp: %s", cmp.c_str());
-            TerminateProcess(GetCurrentProcess(), -1);
+            g_Log.Write("samp_cmp: %s", hexBuff);
+            TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
         } 
         else
             g_Log << R"(Version "gtarp_clientside.asi" and "samp.dll" supported!!)";
@@ -108,10 +112,6 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
 #define PROCESS(a) {std::thread(a::Process)}
-        //std::function<void()> cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
-                                     //PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(DisableSnowWindow), PROCESS(CustomHelp)};
-        //for (const auto& fnc : cock)
-            //fnc();
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
                            PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
                            PROCESS(Menu), PROCESS(TFRO)};
@@ -221,7 +221,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         auto handleNTDLL = GetModuleHandleA("ntdll.dll");
         auto nAddressLdrLoadDll = DWORD(GetProcAddress(handleNTDLL, "LdrLoadDll"));
 
-        auto addr = patch::FindPattern("ntdll.dll", "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8", "x???x???x??xxx", nAddressLdrLoadDll);
+        auto addr = patch__FindPattern("ntdll.dll",
+                                       "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8",
+                                       "x???x???x??xxx",
+                                       nAddressLdrLoadDll);
         addr += 13;
 
         g_pLdrpDereferenceModule = new patch::callHook(addr);

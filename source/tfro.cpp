@@ -6,6 +6,6 @@ void TFRO::Process() {
     if (g_Config["gtasa"]["tfro"].get<bool>()) {
         // mov dl, 11
         // nop
-        patch::setRaw(0x4EB63D, "\xb2\x0d\x90", 3U);
+        patch__setRaw(0x4EB63D, "\xb2\x0d\x90", 3U);
     }
 }

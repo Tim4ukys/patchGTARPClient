@@ -17,5 +17,5 @@
 */
 
 void UnlockConect::Process() {
-    patch::setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::LOCKCONNECTTOOTHERSERVER), "\xEB\x17\x90", 3);
+    patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::LOCKCONNECTTOOTHERSERVER), "\xEB\x17\x90", 3);
 }

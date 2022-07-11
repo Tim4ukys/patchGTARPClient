@@ -20,9 +20,9 @@ void WhiteID::Process() {
         const char* formatPlayerTag = "%s {FFFFFF}(%d)";
         static char s_arrBuffPlayerTag[128 + 8];
 
-        patch::setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::RENDERPLAYERTAG_FORMAT), reinterpret_cast<uint32_t>(formatPlayerTag));
-        patch::setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::RENDERPLAYERTAG_PUSHBUFF_1), reinterpret_cast<uint32_t>(&s_arrBuffPlayerTag));
+        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::RENDERPLAYERTAG_FORMAT), reinterpret_cast<uint32_t>(formatPlayerTag));
+        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::RENDERPLAYERTAG_PUSHBUFF_1), reinterpret_cast<uint32_t>(&s_arrBuffPlayerTag));
 
-        patch::setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::RENDERPLAYERTAG_PUSHBUFF_2), reinterpret_cast<uint32_t>(&s_arrBuffPlayerTag));
+        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::RENDERPLAYERTAG_PUSHBUFF_2), reinterpret_cast<uint32_t>(&s_arrBuffPlayerTag));
     }
 }

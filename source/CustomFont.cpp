@@ -57,9 +57,9 @@ void CustomFont::Process() {
     if (g_Config["samp"]["isCustomFont"].get<bool>()) {
         g_fontFaceName = g_Config["samp"]["fontFaceName"].get<std::string>();
 
-        patch::setJump(g_sampBase.getAddress(0x6AA7F), uint32_t(&chatFontResetDevice), 5U, true);
-        patch::setJump(g_sampBase.getAddress(0x6AA3F), uint32_t(&chatFontLostDevice), 5U, true);
-        patch::setJump(g_sampBase.getAddress(0x6B36C), uint32_t(&chatFontReset), 5U, true);
+        patch__setJump(g_sampBase.getAddress(0x6AA7F), uint32_t(&chatFontResetDevice), 5U, TRUE);
+        patch__setJump(g_sampBase.getAddress(0x6AA3F), uint32_t(&chatFontLostDevice), 5U, TRUE);
+        patch__setJump(g_sampBase.getAddress(0x6B36C), uint32_t(&chatFontReset), 5U, TRUE);
 
         ///
 
@@ -67,8 +67,8 @@ void CustomFont::Process() {
 
         *(DWORD*)(DWORD(raw + 2)) = DWORD(&g_pChatFont); // mov esi, [pFont]
 
-        patch::fill(g_sampBase.getAddress(0x66D06), 3U, 0x90);
-        patch::setRawThroughJump(g_sampBase.getAddress(0x66D06), raw, 6, 5U, true);
+        patch__fill(g_sampBase.getAddress(0x66D06), 3U, 0x90);
+        patch__setRawThroughJump(g_sampBase.getAddress(0x66D06), raw, 6, 5U, TRUE);
 
         ///
 
