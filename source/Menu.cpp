@@ -111,7 +111,7 @@ void Menu::Process() {
 
             auto oldVers = snippets::versionParse(g_menuData.m_sOldVersion);
             auto curVers = snippets::versionParse(g_szCurrentVersion);
-            g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
+            //g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
 
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
                 auto key = snippets::versionParse(i.key());
