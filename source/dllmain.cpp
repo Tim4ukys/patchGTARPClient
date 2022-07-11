@@ -72,7 +72,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
             {
                 //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
                 PROCESS_INFORMATION info;
-                STARTUPINFOA         infoStart{sizeof(STARTUPINFO)};
+                STARTUPINFOA         infoStart{sizeof(STARTUPINFOA)};
                 CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
                 //system("updater_patchGTARPclient.exe");
                 TerminateProcess(GetCurrentProcess(), -1);
