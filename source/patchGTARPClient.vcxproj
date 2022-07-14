@@ -191,6 +191,7 @@
     <ClInclude Include="SAMP.h" />
     <ClInclude Include="snippets.h" />
     <ClInclude Include="SortScreenshot.h" />
+    <ClInclude Include="tfro.h" />
     <ClInclude Include="UnlockConect.h" />
     <ClInclude Include="WhiteID.h" />
   </ItemGroup>
@@ -219,6 +220,7 @@
     <ClCompile Include="SAMP.cpp" />
     <ClCompile Include="snippets.cpp" />
     <ClCompile Include="SortScreenshot.cpp" />
+    <ClCompile Include="tfro.cpp" />
     <ClCompile Include="UnlockConect.cpp" />
     <ClCompile Include="WhiteID.cpp" />
   </ItemGroup>

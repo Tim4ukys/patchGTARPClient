@@ -14,18 +14,19 @@
 // ---------------------------
 
 patch::callHook::callHook(uintptr_t HookAddress)
-    : m_nHookAddress(HookAddress), m_nOldCallFunc(NULL) {}
+    : m_nHookAddress(HookAddress),
+      m_nOldCallFunc(NULL) {
+}
 
 patch::callHook::~callHook() {
     uninstallHook();
 }
 
-BOOL patch::callHook::set(uintptr_t HookAddress, void* DetourFunction, uintptr_t *oldCallFnc) {
+BOOL patch::callHook::set(uintptr_t HookAddress, void* DetourFunction, uintptr_t* oldCallFnc) {
     if (oldCallFnc)
         *oldCallFnc = *reinterpret_cast<uintptr_t*>(HookAddress + 1) + HookAddress + 5;
 
-    if (DWORD oldProt; VirtualProtect(reinterpret_cast<void*>(HookAddress + 1), sizeof(uintptr_t), PAGE_READWRITE, &oldProt)) 
-    {
+    if (DWORD oldProt; VirtualProtect(reinterpret_cast<void*>(HookAddress + 1), sizeof(uintptr_t), PAGE_READWRITE, &oldProt)) {
         *reinterpret_cast<uintptr_t*>(HookAddress + 1) = reinterpret_cast<uintptr_t>(DetourFunction) - HookAddress - (sizeof(uintptr_t) + 1U);
         VirtualProtect(reinterpret_cast<void*>(HookAddress + 1), sizeof(uintptr_t), oldProt, &oldProt);
         return TRUE;
@@ -52,38 +53,42 @@ DWORD patch::callHook::getOriginal() const noexcept {
 
 // ---------------------------
 
-inline MODULEINFO GetModuleInfo(char* szModule) {
-    MODULEINFO modinfo{};
-    HMODULE    hModule = GetModuleHandleA(szModule);
-    if (!hModule)
-        return modinfo;
-    GetModuleInformation(GetCurrentProcess(), hModule, &modinfo, sizeof(MODULEINFO));
-    return modinfo;
+extern "C" {
+
+static void GetModuleInfo(const char* szModule, MODULEINFO* moduleInfo) {
+    ZeroMemory(moduleInfo, sizeof(MODULEINFO));
+    HMODULE hModule = GetModuleHandleA(szModule);
+    if (hModule) {
+        GetModuleInformation(GetCurrentProcess(), hModule, moduleInfo, sizeof(MODULEINFO));
+    }
 }
 
-uintptr_t patch::FindPattern(char* module, char* pattern, char* mask, uintptr_t startSearchAddr) {
-    //Get all module related information
-    const MODULEINFO mInfo = GetModuleInfo(module);
+uint32_t patch__FindPattern(_In_ const char* szModule, _In_ const char* szPattern, _In_ const char* mask,
+                            _In_opt_ uint32_t startSearchAddr) {
+    // Get all module related information
+    MODULEINFO mInfo;
+    GetModuleInfo(szModule, &mInfo);
 
-    //Assign our base and module size
-    //Having the values right is ESSENTIAL, this makes sure
-    //that we don't scan unwanted memory and leading our game to crash
-    const uintptr_t base = startSearchAddr == NULL ? uintptr_t(mInfo.lpBaseOfDll) : startSearchAddr;
-    const uintptr_t size = mInfo.SizeOfImage;
+    // Assign our base and module size
+    // Having the values right is ESSENTIAL, this makes sure
+    // that we don't scan unwanted memory and leading our game to crash
+    const uint32_t base = startSearchAddr == NULL ? (uint32_t)mInfo.lpBaseOfDll : startSearchAddr;
+    const uint32_t size = mInfo.SizeOfImage;
 
-    //Get length for our mask, this will allow us to loop through our array
+    // Get length for our mask, this will allow us to loop through our array
     const DWORD patternLength = (DWORD)strlen(mask);
 
     for (uintptr_t i = 0; i < size - (uintptr_t)patternLength; i++) {
-        bool found = true;
-        for (DWORD j = 0; j < patternLength; j++) {
-            //if we have a ? in our mask then we have true by default,
-            //or if the bytes match then we keep searching until finding it or not
-            found &= mask[j] == '?' || pattern[j] == *(char*)(base + i + j);
+        char found = '\x1';
+        DWORD j;
+        for (j = 0; j < patternLength; j++) {
+            // if we have a ? in our mask then we have true by default,
+            // or if the bytes match then we keep searching until finding it or not
+            found &= mask[j] == '?' || szPattern[j] == *(char*)(base + i + j);
         }
 
-        //found = true, our entire pattern was found
-        //return the memory addy so we can write to it
+        // found = true, our entire pattern was found
+        // return the memory addy so we can write to it
         if (found) {
             return base + i;
         }
@@ -92,42 +97,31 @@ uintptr_t patch::FindPattern(char* module, char* pattern, char* mask, uintptr_t 
     return NULL;
 }
 
-void patch::HEXtoRaw(std::string& hex, std::vector<uint8_t>* raw) {
-    raw->resize(hex.size() / 2);
-
-    for (size_t i = 0; i + 1 < hex.size(); i += 2) {
-        char buff[3];
-        memcpy(buff, &hex[i], 2);
-        buff[2] = '\0';
-
-        (*raw)[i / 2] = static_cast<uint8_t>(strtol(buff, nullptr, 16));
-    }
-}
-
-BOOL patch::setRawThroughJump(uintptr_t address, const char* raw, size_t rawSize, size_t saveByte, bool isSave) {
+BOOL patch__setRawThroughJump(_In_ uint32_t address, _In_ const char* raw, _In_ size_t rawSize,
+                              _In_opt_ size_t saveByte, _In_opt_ BOOL isSave) {
     DWORD oldProtect;
 
-    size_t size = saveByte < (sizeof(uintptr_t) + 1) ? (sizeof(uintptr_t) + 1) : saveByte;
+    size_t size = saveByte < 5u ? 5u : saveByte;
 
-    if (VirtualProtect(PVOID(address), size, PAGE_READWRITE, &oldProtect)) {
+    if (VirtualProtect((PVOID)address, size, PAGE_READWRITE, &oldProtect)) {
         // Копируем память, чтобы потом вставить её в конец
-        uint8_t* aSaveByte = nullptr;
+        uint8_t* aSaveByte = NULL;
         if (isSave) {
-            aSaveByte = new uint8_t[size];
-            memcpy(aSaveByte, PVOID(address), size);
+            aSaveByte = (uint8_t*)malloc(size);
+            memcpy(aSaveByte, (PVOID)address, size);
         }
 
         // NOP'им память
-        FillMemory(PVOID(address), size, 0x90);
+        FillMemory((PVOID)address, size, 0x90);
 
         // Создаём островок, где будем вызывать detour
-        uint8_t* memIsland = reinterpret_cast<uint8_t*>(malloc((sizeof(uintptr_t) + 1) * 2 + (isSave ? size : 0U)));
+        uint8_t* memIsland = (uint8_t*)malloc(5u + rawSize + (isSave ? size : 0U));
 
         // Делаем прыжок на островок
         *(uint8_t*)address = 0xE9; /* jump */
-        *reinterpret_cast<DWORD*>(address + 1) = DWORD(memIsland) - address - (sizeof(uintptr_t) + 1);
+        *(uint32_t*)(address + 1) = (uint32_t)memIsland - address - 5u;
 
-        // Ставим raw
+        // Переносим RAW на островок
         memcpy(memIsland, raw, rawSize);
         memIsland += rawSize;
 
@@ -136,149 +130,114 @@ BOOL patch::setRawThroughJump(uintptr_t address, const char* raw, size_t rawSize
             memcpy(memIsland, aSaveByte, size);
             memIsland += size;
 
-            delete[] aSaveByte;
+            free(aSaveByte);
         }
 
         // Делаем прыжок назад
         *memIsland = 0xE9; /* jump */
-        *(DWORD*)(DWORD(memIsland) + 1) = (address + (sizeof(uintptr_t) + 1)) - DWORD(memIsland) - (sizeof(uintptr_t) + 1);
+        *(uint32_t*)((uint32_t)memIsland + 1) = address + 5u - (uint32_t)memIsland - 5u;
 
-        VirtualProtect(PVOID(address), size, oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, NULL);
         return TRUE;
     }
 
     return FALSE;
 }
 
-BOOL patch::setJump(uintptr_t address, uintptr_t detour, size_t saveByte, bool isSave) {
+BOOL patch__setJump(_In_ uint32_t address, _In_ uint32_t detour,
+                    _In_opt_ size_t saveByte, _In_opt_ BOOL isSave) {
     DWORD oldProtect;
 
-    size_t size = saveByte < (sizeof(uintptr_t) + 1) ? (sizeof(uintptr_t) + 1) : saveByte;
+    const size_t size = saveByte < 5u ? 5u : saveByte;
 
-    if (VirtualProtect(PVOID(address), size, PAGE_READWRITE, &oldProtect)) {
+    if (VirtualProtect((PVOID)address, size, PAGE_READWRITE, &oldProtect)) {
         // Копируем память, чтобы потом вставить её в конец
-        uint8_t* aSaveByte = nullptr;
+        uint8_t* aSaveByte = NULL;
         if (isSave) {
-            aSaveByte = new uint8_t[size];
-            memcpy(aSaveByte, PVOID(address), size);
+            aSaveByte = (uint8_t*)malloc(size);
+            memcpy(aSaveByte, (PVOID)address, size);
         }
 
         // NOP'им память
-        FillMemory(PVOID(address), size, 0x90);
+        FillMemory((PVOID)address, size, 0x90);
 
         // Создаём островок, где будем вызывать detour
-        uint8_t* memIsland = reinterpret_cast<uint8_t*>(malloc((sizeof(uintptr_t) + 1) * 2 + (isSave ? size : 0U)));
+        uint8_t* memIsland = (uint8_t*)malloc(5u * 2 + (isSave ? size : 0U));
 
         // Делаем прыжок на островок
         *(uint8_t*)address = 0xE9; /* jump */
-        *reinterpret_cast<DWORD*>(address + 1) = DWORD(memIsland) - address - (sizeof(uintptr_t) + 1);
+        *(uint32_t*)(address + 1) = (uint32_t)memIsland - address - 5u;
 
         // Вызываем detour
         *memIsland = 0xE8; /* call */
-        *reinterpret_cast<DWORD*>(memIsland + 1) = detour - DWORD(memIsland) - (sizeof(uintptr_t) + 1);
-        memIsland += (sizeof(uintptr_t) + 1);
+        *(uint32_t*)(memIsland + 1) = detour - (uint32_t)memIsland - 5u;
+        memIsland += 5u;
 
         // Вставляем сохранёные байты
         if (isSave) {
             memcpy(memIsland, aSaveByte, size);
             memIsland += size;
 
-            delete[] aSaveByte;
+            free(aSaveByte);
         }
 
         // Делаем прыжок назад
         *memIsland = 0xE9; /* jump */
-        *(DWORD*)(DWORD(memIsland) + 1) = (address + (sizeof(uintptr_t) + 1)) - DWORD(memIsland) - (sizeof(uintptr_t) + 1);
+        *(uint32_t*)((uint32_t)memIsland + 1) = address + 5u - uint32_t(memIsland) - 5u;
 
-        VirtualProtect(PVOID(address), size, oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, NULL);
         return TRUE;
     }
 
     return FALSE;
 }
 
-BOOL patch::setPushOffset(uintptr_t address, uintptr_t offsetAddress) {
+BOOL patch__setPushOffset(_In_ uint32_t address, _In_ uint32_t offsetAddress) {
     DWORD oldProtect;
-    if (VirtualProtect(reinterpret_cast<LPVOID>(address), (sizeof(uintptr_t) + 1), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        uint8_t* pAddr = reinterpret_cast<uint8_t*>(address);
+    if (VirtualProtect((PVOID)address, 5u, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        uint8_t* pAddr = (uint8_t*)address;
+
         *pAddr = 0x68;
+        memcpy(++pAddr, &offsetAddress, 4u);
 
-        memcpy(++pAddr, &offsetAddress, sizeof(uintptr_t));
-
-        VirtualProtect(reinterpret_cast<LPVOID>(address), (sizeof(uintptr_t) + 1), oldProtect, NULL);
+        VirtualProtect((PVOID)address, 5u, oldProtect, NULL);
         return TRUE;
     }
-
     return FALSE;
 }
 
-std::string patch::getHEX(uintptr_t address, size_t size) {
-    std::stringstream sstream{};
-
+BOOL patch__getHEX(_In_ uint32_t address, _Out_ char* outBuff, _In_ size_t size) {
     DWORD oldProtect;
-    if (VirtualProtect(reinterpret_cast<LPVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        for (size_t i = 0; i < size; i++) {
-            sstream << std::setfill('0') << std::setw(2) << std::uppercase << std::hex << static_cast<int>(reinterpret_cast<uint8_t*>(address)[i]);
+    if (VirtualProtect((LPVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        size_t i;
+        for (i = 0; i < size; ++i) {
+            sprintf(outBuff, "%02X", *(uint8_t*)(address++));
+            outBuff += 2;
         }
-
-        VirtualProtect(reinterpret_cast<LPVOID>(address), size, oldProtect, NULL);
-    }
-
-    return sstream.str();
-}
-
-BOOL patch::setRaw(uintptr_t address, std::vector<uint8_t>& raw) {
-    DWORD oldProtect;
-
-    if (VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        memcpy(PVOID(address), &raw[0], raw.size());
-
-        VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, NULL);
         return TRUE;
     }
     return FALSE;
 }
 
-BOOL patch::setRaw(uintptr_t address, const char* raw, size_t size) {
+BOOL patch__setRaw(_In_ uint32_t address, _In_ const char* raw, _In_ size_t size) {
     DWORD oldProtect;
-
-    if (VirtualProtect(reinterpret_cast<LPVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        memcpy(PVOID(address), raw, size);
-
-        VirtualProtect(reinterpret_cast<LPVOID>(address), size, oldProtect, NULL);
+    if (VirtualProtect((PVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        memcpy((PVOID)address, raw, size);
+        VirtualProtect((LPVOID)address, size, oldProtect, NULL);
         return TRUE;
     }
     return FALSE;
 }
 
-BOOL patch::setRaw(uintptr_t address, std::string& raw) {
+BOOL patch__fill(_In_ uint32_t address, _In_ size_t size, _In_ uint32_t value) {
     DWORD oldProtect;
-    if (VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        memcpy(PVOID(address), &raw[0], raw.size());
-
-        VirtualProtect(reinterpret_cast<LPVOID>(address), raw.size(), oldProtect, NULL);
+    if (VirtualProtect((PVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        FillMemory((PVOID)address, size, value);
+        VirtualProtect((PVOID)address, size, oldProtect, NULL);
         return TRUE;
     }
     return FALSE;
 }
 
-template<typename T>
-BOOL patch::set(uintptr_t address, T value) {
-    DWORD oldProtect;
-    if (VirtualProtect(reinterpret_cast<PVOID>(address), sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        *reinterpret_cast<T*>(address) = value;
-        VirtualProtect(reinterpret_cast<PVOID>(address), sizeof(T), oldProtect, NULL);
-        return TRUE;
-    }
-    return FALSE;
-}
-
-BOOL patch::fill(uintptr_t address, size_t size, uint32_t value) {
-    DWORD oldProtect;
-    if (VirtualProtect(reinterpret_cast<PVOID>(address), size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        FillMemory(PVOID(address), size, value);
-        VirtualProtect(reinterpret_cast<PVOID>(address), size, oldProtect, NULL);
-        return TRUE;
-    }
-    return FALSE;
 }

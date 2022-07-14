@@ -18,6 +18,6 @@
 
 void DelCarTable::Process() {
     if (!g_Config["vehicleHud"]["isDrawHelpTablet"].get<bool>()) {
-        patch::fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DRAWSPEEDOMETER_DRAWRAMKA), 0x1E, 0x90 /*NOP*/);
+        patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DRAWSPEEDOMETER_DRAWRAMKA), 0x1E, 0x90 /*NOP*/);
     }
 }

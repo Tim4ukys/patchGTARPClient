@@ -39,17 +39,6 @@ public:
 static WNDPROC g_pWindowProc;
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    /*switch (msg) {
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-        switch (wParam) {
-        case VK_F4:
-            g_menuData.m_bOpen ^= true;
-            break;
-        }
-        break;
-    }*/
-
     if (static bool popen = false; g_menuData.m_bOpen) {
         if (!popen) {
             Menu::show_cursor(true);
@@ -102,7 +91,7 @@ void Menu::Process() {
     g_onInitSamp += []() {
         g_pSAMP->cmdRect("patch_open",
                          [](const char* param) {
-                             g_menuData.m_bOpen = true;
+                             g_menuData.m_bOpen ^= true;
                          });
         g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}Напоминаем{FF9900}, что команда открытия меню: {606060}/patch_open");
     };
@@ -120,8 +109,16 @@ void Menu::Process() {
             using json = nlohmann::json;
             auto j = json::parse(client::downloadStringFromURL("https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/news.json"));
 
+            auto oldVers = snippets::versionParse(g_menuData.m_sOldVersion);
+            auto curVers = snippets::versionParse(g_szCurrentVersion);
+            //g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
+
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
-                if (auto& key = i.key(); key > g_menuData.m_sOldVersion) {
+                auto key = snippets::versionParse(i.key());
+                if (key[0] <= curVers[0] && key[0] > oldVers[0] 
+                    || ((key[0] <= curVers[0] && key[1] <= curVers[1]) && (key[0] == oldVers[0] && key[1] > oldVers[1])) 
+                    || ((key[0] <= curVers[0] && key[1] <= curVers[1] && key[2] <= curVers[2]) && (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2]))) 
+                {
                     std::pair<std::string, std::vector<std::string>> t;
                     t.first = i.key();
                     auto& arr = i.value();
@@ -204,6 +201,24 @@ void Menu::Process() {
                 if (desc && ImGui::IsItemHovered())
                     ImGui::SetTooltip(desc);
             };
+            auto combo = [](const char* label, nlohmann::json& j, const char const* params[], int count, const char* desc = nullptr) {
+                static std::map<const char*, int> s_labels;
+                if (s_labels.find(label) == s_labels.end()) {
+                    if (auto find_str = std::find_if(params, params + count, [&](const char* fstr) -> bool { return j.get<std::string>() == fstr; });
+                        find_str != params + count) 
+                    {
+                        s_labels.emplace(label, int(DWORD(find_str) - DWORD(params)) / int(sizeof(sizeof(const char*))));
+                    } else {
+                        s_labels.emplace(label, 0);
+                    }
+                }
+                if (ImGui::Combo(label, &s_labels[label], params, count)) {
+                    j = params[s_labels[label]];
+                    g_Config.saveFile();
+                }
+                if (desc && ImGui::IsItemHovered())
+                    ImGui::SetTooltip(desc);
+            };
 
             constexpr auto TAB_SIZE = 20;
 
@@ -244,15 +259,23 @@ void Menu::Process() {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
                     checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"],
                              u8"После создания скриншота будет проигрываться мелодия(копипаста из STEAM).");
+
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+
+                    const char* fmtIMG[]{"PNG", "JPEG", "TGA"};
+                    combo(u8"Формат изображения", g_Config["samp"]["formatScreenshotIMG"], fmtIMG, ARRAYSIZE(fmtIMG),
+                          u8"Формат, в котором будут сохраняться скриншоты");
                 }
 
                 checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"],
-                         u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\\\n"
+                         u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\n"
                          u8"Например:\t screens\\2005-11-29");
                 
                 break;
             case eTitles_GTASA:
-                ImGui::Text(u8"Пока пусто=(");
+                checkbox(u8"Turn Fucking Radio Off", g_Config["gtasa"]["tfro"],
+                         u8"При посадке в авто радио будет автоматически выключенно.\n"
+                         u8"Автор оригинала: NarutoUA (blast.hk/members/2504)");
                 break;
             case eTitles_GTARP:
                 checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"],
@@ -351,27 +374,13 @@ void Menu::background() {
 // thx imring
 void Menu::show_cursor(bool show) {
     if (show) {
-        plugin::patch::Nop(0x541DF5, 5);                        // don't call CControllerConfigManager::AffectPadFromKeyBoard
-        plugin::patch::Nop(0x53F417, 5);                        // don't call CPad__getMouseState
-        plugin::patch::SetRaw(0x53F41F, "\x33\xC0\x0F\x84", 4); // test eax, eax -> xor eax, eax
-                                                                // jl loc_53F526 -> jz loc_53F526
-        plugin::patch::PutRetn(0x6194A0);                       // disable RsMouseSetPos (ret)
-
+        g_pSAMP->setCursorMode(CURSOR_LOCKKEYS_NOCURSOR, TRUE);
+        g_pSAMP->setCursorMode(CURSOR_LOCKCAM_NOCURSOR, TRUE);
         ImGui::GetIO().MouseDrawCursor = true;
     } else {
-        plugin::patch::SetRaw(0x541DF5, "\xE8\x46\xF3\xFE\xFF", 5); // call CControllerConfigManager::AffectPadFromKeyBoard
-        plugin::patch::SetRaw(0x53F417, "\xE8\xB4\x7A\x20\x00", 5); // call CPad__getMouseState
-        plugin::patch::SetRaw(0x53F41F, "\x85\xC0\x0F\x8C", 4);     // xor eax, eax -> test eax, eax
-                                                                    // jz loc_53F526 -> jl loc_53F526
-        plugin::patch::SetUChar(0x6194A0, 0xE9);                    // jmp setup
-
+        g_pSAMP->setCursorMode(CURSOR_NONE, TRUE);
         ImGui::GetIO().MouseDrawCursor = false;
     }
-
-    (*reinterpret_cast<CMouseControllerState*>(0xB73418)).X = 0.0f;
-    (*reinterpret_cast<CMouseControllerState*>(0xB73418)).Y = 0.0f;
-    ((void(__cdecl*)())(0x541BD0))(); // CPad::ClearMouseHistory
-    ((void(__cdecl*)())(0x541DD0))(); // CPad::UpdatePads
 }
 
 void Menu::set_style() {

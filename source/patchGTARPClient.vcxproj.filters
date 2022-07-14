@@ -91,6 +91,9 @@
     <ClInclude Include="Menu.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="tfro.h">
+      <Filter>md\gtasa</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -153,6 +156,9 @@
     </ClCompile>
     <ClCompile Include="Menu.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="tfro.cpp">
+      <Filter>md\gtasa</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

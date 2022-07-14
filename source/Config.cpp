@@ -62,6 +62,9 @@ void Config::restoreAndCheckKeysCorrect() {
         fnc(jch[key]);
     };
     //SET_DEFAULT_STR(j, "version", g_szCurrentVersion);
+    safeLoadStruct(j, "gtasa", [](nlohmann::json& jn) {
+        SET_DEFAULT_BOOL(jn, "tfro", true);
+    });
     safeLoadStruct(j, "oldHud", [](nlohmann::json &jn) {
         SET_DEFAULT_BOOL(jn, "radar", false)
         SET_DEFAULT_BOOL(jn, "hud", true)
@@ -79,6 +82,7 @@ void Config::restoreAndCheckKeysCorrect() {
         SET_DEFAULT_BOOL(jn, "isCustomF1", true)
         SET_DEFAULT_BOOL(jn, "isMakeQuickScreenshot", true)
         SET_DEFAULT_BOOL(jn, "isPlaySoundAfterMakeScreenshot", true)
+        SET_DEFAULT_STR(jn, "formatScreenshotIMG", "PNG");
     });
     safeLoadStruct(j, "serverIcon", [](nlohmann::json& jn) {
         SET_DEFAULT_BOOL(jn, "state", false)
