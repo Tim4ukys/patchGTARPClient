@@ -51,8 +51,8 @@ void D3D9Hook::initHooks() {
     PVOID hookPrs = reinterpret_cast<void*>(getDeviceAddress(17));
     PVOID hookRes = reinterpret_cast<void*>(getDeviceAddress(16));
 
-    present.m_pDetour = new PLH::x86Detour((char*)hookPrs, (char*)&HookedPresent, &present.m_uiJump, dis);
-    reset.m_pDetour = new PLH::x86Detour((char*)hookRes, (char*)&HookedReset, &reset.m_uiJump, dis);
+    present.m_pDetour = new PLH::x86Detour(UINT64(hookPrs), UINT64(&HookedPresent), &present.m_uiJump);
+    reset.m_pDetour = new PLH::x86Detour(UINT64(hookRes), UINT64(&HookedReset), &reset.m_uiJump);
 
     present.m_pDetour->hook();
     reset.m_pDetour->hook();

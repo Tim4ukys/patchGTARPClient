@@ -66,18 +66,19 @@ std::string snippets::ConvertWideToANSI(const wchar_t* wstr)
 // -------------------------
 
 WNDPROC snippets::WinProcHeader::s_pOrig;
-PLH::CapstoneDisassembler g_dis{PLH::Mode::x86};
 
 void snippets::WinProcHeader::Init() {
     s_pOrig = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
 }
 
-PLH::x86Detour* snippets::WinProcHeader::regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader) {
+std::shared_ptr<PLH::x86Detour> snippets::WinProcHeader::regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader) {
     static std::mutex s_lock;
     std::lock_guard<std::mutex> lock(s_lock);
 
     uint64_t jumpToBack;
-    auto pWinProc = new PLH::x86Detour((const PCHAR)WndProcHandler, (const PCHAR)pNewHeader, &jumpToBack, g_dis);
+    auto pWinProc = std::make_shared<PLH::x86Detour>(UINT64(WndProcHandler),
+                                                     UINT64(pNewHeader),
+                                                     &jumpToBack);
     pWinProc->hook();
     *pOldHeader = WNDPROC(jumpToBack);
     return pWinProc;

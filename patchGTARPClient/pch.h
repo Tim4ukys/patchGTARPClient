@@ -45,6 +45,7 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
+#include <memory>
 
 
 // C (Old-Library)
@@ -72,7 +73,6 @@
 
 // Poly-Hook2
 #include <polyhook2/Detour/x86Detour.hpp>
-#include <polyhook2/CapstoneDisassembler.hpp>
 
 
 // Plugin SDK

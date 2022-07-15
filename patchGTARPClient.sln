@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "patchGTARPClient", "patchGT
 		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00} = {850A97F7-B2D8-4A5D-9FEE-29B71F367B00}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "third-party", "third-party", "{18615C0F-2441-4633-A3F5-57515BCBC9B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -36,6 +38,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00} = {18615C0F-2441-4633-A3F5-57515BCBC9B7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A5B7F412-2E13-4D9A-B416-CCD65A4DFF35}

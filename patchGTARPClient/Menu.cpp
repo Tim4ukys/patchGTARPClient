@@ -37,7 +37,8 @@ public:
 } g_menuData;
 
 static WNDPROC g_pWindowProc;
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static std::shared_ptr<PLH::x86Detour> g_wndProcHangler;
+extern IMGUI_IMPL_API LRESULT          ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (static bool popen = false; g_menuData.m_bOpen) {
         if (!popen) {
@@ -99,7 +100,7 @@ void Menu::Process() {
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
         g_pBlurEffect = new BlurEffect(pDevice);
-        snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
+        g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
 
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
