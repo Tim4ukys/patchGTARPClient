@@ -74,7 +74,7 @@
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.ASI</TargetExt>
     <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0;$(SolutionDir)third-party\PolyHook_2_0\zydis\include;$(SolutionDir)third-party\PolyHook_2_0\zydis\dependencies\zycore\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\build32\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\asmtk\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\build32\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\asmtk\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\dependencies\zycore\$(Configuration);$(LibraryPath)</LibraryPath>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
     <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
@@ -82,7 +82,7 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.ASI</TargetExt>
     <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0;$(SolutionDir)third-party\PolyHook_2_0\zydis\include;$(SolutionDir)third-party\PolyHook_2_0\zydis\dependencies\zycore\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\build32\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\asmtk\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\build32\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\asmtk\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\dependencies\zycore\$(Configuration);$(LibraryPath)</LibraryPath>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
     <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
