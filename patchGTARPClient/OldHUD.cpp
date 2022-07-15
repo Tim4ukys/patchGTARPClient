@@ -120,6 +120,7 @@ std::unique_ptr<PLH::x86Detour> g_pHudScaleFixDetourDetour;
 void hudScaleFixDetour(PCHAR a1) {
     FNC_CAST(hudScaleFixDetour, g_ui64HudScaleFixDetourJumpTrampline)(a1);
     g_Config["oldHud"]["radarScaleFix"] = *g_pSAMPHudScale/* ^ true*/;
+    g_Config.saveFile();
 }
 
 // -----------------------------
