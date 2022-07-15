@@ -13,7 +13,7 @@
 class OFFSETS {
 public:
 
-	enum class GTARP : unsigned int {
+    enum class GTARP : unsigned int {
         LOCKCONNECTTOOTHERSERVER = 0x5119,
         INITTEXTURE_INITHOOK = 0x1C4DD,
         INITTEXTURE_FNC = 0x1BEB0,
@@ -34,7 +34,7 @@ public:
         CUSTOM_PATH_TXD_HUD = 0x2ECAF, 
 
         DISABLE_RECHANGE_SCALE_STATE = 0x2F2D9
-	};
+    };
 
     enum class SAMP : unsigned int {
         ENABLECLOCK = 0xA0D84,
