@@ -137,7 +137,7 @@ BOOL patch__setRawThroughJump(_In_ uint32_t address, _In_ const char* raw, _In_ 
         *memIsland = 0xE9; /* jump */
         *(uint32_t*)((uint32_t)memIsland + 1) = address + 5u - (uint32_t)memIsland - 5u;
 
-        VirtualProtect((PVOID)address, size, oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, &oldProtect);
         return TRUE;
     }
 
@@ -185,7 +185,7 @@ BOOL patch__setJump(_In_ uint32_t address, _In_ uint32_t detour,
         *memIsland = 0xE9; /* jump */
         *(uint32_t*)((uint32_t)memIsland + 1) = address + 5u - uint32_t(memIsland) - 5u;
 
-        VirtualProtect((PVOID)address, size, oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, &oldProtect);
         return TRUE;
     }
 
@@ -200,7 +200,7 @@ BOOL patch__setPushOffset(_In_ uint32_t address, _In_ uint32_t offsetAddress) {
         *pAddr = 0x68;
         memcpy(++pAddr, &offsetAddress, 4u);
 
-        VirtualProtect((PVOID)address, 5u, oldProtect, NULL);
+        VirtualProtect((PVOID)address, 5u, oldProtect, &oldProtect);
         return TRUE;
     }
     return FALSE;
@@ -214,7 +214,7 @@ BOOL patch__getHEX(_In_ uint32_t address, _Out_ char* outBuff, _In_ size_t size)
             sprintf(outBuff, "%02X", *(uint8_t*)(address++));
             outBuff += 2;
         }
-        VirtualProtect((PVOID)address, size, oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, &oldProtect);
         return TRUE;
     }
     return FALSE;
@@ -224,7 +224,7 @@ BOOL patch__setRaw(_In_ uint32_t address, _In_ const char* raw, _In_ size_t size
     DWORD oldProtect;
     if (VirtualProtect((PVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
         memcpy((PVOID)address, raw, size);
-        VirtualProtect((LPVOID)address, size, oldProtect, NULL);
+        VirtualProtect((LPVOID)address, size, oldProtect, &oldProtect);
         return TRUE;
     }
     return FALSE;
@@ -234,7 +234,7 @@ BOOL patch__fill(_In_ uint32_t address, _In_ size_t size, _In_ uint32_t value) {
     DWORD oldProtect;
     if (VirtualProtect((PVOID)address, size, PAGE_EXECUTE_READWRITE, &oldProtect)) {
         FillMemory((PVOID)address, size, value);
-        VirtualProtect((PVOID)address, size, oldProtect, NULL);
+        VirtualProtect((PVOID)address, size, oldProtect, &oldProtect);
         return TRUE;
     }
     return FALSE;
