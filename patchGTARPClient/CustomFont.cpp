@@ -15,64 +15,90 @@
 * Этот файл заменяет стандартный шрифт в чате на любой другой
 */
 
-ID3DXFont* g_pChatFont = nullptr;
+std::string CustomFont::s_fontFaceName;
 
-void chatFontReset() {
-    SAFE_RELEASE(g_pChatFont);
+CustomFont::stFont* CustomFont::s_pFontCE;
+ID3DXFont*          CustomFont::s_pShadowFont;
 
-    int iFontSize = ((int (*)())g_sampBase.getAddress(0xC5B20))();
-    int iFontWeight = ((int (*)())g_sampBase.getAddress(0xC5BD0))();
+uint64_t                        CustomFont::s_ui64OnChatFontReset;
+std::unique_ptr<PLH::x86Detour> CustomFont::s_onChatFontReset;
+void __fastcall CustomFont::onChatFontReset(PVOID p_this, PVOID trash) {
+    ((void(__fastcall*)(PVOID, PVOID))s_ui64OnChatFontReset)(p_this, trash);
+
+    SAFE_RELEASE(s_pFontCE->m_pFont);
+    SAFE_RELEASE(s_pShadowFont);
+
+    const int iFontSize = ((int (*)())g_sampBase.getAddress(0xC5B20))();
+    const int iFontWeight = ((int (*)())g_sampBase.getAddress(0xC5BD0))();
 
     g_Log.Write("[CustomFont]: iFontSize: %d | iFontWeight: %d", iFontSize, iFontWeight);
 
-    D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1, FALSE, DEFAULT_CHARSET,
-                    OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, g_Config["samp"]["fontFaceName"].get<std::string>().c_str(), 
-                    &g_pChatFont);
+    D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1,
+                    FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
+                    DEFAULT_PITCH, s_fontFaceName.c_str(), &s_pFontCE->m_pFont);
+
+    D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1,
+                    FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
+                    DEFAULT_PITCH, s_fontFaceName.c_str(), &s_pShadowFont);
 }
 
-void chatFontResetDevice() {
-    if (g_pChatFont)
-        g_pChatFont->OnResetDevice();
+uint64_t                        CustomFont::s_ui64OnLostDevice;
+std::unique_ptr<PLH::x86Detour> CustomFont::s_onLostDevice;
+void __fastcall CustomFont::onLostDevice(PVOID p_this, PVOID trash) {
+    ((void(__fastcall*)(PVOID, PVOID))s_ui64OnLostDevice)(p_this, trash);
+
+    s_pFontCE->m_pFont->OnLostDevice();
+    s_pShadowFont->OnLostDevice();
 }
 
-void chatFontLostDevice() {
-    if (g_pChatFont)
-        g_pChatFont->OnLostDevice();
-}
+uint64_t                        CustomFont::s_ui64OnResetDevice;
+std::unique_ptr<PLH::x86Detour> CustomFont::s_onResetDevice;
+void __fastcall CustomFont::onResetDevice(PVOID p_this, PVOID trash) {
+    ((void(__fastcall*)(PVOID, PVOID))s_ui64OnResetDevice)(p_this, trash);
 
-//patch::callHook g_createFontHook;
-std::unique_ptr<patch::callHook> g_createFontHook;
-std::string                      g_fontFaceName;
-void WINAPI Direct9CreateFontA__Detour(int a1, int a2, int a3, int a4, int a5, int a6, int a7, 
-                                      int a8, int a9, int a10, const char* fontFaceName, int a12, 
-                                      int a13, int a14, int a15) {
-    void(WINAPI * orig)(int, int, int, int, int, int, int,
-                       int, int, int, const char*,
-                       int, int, int, int) = reinterpret_cast<decltype(orig)>(g_createFontHook->getOriginal());
-    //g_Log.Write("[CustomFont]: Create font \"%s\"", fontFace.c_str());
-    return orig(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, g_fontFaceName.c_str(), a12, a13, a14, a15);
+    s_pFontCE->m_pFont->OnResetDevice();
+    s_pShadowFont->OnResetDevice();
 }
 
 void CustomFont::Process() {
-    if (g_Config["samp"]["isCustomFont"].get<bool>()) {
-        g_fontFaceName = g_Config["samp"]["fontFaceName"].get<std::string>();
+    if (!g_Config["samp"]["isCustomFont"].get<bool>())
+        return;
 
-        patch__setJump(g_sampBase.getAddress(0x6AA7F), uint32_t(&chatFontResetDevice), 5U, TRUE);
-        patch__setJump(g_sampBase.getAddress(0x6AA3F), uint32_t(&chatFontLostDevice), 5U, TRUE);
-        patch__setJump(g_sampBase.getAddress(0x6B36C), uint32_t(&chatFontReset), 5U, TRUE);
+    s_fontFaceName = g_Config["samp"]["fontFaceName"].get<std::string>();
 
-        ///
+    s_pFontCE = (stFont*) new uint8_t[sizeof(stFont)];
+    ZeroMemory(s_pFontCE, sizeof(stFont));
+    // Ставим VTable из SA-MP. В нём находятся функции из сампа, которые делают такие секас цвета
+    *(DWORD*)s_pFontCE = g_sampBase.getAddress(0xEA3B8);
 
-        char raw[6]{'\x8B', '\x35', 0, 0, 0, 0}; // 8B 35 ? ? ? ?
+    ///
 
-        *(DWORD*)(DWORD(raw + 2)) = DWORD(&g_pChatFont); // mov esi, [pFont]
+    s_onChatFontReset = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0x6B170)),
+                                                         UINT64(&onChatFontReset),
+                                                         &s_ui64OnChatFontReset);
+    s_onChatFontReset->hook();
 
-        patch__fill(g_sampBase.getAddress(0x66D06), 3U, 0x90);
-        patch__setRawThroughJump(g_sampBase.getAddress(0x66D06), raw, 6, 5U, TRUE);
+    s_onLostDevice = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0x6AA10)),
+                                                      UINT64(&onLostDevice),
+                                                      &s_ui64OnLostDevice);
+    s_onLostDevice->hook();
 
-        ///
+    s_onResetDevice = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0x6AA50)),
+                                                       UINT64(&onResetDevice),
+                                                       &s_ui64OnResetDevice);
+    s_onResetDevice->hook();
 
-        g_createFontHook = std::make_unique<patch::callHook>(g_sampBase.getAddress(0x6B230));
-        g_createFontHook->installHook(&Direct9CreateFontA__Detour);
-    }
+    ///
+
+    char raw[]{
+        '\xbe', 0, 0, 0, 0, // mov esi, &pFontCE
+        '\x8B', '\x06', // mov eax, [esi]
+        '\x89', '\x44', '\x24', '\x10', // mov [esp+214h+pFontCE], eax
+        '\xb8', 0, 0, 0, 0, // mov eax, &pFont
+        '\x8b', '\x30' // mov esi, [eax]
+    };
+
+    *(stFont***)(raw + 1) = &s_pFontCE;
+    *(ID3DXFont***)(raw + 12) = &s_pShadowFont;
+    patch__setRawThroughJump(g_sampBase.getAddress(0x66D06), raw, ARRAYSIZE(raw), 9, FALSE);
 }
