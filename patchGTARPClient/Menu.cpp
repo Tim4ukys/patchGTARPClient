@@ -372,11 +372,19 @@ void Menu::background() {
     g_pBlurEffect->Render({long(wpos.x), long(wpos.y), long(wpos.x + wsize.x), long(wpos.y + wsize.y)}, 75.f);
 }
 
-// thx imring
 void Menu::show_cursor(bool show) {
     if (show) {
-        g_pSAMP->setCursorMode(CURSOR_LOCKKEYS_NOCURSOR, TRUE);
-        g_pSAMP->setCursorMode(CURSOR_LOCKCAM_NOCURSOR, TRUE);
+        patch__fill(0x541DF5, 5u, 0x90);
+        patch__fill(0x53F417, 5u, 0x90);
+        patch__setRaw(0x53F41F, "\x33\xC0\xf\x84", 4u);
+        *(DWORD*)0xB73424 = 0;
+        *(DWORD*)0xB73428 = 0;
+        ((void (*)())0x541BD0)();
+        ((void (*)())0x541DD0)();
+        patch__setRaw(0x6194A0, "\xC3", 1u);
+
+        *(DWORD*)(*(DWORD*)g_sampBase.getAddress(0x26E8F4) + 0x61) = 2;
+
         ImGui::GetIO().MouseDrawCursor = true;
     } else {
         g_pSAMP->setCursorMode(CURSOR_NONE, TRUE);
