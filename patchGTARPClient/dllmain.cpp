@@ -200,11 +200,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         // ------------
 
         if (GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI") != hModule) {
-            WCHAR moduleName[256]{};
-            GetModuleBaseNameW(GetCurrentProcess(), hModule, moduleName, 256);
+            wchar_t moduleName[MAX_PATH]{};
+            GetModuleFileNameW(hModule, moduleName, ARRAYSIZE(moduleName));
+            wchar_t* name = wcsrchr(moduleName, L'\\') + 1;
             MessageBoxW(NULL,
                         L"Пожайлуста, переименуйте плагин на: !000patchGTARPClientByTim4ukys.ASI",
-                        moduleName,
+                        name,
                         MB_ICONERROR | MB_OK);
             exit(EXIT_FAILURE);
         }
