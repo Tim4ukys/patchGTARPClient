@@ -147,6 +147,7 @@ void Menu::Process() {
             //g_Log << R"(g_Config["vers"] < g_szCurrentVersion)";
             g_menuData.m_sOldVersion = g_Config["vers"];
             g_Config["vers"] = g_szCurrentVersion;
+            g_Config.saveFile();
         #else 
         {
             g_menuData.m_sOldVersion = "8.0.0";
