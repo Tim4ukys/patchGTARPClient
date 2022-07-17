@@ -22,6 +22,7 @@ UINT g_uiWindowSize[2];
 // ---------------------------
 
 bool    stateRenderHelp = false;
+static std::shared_ptr<PLH::x86Detour> g_wndProcHangler;
 static WNDPROC m_pWindowProc;
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -55,7 +56,7 @@ void CustomHelp::Process() {
         D3DXCreateSprite(pDevice, &g_pSprite);
 
         //m_pWindowProc = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
-        snippets::WinProcHeader::regWinProc(WndProcHandler, &m_pWindowProc);
+        g_wndProcHangler = snippets::WinProcHeader::regWinProc(WndProcHandler, &m_pWindowProc);
         plugin::patch::ReplaceFunction(g_sampBase.getAddress(0x6B3C0), &showHelpDialogHook);
     };
     g_pD3D9Hook->onLostDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {

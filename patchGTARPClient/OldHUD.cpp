@@ -25,8 +25,8 @@
 // ----------------------------------------------------------
 // Исправление уровня розыска
 
-uint64_t        g_ui64DrawWantedJumpTrampline;
-PLH::x86Detour* g_pDrawWantedDetour = nullptr;
+uint64_t                        g_ui64DrawWantedJumpTrampline;
+std::unique_ptr<PLH::x86Detour> g_pDrawWantedDetour;
 NOINLINE void   drawWantedDetourFNC() {
     static auto s_piWantedLevel = reinterpret_cast<DWORD*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::WANTEDLEVEL));
 
@@ -86,8 +86,8 @@ int   drawServerIcon() {
     return NULL;
 }
 
-uint64_t        g_ui64LoadTextureHudJumpTrampline;
-PLH::x86Detour* g_pLoadTextureHudDetour = nullptr;
+uint64_t                        g_ui64LoadTextureHudJumpTrampline;
+std::unique_ptr<PLH::x86Detour> g_pLoadTextureHudDetour;
 NOINLINE void   loadTextureHudDetourFNC() {
     ((void(__cdecl*)())g_ui64LoadTextureHudJumpTrampline)(); // call original
 
@@ -113,18 +113,19 @@ int fmtDirPath(char* a1 /*obuf*/, char* a2 /*fmt*/, char* a3 /*currPath*/, int a
 // -----------------------------
 // scale fix
 
-uint64_t        g_ui64HudScaleFixDetourJumpTrampline;
-PLH::x86Detour* g_pHudScaleFixDetourDetour = nullptr;
-bool*           g_pSAMPHudScale;
+bool* g_pSAMPHudScale;
+
+uint64_t                        g_ui64HudScaleFixDetourJumpTrampline;
+std::unique_ptr<PLH::x86Detour> g_pHudScaleFixDetourDetour;
 void hudScaleFixDetour(PCHAR a1) {
     FNC_CAST(hudScaleFixDetour, g_ui64HudScaleFixDetourJumpTrampline)(a1);
     g_Config["oldHud"]["radarScaleFix"] = *g_pSAMPHudScale/* ^ true*/;
+    g_Config.saveFile();
 }
 
 // -----------------------------
 
 void OldHUD::Process() {
-    auto dis = PLH::CapstoneDisassembler(PLH::Mode::x86);
     if (g_Config["oldHud"]["hud"].get<bool>()) {
         bFixTimeZone = g_Config["clock"]["fixTimeZone"].get<bool>();
 
@@ -150,14 +151,15 @@ void OldHUD::Process() {
         plugin::patch::ReplaceFunctionCall(static_cast<uint32_t>(OFFSETS::GTA_SA::DRAWHUD_CLOCK_SPRINTF), &drawClockSprintfDetourFNC);
 
         /* Исправляет уровень розыска */
-        g_pDrawWantedDetour = new PLH::x86Detour(reinterpret_cast<PCHAR>(OFFSETS::GTA_SA::DRAWWANTED), reinterpret_cast<PCHAR>(&drawWantedDetourFNC),
-                                                 &g_ui64DrawWantedJumpTrampline, dis);
+        g_pDrawWantedDetour = std::make_unique<PLH::x86Detour>(UINT64(OFFSETS::GTA_SA::DRAWWANTED),
+                                                               UINT64(&drawWantedDetourFNC),
+                                                               &g_ui64DrawWantedJumpTrampline);
         g_pDrawWantedDetour->hook();
 
         /* Фиксит положение иконки сервера */
-        g_pLoadTextureHudDetour = new PLH::x86Detour(
-            reinterpret_cast<PCHAR>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_FNC)), reinterpret_cast<PCHAR>(&loadTextureHudDetourFNC),
-            &g_ui64LoadTextureHudJumpTrampline, dis);
+        g_pLoadTextureHudDetour = std::make_unique<PLH::x86Detour>(UINT64(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_FNC)),
+                                                                   UINT64(&loadTextureHudDetourFNC),
+                                                                   &g_ui64LoadTextureHudJumpTrampline);
         g_pLoadTextureHudDetour->hook();
     }
     if (g_Config["oldHud"]["radar"].get<bool>()) {
@@ -173,11 +175,10 @@ void OldHUD::Process() {
 
     g_pSAMPHudScale = (bool*)g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX_STATE);
     g_Log.Write("g_pSAMPHudScale: %p | nop: 0x%X", g_pSAMPHudScale, g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE));
-    g_pHudScaleFixDetourDetour = new PLH::x86Detour(
-        PCHAR(g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX)),
-        PCHAR(&hudScaleFixDetour),
-        &g_ui64HudScaleFixDetourJumpTrampline,
-        dis);
+    g_pHudScaleFixDetourDetour = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX)),
+                                                                  UINT64(&hudScaleFixDetour),
+                                                                  &g_ui64HudScaleFixDetourJumpTrampline);
+    g_pHudScaleFixDetourDetour->hook();
     *g_pSAMPHudScale = g_Config["oldHud"]["radarScaleFix"].get<bool>();
     patch__fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE), 7u, 0x90);
     patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLE_RECHANGE_SCALE_STATE), "\xEB\x23", 2u); /*jmp $+0x23*/

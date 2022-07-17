@@ -57,7 +57,7 @@ namespace snippets
     public:
 
         static void Init();
-        static PLH::x86Detour* regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader);
+        static std::shared_ptr<PLH::x86Detour> regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader);
 
     private:
         static WNDPROC s_pOrig;

@@ -25,8 +25,6 @@ private:
     static NOINLINE HRESULT __stdcall HookedPresent(IDirect3DDevice9* pDevice, CONST RECT* pSrcRect, CONST RECT* pDestRect, HWND hDestWindow, CONST RGNDATA* pDirtyRegion);
     static NOINLINE HRESULT __stdcall HookedReset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams);
 
-    PLH::CapstoneDisassembler dis = {PLH::Mode::x86};
-
     patch::callHook* m_pInitDevice;
     static void               initDeviceHook();
     void        initHooks();
@@ -39,6 +37,10 @@ private:
         inline stHookData()
                 : m_uiJump(NULL),
                   m_pDetour(nullptr) {
+        }
+        inline ~stHookData() {
+            if (m_pDetour != nullptr)
+                delete m_pDetour;
         }
 	};
 

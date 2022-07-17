@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31717.71
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "third-party\imgui\imgui.vcxproj", "{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "updater", "updater\updater.vcxproj", "{C7318485-9BD6-4F54-B9C6-5C527440512D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00} = {850A97F7-B2D8-4A5D-9FEE-29B71F367B00}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "patchGTARPClient", "patchGTARPClient\patchGTARPClient.vcxproj", "{DF7CBE2E-03BD-4EF9-B271-5482133A0731}"
+	ProjectSection(ProjectDependencies) = postProject
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00} = {850A97F7-B2D8-4A5D-9FEE-29B71F367B00}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "third-party", "third-party", "{18615C0F-2441-4633-A3F5-57515BCBC9B7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x86.ActiveCfg = Debug|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x86.Build.0 = Debug|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x86.ActiveCfg = Release|Win32
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x86.Build.0 = Release|Win32
+		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Debug|x86.ActiveCfg = Debug|Win32
+		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Debug|x86.Build.0 = Debug|Win32
+		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Release|x86.ActiveCfg = Release|Win32
+		{C7318485-9BD6-4F54-B9C6-5C527440512D}.Release|x86.Build.0 = Release|Win32
+		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Debug|x86.ActiveCfg = Debug|Win32
+		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Debug|x86.Build.0 = Debug|Win32
+		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Release|x86.ActiveCfg = Release|Win32
+		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00} = {18615C0F-2441-4633-A3F5-57515BCBC9B7}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5B7F412-2E13-4D9A-B416-CCD65A4DFF35}
+	EndGlobalSection
+EndGlobal

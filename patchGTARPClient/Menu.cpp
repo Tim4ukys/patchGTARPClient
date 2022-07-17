@@ -37,7 +37,8 @@ public:
 } g_menuData;
 
 static WNDPROC g_pWindowProc;
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static std::shared_ptr<PLH::x86Detour> g_wndProcHangler;
+extern IMGUI_IMPL_API LRESULT          ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (static bool popen = false; g_menuData.m_bOpen) {
         if (!popen) {
@@ -99,7 +100,7 @@ void Menu::Process() {
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
         g_pBlurEffect = new BlurEffect(pDevice);
-        snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
+        g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
 
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -146,6 +147,7 @@ void Menu::Process() {
             //g_Log << R"(g_Config["vers"] < g_szCurrentVersion)";
             g_menuData.m_sOldVersion = g_Config["vers"];
             g_Config["vers"] = g_szCurrentVersion;
+            g_Config.saveFile();
         #else 
         {
             g_menuData.m_sOldVersion = "8.0.0";
@@ -228,6 +230,15 @@ void Menu::Process() {
                 ImGui::Separator();
                 ImGui::Text(u8"Сайт проекта GitHub: github.com/Tim4ukys/patchGTARPClient\n"
                             u8"DonationAlerts: www.donationalerts.com/r/tim4ukys");
+                ImGui::TextWrapped(u8"Донат нужен для аренды облака, с помощью которого работает tg-bot, "
+                            u8"а в будущем он нужен будет для работы и самого плагина. "
+                            u8"Цена аренды 270-320 рублей. Я не хочу отбирать деньги просто так, и ради этого "
+                            u8"я создал цель сбора. Если нужная сумма набирается, то этот сбор закрывается, "
+                            u8"и где-то через месяц я создаю новый. "
+                            u8"Все прозрачно. Вы сами сможете видеть, сколько ещё нужно до цели. Главное, чтобы "
+                            u8"при донате Вы не забывали выбрать \"цель\" доната. (Host: RuVDS)");
+                ImGui::TextWrapped(u8"Буду рад и 10 рублям. Весь этот проект(я про патч) создавался не из-за "
+                                   u8"каких-то карыстных побуждений, а на голом энтузиазме. Спасибо за понимание.");
                 break;
             case eTitles_News:
                 ImGui::Text(u8"Все изменения, которые произошли пока Вы не обновляли плагин:");
@@ -371,11 +382,19 @@ void Menu::background() {
     g_pBlurEffect->Render({long(wpos.x), long(wpos.y), long(wpos.x + wsize.x), long(wpos.y + wsize.y)}, 75.f);
 }
 
-// thx imring
 void Menu::show_cursor(bool show) {
     if (show) {
-        g_pSAMP->setCursorMode(CURSOR_LOCKKEYS_NOCURSOR, TRUE);
-        g_pSAMP->setCursorMode(CURSOR_LOCKCAM_NOCURSOR, TRUE);
+        patch__fill(0x541DF5, 5u, 0x90);
+        patch__fill(0x53F417, 5u, 0x90);
+        patch__setRaw(0x53F41F, "\x33\xC0\xf\x84", 4u);
+        *(DWORD*)0xB73424 = 0;
+        *(DWORD*)0xB73428 = 0;
+        ((void (*)())0x541BD0)();
+        ((void (*)())0x541DD0)();
+        patch__setRaw(0x6194A0, "\xC3", 1u);
+
+        *(DWORD*)(*(DWORD*)g_sampBase.getAddress(0x26E8F4) + 0x61) = 2;
+
         ImGui::GetIO().MouseDrawCursor = true;
     } else {
         g_pSAMP->setCursorMode(CURSOR_NONE, TRUE);

@@ -22,8 +22,8 @@ const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(8, 1, 0)
-#define CURRENT_VERSION "8.1.0"
+DECLARATION_VERSION(8, 2, 0)
+#define CURRENT_VERSION "8.2.0"
 const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
@@ -130,8 +130,8 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
 FSignal<void()> g_onInitSamp;
 
-uint64_t        g_ui64GameLoopJumpTrampline;
-PLH::x86Detour* g_pGameLoopDetour = nullptr;
+uint64_t                        g_ui64GameLoopJumpTrampline;
+std::unique_ptr<PLH::x86Detour> g_pGameLoopDetour;
 NOINLINE void   gameLoopDetourFNC() {
     ((void (*)())g_ui64GameLoopJumpTrampline)(); // call original
 
@@ -170,8 +170,8 @@ NOINLINE void   gameLoopDetourFNC() {
 
 FSignal<void()> g_initAudioTracks;
 
-uint64_t g_uiOrigAudioInit;
-PLH::x86Detour *g_pAudioInitDetour;
+uint64_t                        g_uiOrigAudioInit;
+std::unique_ptr<PLH::x86Detour> g_pAudioInitDetour;
 int __fastcall initSAMPDetour(PVOID pthis, PVOID trash, char* a2, int a3, const char* a4, int a5) {
     BASS_Init(-1, 44100, 0, 0, nullptr);
 
@@ -199,6 +199,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
         // ------------
 
+        if (GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI") != hModule) {
+            wchar_t moduleName[MAX_PATH]{};
+            GetModuleFileNameW(hModule, moduleName, ARRAYSIZE(moduleName));
+            wchar_t* name = wcsrchr(moduleName, L'\\') + 1;
+            MessageBoxW(NULL,
+                        L"Пожайлуста, переименуйте плагин на: !000patchGTARPClientByTim4ukys.ASI",
+                        name,
+                        MB_ICONERROR | MB_OK);
+            exit(EXIT_FAILURE);
+        }
+
+        // ------------
+
         OSVERSIONINFOA vers;
         ZeroMemory(&vers, sizeof(OSVERSIONINFOA));
         vers.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
@@ -211,9 +224,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         // ------------
         // Проверка на обновления
         g_pSAMP = new SAMP();
-        PLH::CapstoneDisassembler dis(PLH::Mode::x86);
-        g_pGameLoopDetour = new PLH::x86Detour(
-            reinterpret_cast<PCHAR>(OFFSETS::GTA_SA::GAMELOOP), reinterpret_cast<PCHAR>(&gameLoopDetourFNC), &g_ui64GameLoopJumpTrampline, dis);
+        g_pGameLoopDetour = std::make_unique<PLH::x86Detour>(UINT64(OFFSETS::GTA_SA::GAMELOOP),
+                                                             UINT64(&gameLoopDetourFNC),
+                                                             &g_ui64GameLoopJumpTrampline);
         g_pGameLoopDetour->hook();
 
         // ------------
@@ -230,7 +243,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         g_pLdrpDereferenceModule = new patch::callHook(addr);
         g_pLdrpDereferenceModule->installHook(&loadModule, false);
 
-        g_pAudioInitDetour = new PLH::x86Detour(PCHAR(g_sampBase.getAddress(0xB5F0)), PCHAR(&initSAMPDetour), &g_uiOrigAudioInit, dis);
+        g_pAudioInitDetour = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0xB5F0)),
+                                                              UINT64(&initSAMPDetour),
+                                                              &g_uiOrigAudioInit);
         g_pAudioInitDetour->hook();
     }
         break;
@@ -242,7 +257,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         SAFE_DELETE(g_pD3D9Hook);
         SAFE_DELETE(g_pLdrpDereferenceModule);
         SAFE_DELETE(g_pSAMP);
-        SAFE_DELETE(g_pGameLoopDetour);
         g_Config.saveFile();
         BASS_Free();
         break;
