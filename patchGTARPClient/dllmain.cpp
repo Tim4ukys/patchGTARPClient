@@ -158,8 +158,8 @@ NOINLINE void   gameLoopDetourFNC() {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}У нас появился {990000}Telegram-Bot{FF9900}!");
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Подробнее: {990000}https://t.me/patchClient_bot");
+        /*g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}У нас появился {990000}Telegram-Bot{FF9900}!");
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Подробнее: {990000}https://t.me/patchClient_bot");*/
         g_Log.Write("[UPDATE]: Last version: %d.%d.%d", vMaj, vMin, vPatch);
         s_bIsInit = true;
     }
