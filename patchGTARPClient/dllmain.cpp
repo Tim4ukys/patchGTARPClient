@@ -15,7 +15,7 @@
 FSignal<void()> g_onDetachPlugin;
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
-const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
+const char GTARP_CMP[] = "4C00750883C8FFE9A302";
 
 #define DECLARATION_VERSION(v_maj, v_min, v_patch) \
     const int CURRENT_VERSION_MAJ = v_maj; \
