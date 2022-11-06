@@ -26,17 +26,20 @@ public:
         INITTEXTURE_FNC = 0x1BEB0,
 
         /* [can be found in] Sig: 8B 04 B5 ? ? ? ? 8B 0D ? ? ? ? FF 30 8B 41 20 6A 01 FF D0 8B 0D ? ? ? ? */
-        ARRAYSERVERLOGO = 0xD8DAC, /* 01 - +0h, 02 - +4h, test - +8h*/
+        ARRAYSERVERLOGO = 0xD8DBC, /* 01 - +0h, 02 - +4h, test - +8h*/
         /* Sig(offs: +6h): 0F 82 ? ? ? ? A1 ? ? ? ? */
         SERVERID = 0xCDB20, // 2 - test server
+        /* HALLOWEEN | Temporarily */
+        X2_PAYDAY = 0xD373C,
+        ARRAYSERVERHALLOWEEN = 0xD8B50,
 
         /* Sig: 55 8B EC 83 EC 48 A1 ? ? ? ? 33 C5 89 45 FC 56 */
-        DRAWHUD = 0x1C8A0,
+        DRAWHUD = 0x1C770,
         /* Sig: 85 C0 75 1F C7 05 ? ? ? ? ? ? ? ? */
         DRAWSPEEDOMETER_DRAWRAMKA = 0x25DCA,
 
         /* [can be found in] Sig: 8B 0D ? ? ? ? 83 C4 08 85 C9 */
-        WANTEDLEVEL = 0xD8B60,
+        WANTEDLEVEL = 0xD8B70,
 
         /* Sig: 8B C8 E8 ? ? ? ? 3D ? ? ? ? */
         //DISABLECHECKTXD = 0xF134, goodbay epta
@@ -44,9 +47,9 @@ public:
         //DISABLEWINTERWINDOW = 0x26384, goodbay epta
 
         /* Sig(offs: +5h): A3 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? 51 */
-        DISABLE_CALL_SET_CUSTOM_RADAR = 0xF486,
+        DISABLE_CALL_SET_CUSTOM_RADAR = 0xF366,
         /* Sig: FF D7 83 C4 10 8B D8 E9 ? ? ? ? 68 ? ? ? ? 56 E8 ? ? ? ? 83 C4 08 85 C0 75 45 */
-        CUSTOM_PATH_TXD_HUD = 0x2ECAF, 
+        CUSTOM_PATH_TXD_HUD = 0x2EC08, 
         
         /* Sig: 85 C0 0F 95 45 F4 88 1E */
         DISABLE_RECHANGE_SCALE_STATE = 0x2F2D9

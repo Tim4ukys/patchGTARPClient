@@ -71,17 +71,15 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...) {
 struct stServerIcon {
     CSprite2d* m_pSprites = nullptr;
     float      m_fIconPos[2];
-    bool       m_bState;
+    int*       m_pIsX2PayDay = nullptr;
 } g_serverIcon;
 
 int   drawServerIcon() {
-    if (g_serverIcon.m_bState) {
-        g_serverIcon.m_pSprites->Draw(
-            SCREEN_COORD_LEFT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->width / 2)),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->height / 2)),
-            CRGBA(0xFF, 0xFF, 0xFF));
-    }
+    g_serverIcon.m_pSprites[*g_serverIcon.m_pIsX2PayDay].Draw(
+        SCREEN_COORD_LEFT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
+        SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->width / 2)),
+        SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->height / 2)),
+        CRGBA(0xFF, 0xFF, 0xFF));
 
     return NULL;
 }
@@ -91,14 +89,25 @@ std::unique_ptr<PLH::x86Detour> g_pLoadTextureHudDetour;
 NOINLINE void   loadTextureHudDetourFNC() {
     ((void(__cdecl*)())g_ui64LoadTextureHudJumpTrampline)(); // call original
 
-    RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO));
+    //RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERHALLOWEEN));
     //while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2]) Sleep(100);
 
-    g_serverIcon.m_pSprites = new CSprite2d;
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::SERVERID));
-    serverID = serverID > 2 || serverID < 0 ? 0 : serverID;
+    if (serverID < 0 || serverID > 1) serverID = 2;
+    if (serverID != 2) {
+        RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERHALLOWEEN));
+        g_serverIcon.m_pSprites = new CSprite2d[2];
+        g_serverIcon.m_pSprites[0].m_pTexture = serverIcon[serverID * 2];
+        g_serverIcon.m_pSprites[1].m_pTexture = serverIcon[serverID * 2 + 1];
 
-    g_serverIcon.m_pSprites->m_pTexture = serverIcon[serverID];
+        g_serverIcon.m_pIsX2PayDay = reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::X2_PAYDAY));
+    } else {
+        static int s_fakeX2 = 0;
+        g_serverIcon.m_pSprites = new CSprite2d;
+        g_serverIcon.m_pSprites->m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[2];
+        g_serverIcon.m_pIsX2PayDay = &s_fakeX2;
+    }
+
 
     plugin::patch::ReplaceFunction(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DRAWHUD), &drawServerIcon);
 }
@@ -129,10 +138,6 @@ void OldHUD::Process() {
     if (g_Config["oldHud"]["hud"].get<bool>()) {
         bFixTimeZone = g_Config["clock"]["fixTimeZone"].get<bool>();
 
-        g_serverIcon.m_bState = g_Config["serverIcon"]["state"].get<bool>();
-        g_serverIcon.m_fIconPos[0] = g_Config["serverIcon"]["x"].get<float>();
-        g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
-
         // --------
 
         /*
@@ -155,12 +160,6 @@ void OldHUD::Process() {
                                                                UINT64(&drawWantedDetourFNC),
                                                                &g_ui64DrawWantedJumpTrampline);
         g_pDrawWantedDetour->hook();
-
-        /* Фиксит положение иконки сервера */
-        g_pLoadTextureHudDetour = std::make_unique<PLH::x86Detour>(UINT64(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_FNC)),
-                                                                   UINT64(&loadTextureHudDetourFNC),
-                                                                   &g_ui64LoadTextureHudJumpTrampline);
-        g_pLoadTextureHudDetour->hook();
     }
     if (g_Config["oldHud"]["radar"].get<bool>()) {
         /* Возвращает радар */
@@ -172,6 +171,19 @@ void OldHUD::Process() {
         patch__fill(addrPatch, 2u, 0x90);
         patch__setJump(addrPatch, uint32_t(&fmtDirPath), 0u, TRUE);
     }
+    if (g_Config["serverIcon"]["state"].get<bool>()) {
+        g_serverIcon.m_fIconPos[0] = g_Config["serverIcon"]["x"].get<float>();
+        g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
+
+        // --------
+
+        /* Фиксит положение иконки сервера */
+        g_pLoadTextureHudDetour = std::make_unique<PLH::x86Detour>(UINT64(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_FNC)),
+                                                                   UINT64(&loadTextureHudDetourFNC),
+                                                                   &g_ui64LoadTextureHudJumpTrampline);
+        g_pLoadTextureHudDetour->hook();
+    }
+    
 
     g_pSAMPHudScale = (bool*)g_sampBase.GET_ADDR(OFFSETS::SAMP::SCALE_HUD_FIX_STATE);
     g_Log.Write("g_pSAMPHudScale: %p | nop: 0x%X", g_pSAMPHudScale, g_sampBase.GET_ADDR(OFFSETS::SAMP::DISABLE_LOAD_SCALE_STATE));
