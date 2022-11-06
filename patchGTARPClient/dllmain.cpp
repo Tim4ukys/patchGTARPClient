@@ -15,15 +15,15 @@
 FSignal<void()> g_onDetachPlugin;
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
-const char GTARP_CMP[] = "432C89108BCF81FFFF0F";
+const char GTARP_CMP[] = "4C00750883C8FFE9A302";
 
 #define DECLARATION_VERSION(v_maj, v_min, v_patch) \
     const int CURRENT_VERSION_MAJ = v_maj; \
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(8, 2, 0)
-#define CURRENT_VERSION "8.2.0"
+DECLARATION_VERSION(9, 0, 0)
+#define CURRENT_VERSION "9.0.0"
 const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
@@ -40,7 +40,7 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 #include "UnlockConect.h"
 #include "CustomFont.h"
 #include "WhiteID.h"
-#include "ReplaceableTXD.h"
+//#include "ReplaceableTXD.h"
 #include "DelCarTable.h"
 #include "SortScreenshot.h"
 #include "CustomHelp.h"
@@ -112,7 +112,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
 #define PROCESS(a) {std::thread(a::Process)}
-        std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
+        std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), /*PROCESS(ReplaceableTXD),*/
                            PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
                            PROCESS(Menu), PROCESS(TFRO)};
         for (auto& thr : cock)
@@ -158,8 +158,8 @@ NOINLINE void   gameLoopDetourFNC() {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}У нас появился {990000}Telegram-Bot{FF9900}!");
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Подробнее: {990000}https://t.me/patchClient_bot");
+        /*g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}У нас появился {990000}Telegram-Bot{FF9900}!");
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Подробнее: {990000}https://t.me/patchClient_bot");*/
         g_Log.Write("[UPDATE]: Last version: %d.%d.%d", vMaj, vMin, vPatch);
         s_bIsInit = true;
     }

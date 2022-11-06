@@ -230,7 +230,7 @@ void Menu::Process() {
                 ImGui::Separator();
                 ImGui::Text(u8"Сайт проекта GitHub: github.com/Tim4ukys/patchGTARPClient\n"
                             u8"DonationAlerts: www.donationalerts.com/r/tim4ukys");
-                ImGui::TextWrapped(u8"Донат нужен для аренды облака, с помощью которого работает tg-bot, "
+                /*ImGui::TextWrapped(u8"Донат нужен для аренды облака, с помощью которого работает tg-bot, "
                             u8"а в будущем он нужен будет для работы и самого плагина. "
                             u8"Цена аренды 270-320 рублей. Я не хочу отбирать деньги просто так, и ради этого "
                             u8"я создал цель сбора. Если нужная сумма набирается, то этот сбор закрывается, "
@@ -238,7 +238,7 @@ void Menu::Process() {
                             u8"Все прозрачно. Вы сами сможете видеть, сколько ещё нужно до цели. Главное, чтобы "
                             u8"при донате Вы не забывали выбрать \"цель\" доната. (Host: RuVDS)");
                 ImGui::TextWrapped(u8"Буду рад и 10 рублям. Весь этот проект(я про патч) создавался не из-за "
-                                   u8"каких-то карыстных побуждений, а на голом энтузиазме. Спасибо за понимание.");
+                                   u8"каких-то карыстных побуждений, а на голом энтузиазме. Спасибо за понимание.");*/
                 break;
             case eTitles_News:
                 ImGui::Text(u8"Все изменения, которые произошли пока Вы не обновляли плагин:");
@@ -295,8 +295,18 @@ void Menu::Process() {
                          u8"Возвращает старый худ из GTA SA");
                 if (g_Config["oldHud"]["hud"].get<bool>()) {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Часовой пояс начасах МСК", g_Config["clock"]["fixTimeZone"],
+                    checkbox(u8"Часовой пояс на часах МСК", g_Config["clock"]["fixTimeZone"],
                              u8"Подстраивает время на часах относительно московского часового пояса.");
+
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"],
+                             u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
+                    if (g_Config["serverIcon"]["state"].get<bool>()) {
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                        doubleInput(u8"X", g_Config["serverIcon"]["x"]);
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                        doubleInput(u8"Y", g_Config["serverIcon"]["y"]);
+                    }
                 }
                 checkbox(u8"Старый радар", g_Config["oldHud"]["radar"],
                          u8"Возвращает радар из GTA SA");
@@ -305,15 +315,6 @@ void Menu::Process() {
                           u8"Например(Как в настройках->Как в итоге):\n\t"
                           u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
                           u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
-                
-                checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"],
-                         u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
-                if (g_Config["serverIcon"]["state"].get<bool>()) {
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    doubleInput(u8"X", g_Config["serverIcon"]["x"]);
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    doubleInput(u8"Y", g_Config["serverIcon"]["y"]);
-                }
                 break;
             }
             background();

@@ -15,5 +15,5 @@
 /* Этот файл отключает проверку на повреждение GTARP_HUD */
 
 void ReplaceableTXD::Process() {
-    patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLECHECKTXD), "\xEB\x42", 2);
+    //patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DISABLECHECKTXD), "\xEB\x42", 2);
 }
