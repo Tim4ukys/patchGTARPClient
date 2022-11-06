@@ -295,8 +295,18 @@ void Menu::Process() {
                          u8"Возвращает старый худ из GTA SA");
                 if (g_Config["oldHud"]["hud"].get<bool>()) {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Часовой пояс начасах МСК", g_Config["clock"]["fixTimeZone"],
+                    checkbox(u8"Часовой пояс на часах МСК", g_Config["clock"]["fixTimeZone"],
                              u8"Подстраивает время на часах относительно московского часового пояса.");
+
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"],
+                             u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
+                    if (g_Config["serverIcon"]["state"].get<bool>()) {
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                        doubleInput(u8"X", g_Config["serverIcon"]["x"]);
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                        doubleInput(u8"Y", g_Config["serverIcon"]["y"]);
+                    }
                 }
                 checkbox(u8"Старый радар", g_Config["oldHud"]["radar"],
                          u8"Возвращает радар из GTA SA");
@@ -305,15 +315,6 @@ void Menu::Process() {
                           u8"Например(Как в настройках->Как в итоге):\n\t"
                           u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
                           u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
-                
-                checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"],
-                         u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
-                if (g_Config["serverIcon"]["state"].get<bool>()) {
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    doubleInput(u8"X", g_Config["serverIcon"]["x"]);
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    doubleInput(u8"Y", g_Config["serverIcon"]["y"]);
-                }
                 break;
             }
             background();
