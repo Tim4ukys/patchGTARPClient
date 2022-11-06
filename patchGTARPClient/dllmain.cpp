@@ -40,7 +40,7 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 #include "UnlockConect.h"
 #include "CustomFont.h"
 #include "WhiteID.h"
-#include "ReplaceableTXD.h"
+//#include "ReplaceableTXD.h"
 #include "DelCarTable.h"
 #include "SortScreenshot.h"
 #include "CustomHelp.h"
@@ -112,7 +112,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
 
 #define PROCESS(a) {std::thread(a::Process)}
-        std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), PROCESS(ReplaceableTXD),
+        std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), /*PROCESS(ReplaceableTXD),*/
                            PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
                            PROCESS(Menu), PROCESS(TFRO)};
         for (auto& thr : cock)

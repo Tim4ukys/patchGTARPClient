@@ -39,7 +39,7 @@ public:
         WANTEDLEVEL = 0xD8B60,
 
         /* Sig: 8B C8 E8 ? ? ? ? 3D ? ? ? ? */
-        DISABLECHECKTXD = 0xF134,
+        //DISABLECHECKTXD = 0xF134, goodbay epta
 
         //DISABLEWINTERWINDOW = 0x26384, goodbay epta
 
