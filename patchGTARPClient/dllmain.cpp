@@ -11,6 +11,7 @@
 #include "pch.h"
 #include "offsets.hpp"
 #include <process.h>
+#include <SubAuth.h>
 
 FSignal<void()> g_onDetachPlugin;
 
@@ -51,18 +52,13 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 
 // ----------------------------------------
 
-patch::callHook *g_pLdrpDereferenceModule = nullptr;
-PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
-    struct ldrrModuleDLL {
-        uint32_t pad_0[6]; // +0h
-        HANDLE   hModule; // +18h
-        uint32_t pad_1[5]; // +1Ch
-        wchar_t* pPluginName; // +30h
-    }* _a1 = (ldrrModuleDLL*)a1;
+uint64_t                        g_ui64LdrLoadDllJumpTrampline;
+std::unique_ptr<PLH::x86Detour> g_pLdrLoadDllDetour;
+NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE_STRING name, PVOID* baseAddress) {
+    auto r = ((NTSTATUS(*)(PWSTR, PULONG, PUNICODE_STRING, PVOID*))g_ui64LdrLoadDllJumpTrampline)
+        (searchPath, loadFlags, name, baseAddress); // call original
 
-    static auto origFnc = reinterpret_cast<PDWORD(__fastcall*)(ldrrModuleDLL*, PVOID)>(g_pLdrpDereferenceModule->getOriginal());
-
-    if (!wcscmp(_a1->pPluginName, L"gtarp_clientside.asi"))
+    if (!wcscmp(name->Buffer, L"gtarp_clientside.asi"))
     {
         if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
             auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
@@ -119,11 +115,11 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
             thr.join();
 #undef PROCESS
 
-        g_Log << "[loader]: end patching. Destroy 'LdrpDereferenceModule' hook.";
-        g_pLdrpDereferenceModule->uninstallHook();
+        g_Log << "[loader]: end patching. Destroy 'LdrLoadDll' hook.";
+        g_pLdrLoadDllDetour->unHook();
     }
 
-    return origFnc((ldrrModuleDLL*)a1, a2);
+    return r;
 }
 
 // ------------------------------
@@ -230,18 +226,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         g_pGameLoopDetour->hook();
 
         // ------------
+        auto pNTDLLHandle = GetModuleHandleA("ntdll.dll");
+        if (!pNTDLLHandle) {
+            g_Log.Write("pNTDLLHandle == nullptr! Abort");
+            abort();
+        }
+        auto nAddressLdrLoadDll = UINT64(GetProcAddress(pNTDLLHandle, "LdrLoadDll"));
 
-        auto handleNTDLL = GetModuleHandleA("ntdll.dll");
-        auto nAddressLdrLoadDll = DWORD(GetProcAddress(handleNTDLL, "LdrLoadDll"));
+        g_pLdrLoadDllDetour = std::make_unique<PLH::x86Detour>(nAddressLdrLoadDll,
+                                                               UINT64(&LdrLoadDllDetour),
+                                                               &g_ui64LdrLoadDllJumpTrampline);
+        g_pLdrLoadDllDetour->hook();
 
-        auto addr = patch__FindPattern("ntdll.dll",
-                                       "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8",
-                                       "x???x???x??xxx",
-                                       nAddressLdrLoadDll);
-        addr += 13;
-
-        g_pLdrpDereferenceModule = new patch::callHook(addr);
-        g_pLdrpDereferenceModule->installHook(&loadModule, false);
+        // ------------
 
         g_pAudioInitDetour = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0xB5F0)),
                                                               UINT64(&initSAMPDetour),
