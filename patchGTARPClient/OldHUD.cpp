@@ -71,15 +71,16 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...) {
 struct stServerIcon {
     CSprite2d  m_Sprite;
     float      m_fIconPos[2];
+    float      m_fIconSize[2];
     bool       m_bState;
 } g_serverIcon;
 
 int   drawServerIcon() {
     if (g_serverIcon.m_bState) {
         g_serverIcon.m_Sprite.Draw(
-            SCREEN_COORD_LEFT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_Sprite.m_pTexture->raster->width / 2)),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_Sprite.m_pTexture->raster->height / 2)),
+            SCREEN_COORD_RIGHT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
+            SCREEN_COORD(g_serverIcon.m_fIconSize[0]),
+            SCREEN_COORD(g_serverIcon.m_fIconSize[1]),
             CRGBA(0xFF, 0xFF, 0xFF));
     }
 
@@ -132,6 +133,8 @@ void OldHUD::Process() {
         g_serverIcon.m_bState = g_Config["serverIcon"]["state"].get<bool>();
         g_serverIcon.m_fIconPos[0] = g_Config["serverIcon"]["x"].get<float>();
         g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
+        g_serverIcon.m_fIconSize[0] = g_Config["serverIcon"]["width"].get<float>();
+        g_serverIcon.m_fIconSize[1] = g_Config["serverIcon"]["height"].get<float>();
         // --------
 
         /*
