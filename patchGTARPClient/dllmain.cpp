@@ -16,7 +16,8 @@
 FSignal<void()> g_onDetachPlugin;
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
-const char GTARP_CMP[] = "4C00750883C8FFE9A302";
+//const char GTARP_CMP[] = "4C00750883C8FFE9A302";
+constexpr DWORD GTARP_TIMESTAMP = 0x63688148;
 
 #define DECLARATION_VERSION(v_maj, v_min, v_patch) \
     const int CURRENT_VERSION_MAJ = v_maj; \
@@ -77,8 +78,10 @@ NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE
 
         char hexBuff[10 * 2 + 1]{};
 
-        if (patch__getHEX(g_gtarpclientBase.getAddress(0xBABE), hexBuff, 10U); 
-            strcmp(hexBuff, GTARP_CMP)) {
+        auto base = g_gtarpclientBase.getAddress();
+        IMAGE_NT_HEADERS* ntheader = reinterpret_cast<IMAGE_NT_HEADERS*>(base + reinterpret_cast<IMAGE_DOS_HEADER*>(base)->e_lfanew);
+
+        if (ntheader->FileHeader.TimeDateStamp != GTARP_TIMESTAMP) {
             MessageBoxW(
                 NULL,
                 L"ERROR: Эта версия плагина ещё не поддерживает эту версию клиента игры.\n\n"
@@ -87,7 +90,7 @@ NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE
                 L"!000patchGTARPClientByTim4ukys.ASI",
                 MB_ICONERROR
             );
-            g_Log.Write("gtarp_cmp: %s", hexBuff);
+            g_Log.Write("gtarp_timestamp: %d", ntheader->FileHeader.TimeDateStamp);
             TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
         } 
         else if (patch__getHEX(g_sampBase.getAddress(0xBABE), hexBuff, 10); 
