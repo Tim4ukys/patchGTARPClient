@@ -88,6 +88,8 @@ void Config::restoreAndCheckKeysCorrect() {
         SET_DEFAULT_BOOL(jn, "state", false)
         SET_DEFAULT_FLT(jn, "x", 656.0)
         SET_DEFAULT_FLT(jn, "y", 28.0)
+        SET_DEFAULT_FLT(jn, "width", 366.0)
+        SET_DEFAULT_FLT(jn, "height", 144.0)
     });
     safeLoadStruct(j, "vehicleHud", [](nlohmann::json& jn) {
         SET_DEFAULT_BOOL(jn, "isDrawHelpTablet", false)

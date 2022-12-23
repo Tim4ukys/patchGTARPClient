@@ -11,19 +11,21 @@
 #include "pch.h"
 #include "offsets.hpp"
 #include <process.h>
+#include <SubAuth.h>
 
 FSignal<void()> g_onDetachPlugin;
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
-const char GTARP_CMP[] = "4C00750883C8FFE9A302";
+//const char GTARP_CMP[] = "4C00750883C8FFE9A302";
+constexpr DWORD GTARP_TIMESTAMP = 0x63688148;
 
 #define DECLARATION_VERSION(v_maj, v_min, v_patch) \
     const int CURRENT_VERSION_MAJ = v_maj; \
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(9, 0, 0)
-#define CURRENT_VERSION "9.0.0"
+DECLARATION_VERSION(9, 1, 0)
+#define CURRENT_VERSION "9.1.0"
 const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
@@ -51,22 +53,20 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 
 // ----------------------------------------
 
-patch::callHook *g_pLdrpDereferenceModule = nullptr;
-PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
-    struct ldrrModuleDLL {
-        uint32_t pad_0[6]; // +0h
-        HANDLE   hModule; // +18h
-        uint32_t pad_1[5]; // +1Ch
-        wchar_t* pPluginName; // +30h
-    }* _a1 = (ldrrModuleDLL*)a1;
+uint64_t                        g_ui64LdrLoadDllJumpTrampline;
+std::unique_ptr<PLH::x86Detour> g_pLdrLoadDllDetour;
+NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE_STRING name, PVOID* baseAddress) {
+    auto r = ((NTSTATUS(*)(PWSTR, PULONG, PUNICODE_STRING, PVOID*))g_ui64LdrLoadDllJumpTrampline)
+        (searchPath, loadFlags, name, baseAddress); // call original
 
-    static auto origFnc = reinterpret_cast<PDWORD(__fastcall*)(ldrrModuleDLL*, PVOID)>(g_pLdrpDereferenceModule->getOriginal());
-
-    if (!wcscmp(_a1->pPluginName, L"gtarp_clientside.asi"))
+    if (!wcscmp(name->Buffer, L"gtarp_clientside.asi"))
     {
         if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
-            auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-            auto [vMaj, vMin, vPatch] = snippets::versionParse(j["vers"].get<std::string>());
+            auto        j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+            std::string s;
+            j["vers"].get_to(s);
+            auto [vMaj, vMin, vPatch] = snippets::versionParse(s);
+            g_Log.Write("Git version: vMaj: %d | vMid: %d | vPatch: %d", vMaj, vMin, vPatch);
 
             if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
             {
@@ -81,8 +81,10 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
 
         char hexBuff[10 * 2 + 1]{};
 
-        if (patch__getHEX(g_gtarpclientBase.getAddress(0xBABE), hexBuff, 10U); 
-            strcmp(hexBuff, GTARP_CMP)) {
+        auto base = g_gtarpclientBase.getAddress();
+        IMAGE_NT_HEADERS* ntheader = reinterpret_cast<IMAGE_NT_HEADERS*>(base + reinterpret_cast<IMAGE_DOS_HEADER*>(base)->e_lfanew);
+
+        if (ntheader->FileHeader.TimeDateStamp != GTARP_TIMESTAMP) {
             MessageBoxW(
                 NULL,
                 L"ERROR: Эта версия плагина ещё не поддерживает эту версию клиента игры.\n\n"
@@ -91,7 +93,7 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
                 L"!000patchGTARPClientByTim4ukys.ASI",
                 MB_ICONERROR
             );
-            g_Log.Write("gtarp_cmp: %s", hexBuff);
+            g_Log.Write("gtarp_timestamp: %d", ntheader->FileHeader.TimeDateStamp);
             TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
         } 
         else if (patch__getHEX(g_sampBase.getAddress(0xBABE), hexBuff, 10); 
@@ -119,11 +121,11 @@ PDWORD __fastcall loadModule(struct ldrrModuleDLL* a1, PVOID a2) {
             thr.join();
 #undef PROCESS
 
-        g_Log << "[loader]: end patching. Destroy 'LdrpDereferenceModule' hook.";
-        g_pLdrpDereferenceModule->uninstallHook();
+        g_Log << "[loader]: end patching. Destroy 'LdrLoadDll' hook.";
+        g_pLdrLoadDllDetour->unHook();
     }
 
-    return origFnc((ldrrModuleDLL*)a1, a2);
+    return r;
 }
 
 // ------------------------------
@@ -150,8 +152,10 @@ NOINLINE void   gameLoopDetourFNC() {
     static auto s_oldTime = GetTickCount64();
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
     {
-        auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-        auto [vMaj, vMin, vPatch] = snippets::versionParse(j["vers"].get<std::string>());
+        auto        j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+        std::string s;
+        j["vers"].get_to(s);
+        auto [vMaj, vMin, vPatch] = snippets::versionParse(s);
         if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
         {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}ВНИМАНИЕ: {FF9900}Вышло обновление!");
@@ -230,18 +234,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         g_pGameLoopDetour->hook();
 
         // ------------
+        auto pNTDLLHandle = GetModuleHandleA("ntdll.dll");
+        if (!pNTDLLHandle) {
+            g_Log.Write("pNTDLLHandle == nullptr! Abort");
+            abort();
+        }
+        auto nAddressLdrLoadDll = UINT64(GetProcAddress(pNTDLLHandle, "LdrLoadDll"));
 
-        auto handleNTDLL = GetModuleHandleA("ntdll.dll");
-        auto nAddressLdrLoadDll = DWORD(GetProcAddress(handleNTDLL, "LdrLoadDll"));
+        g_pLdrLoadDllDetour = std::make_unique<PLH::x86Detour>(nAddressLdrLoadDll,
+                                                               UINT64(&LdrLoadDllDetour),
+                                                               &g_ui64LdrLoadDllJumpTrampline);
+        g_pLdrLoadDllDetour->hook();
 
-        auto addr = patch__FindPattern("ntdll.dll",
-                                       "\x8B\x4C\x24\x18\x8B\x54\x24\x1C\x8B\x41\x18\x89\x02\xE8",
-                                       "x???x???x??xxx",
-                                       nAddressLdrLoadDll);
-        addr += 13;
-
-        g_pLdrpDereferenceModule = new patch::callHook(addr);
-        g_pLdrpDereferenceModule->installHook(&loadModule, false);
+        // ------------
 
         g_pAudioInitDetour = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0xB5F0)),
                                                               UINT64(&initSAMPDetour),
@@ -255,7 +260,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         }
 
         SAFE_DELETE(g_pD3D9Hook);
-        SAFE_DELETE(g_pLdrpDereferenceModule);
         SAFE_DELETE(g_pSAMP);
         g_Config.saveFile();
         BASS_Free();

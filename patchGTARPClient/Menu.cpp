@@ -17,13 +17,22 @@
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx9.h"
 
+struct stServerIcon {
+    CSprite2d m_Sprite;
+    float     m_fIconPos[2];
+    float     m_fIconSize[2];
+    bool      m_bState;
+};
+extern stServerIcon g_serverIcon;
+
 BlurEffect* g_pBlurEffect{};
 
 //#define DEBUG_NEWS
 
 struct stMenuData {
-    bool m_bOpen;
-    int  m_iSelected;
+    bool        m_bOpen;
+    int         m_iSelected;
+    const char* m_pSelected;
 
     std::string                                                   m_sOldVersion;
     std::vector<std::pair<std::string, std::vector<std::string>>> m_arrNews;
@@ -67,7 +76,7 @@ enum eTitles {
 
 void Menu::title_menu() {
     std::array<const char*, 3> TITLES{
-        "SA-MP", "GTA SA", "GTA RP"
+        "Titles_SA-MP", "Titles_GTA SA", "Titles_GTA RP"
     };
     constexpr float HEIGHT_TITLEMENU = 40.f;
     auto            width = ImGui::GetWindowWidth();
@@ -79,8 +88,9 @@ void Menu::title_menu() {
     ImGui::BeginChild("select_item", ImVec2(width, HEIGHT_TITLEMENU), true, ImGuiWindowFlags_NoScrollbar);
     for (size_t i{}, off{static_cast<size_t>(width / TITLES.size())}; i < TITLES.size(); ++i) {
         ImGui::SetCursorPos({static_cast<float>(off * i), 0});
-        if (ImGui::Button(TITLES[i], ImVec2(static_cast<float>(off), HEIGHT_TITLEMENU))) {
+        if (ImGui::Button(TITLES[i] + (ARRAYSIZE("Titles_")-1), ImVec2(static_cast<float>(off), HEIGHT_TITLEMENU))) {
             g_menuData.m_iSelected = i + 1;
+            g_menuData.m_pSelected = TITLES[i];
         }
     }
     ImGui::EndChild();
@@ -182,8 +192,10 @@ void Menu::Process() {
             ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
             title_menu();
 
-            auto checkbox = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
+            auto checkbox = [](const char* label, nlohmann::json& j, void (*fnc)(bool) = nullptr, const char* desc = nullptr) {
                 if (ImGui::Checkbox(label, j.get_ptr<bool*>())) {
+                    if (fnc)
+                        fnc(j.get<bool>());
                     g_Config.saveFile();
                 }
                 if (desc && ImGui::IsItemHovered())
@@ -196,8 +208,10 @@ void Menu::Process() {
                 if (desc && ImGui::IsItemHovered()) 
                     ImGui::SetTooltip(desc);
             };
-            auto doubleInput = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
+            auto doubleInput = [](const char* label, nlohmann::json& j, void (*fnc)(float) = nullptr, const char* desc = nullptr) {
                 if (ImGui::InputDouble(label, j.get_ptr<double*>())) {
+                    if (fnc)
+                        fnc(j.get<float>());
                     g_Config.saveFile();
                 }
                 if (desc && ImGui::IsItemHovered())
@@ -224,6 +238,8 @@ void Menu::Process() {
 
             constexpr auto TAB_SIZE = 20;
 
+            if (g_menuData.m_pSelected)
+                ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false);
             switch (g_menuData.m_iSelected) {
             case eTitles_INFO:
                 render_doska();
@@ -251,11 +267,11 @@ void Menu::Process() {
                 break;
             case eTitles_SAMP:
                 checkbox(u8"Новое меню на F1", g_Config["samp"]["isCustomF1"]);
-                checkbox(u8"Белые ID", g_Config["samp"]["isWhiteID"],
+                checkbox(u8"Белые ID", g_Config["samp"]["isWhiteID"], nullptr,
                          u8"ID легче читать. Очень полезно в тех случаях когда чел, на которого\n"
                          u8"нужно написать донос в репорт, одел маску.");
                 
-                checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"],
+                checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], nullptr, 
                          u8"Заменяет стандартный шрифт");
                 if (g_Config["samp"]["isCustomFont"].get<bool>()) {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
@@ -264,11 +280,11 @@ void Menu::Process() {
                               u8"\t\t\t\t\t\tComic Sans MS\n"
                               u8"\t\t\t\t\t\tJetBrains Mono");
                 }
-                checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"],
+                checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"], nullptr,
                          u8"Ускоряет создание скриншотов в несколько раз.");
                 if (g_Config["samp"]["isMakeQuickScreenshot"].get<bool>()) {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"],
+                    checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"], nullptr,
                              u8"После создания скриншота будет проигрываться мелодия(копипаста из STEAM).");
 
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
@@ -278,37 +294,41 @@ void Menu::Process() {
                           u8"Формат, в котором будут сохраняться скриншоты");
                 }
 
-                checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"],
+                checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"], nullptr,
                          u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\n"
                          u8"Например:\t screens\\2005-11-29");
                 
                 break;
             case eTitles_GTASA:
-                checkbox(u8"Turn Fucking Radio Off", g_Config["gtasa"]["tfro"],
+                checkbox(u8"Turn Fucking Radio Off", g_Config["gtasa"]["tfro"], nullptr,
                          u8"При посадке в авто радио будет автоматически выключенно.\n"
                          u8"Автор оригинала: NarutoUA (blast.hk/members/2504)");
                 break;
             case eTitles_GTARP:
-                checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"],
+                checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"], nullptr,
                          u8"Подсказка с клавишами, которая появляется, когда персонаж садится в авто.");
-                checkbox(u8"Старый худ", g_Config["oldHud"]["hud"],
+                checkbox(u8"Старый худ", g_Config["oldHud"]["hud"], nullptr,
                          u8"Возвращает старый худ из GTA SA");
                 if (g_Config["oldHud"]["hud"].get<bool>()) {
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Часовой пояс на часах МСК", g_Config["clock"]["fixTimeZone"],
+                    checkbox(u8"Часовой пояс на часах МСК", g_Config["clock"]["fixTimeZone"], nullptr,
                              u8"Подстраивает время на часах относительно московского часового пояса.");
 
                     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"],
+                    checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"], nullptr/*[](bool a) { g_serverIcon.m_bState = a; }*/,
                              u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
                     if (g_Config["serverIcon"]["state"].get<bool>()) {
                         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
-                        doubleInput(u8"X", g_Config["serverIcon"]["x"]);
+                        doubleInput(u8"X", g_Config["serverIcon"]["x"], [](float a) { g_serverIcon.m_fIconPos[0] = a; });
                         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
-                        doubleInput(u8"Y", g_Config["serverIcon"]["y"]);
+                        doubleInput(u8"Y", g_Config["serverIcon"]["y"], [](float a) { g_serverIcon.m_fIconPos[1] = a; });
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                        doubleInput(u8"Ширина", g_Config["serverIcon"]["width"], [](float a) { g_serverIcon.m_fIconSize[0] = a; });
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                        doubleInput(u8"Высота", g_Config["serverIcon"]["height"], [](float a) { g_serverIcon.m_fIconSize[1] = a; });
                     }
                 }
-                checkbox(u8"Старый радар", g_Config["oldHud"]["radar"],
+                checkbox(u8"Старый радар", g_Config["oldHud"]["radar"], nullptr,
                          u8"Возвращает радар из GTA SA");
                 textInput(u8"Путь до \"HUD.TXD\"", g_Config["oldHud"]["pathToTXDhud"],
                           u8"Путь относительно корневой папки игры.\n"
@@ -317,6 +337,8 @@ void Menu::Process() {
                           u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
                 break;
             }
+            if (g_menuData.m_pSelected)
+                ImGui::EndChild();
             background();
             render_warning();
 
@@ -357,7 +379,7 @@ void Menu::render_doska() {
 void Menu::render_warning() {
     if (g_menuData.m_iSelected == eTitles_News || g_menuData.m_iSelected == eTitles_INFO) return;
 
-    const char msg[] = u8"Внимание: все изменённые настройки вступят в силу только после перезагрузки игры";
+    const char msg[] = u8"Внимание: большинство изменённых настройек вступят в силу только после перезагрузки игры";
     auto&& size = ImGui::CalcTextSize(msg);
     auto&& pos = (ImGui::GetWindowPos() + ImGui::GetWindowSize() / 2) - size / 2;
 
@@ -371,7 +393,7 @@ void Menu::render_warning() {
         }
         s_color.a += a;
     }
-
+    
     ImGui::GetWindowDrawList()->AddText(pos, s_color, msg);
 }
 
@@ -427,7 +449,7 @@ void Menu::set_style() {
     colors[ImGuiCol_ScrollbarBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
     colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.277f, 0.277f, 0.277f, 1.000f);
     colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.300f, 0.300f, 0.300f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.330f, 0.330f, 0.330f, 1.000f);
     colors[ImGuiCol_CheckMark] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
     colors[ImGuiCol_SliderGrab] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
     colors[ImGuiCol_SliderGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);

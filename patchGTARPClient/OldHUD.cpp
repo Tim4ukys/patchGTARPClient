@@ -69,18 +69,18 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...) {
 // Фиксит положение иконки сервера и его размер
 
 struct stServerIcon {
-    CSprite2d* m_pSprites = nullptr;
+    CSprite2d  m_Sprite;
     float      m_fIconPos[2];
+    float      m_fIconSize[2];
     bool       m_bState;
-    int*       m_pIsX2PayDay = nullptr;
 } g_serverIcon;
 
 int   drawServerIcon() {
     if (g_serverIcon.m_bState) {
-        g_serverIcon.m_pSprites[*g_serverIcon.m_pIsX2PayDay].Draw(
-            SCREEN_COORD_LEFT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->width / 2)),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->height / 2)),
+        g_serverIcon.m_Sprite.Draw(
+            SCREEN_COORD_RIGHT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
+            SCREEN_COORD(g_serverIcon.m_fIconSize[0]),
+            SCREEN_COORD(g_serverIcon.m_fIconSize[1]),
             CRGBA(0xFF, 0xFF, 0xFF));
     }
 
@@ -101,19 +101,7 @@ NOINLINE void   loadTextureHudDetourFNC() {
 
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::SERVERID));
     if (serverID < 0 || serverID > 1) serverID = 2;
-    if (serverID != 2) {
-        RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERHALLOWEEN));
-        g_serverIcon.m_pSprites = new CSprite2d[2];
-        g_serverIcon.m_pSprites[0].m_pTexture = serverIcon[serverID * 2];
-        g_serverIcon.m_pSprites[1].m_pTexture = serverIcon[serverID * 2 + 1];
-
-        g_serverIcon.m_pIsX2PayDay = reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::X2_PAYDAY));
-    } else {
-        static int s_fakeX2 = 0;
-        g_serverIcon.m_pSprites = new CSprite2d;
-        g_serverIcon.m_pSprites->m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[2];
-        g_serverIcon.m_pIsX2PayDay = &s_fakeX2;
-    }
+    g_serverIcon.m_Sprite.m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[serverID];
 }
 
 // -----------------------------
@@ -145,16 +133,20 @@ void OldHUD::Process() {
         g_serverIcon.m_bState = g_Config["serverIcon"]["state"].get<bool>();
         g_serverIcon.m_fIconPos[0] = g_Config["serverIcon"]["x"].get<float>();
         g_serverIcon.m_fIconPos[1] = g_Config["serverIcon"]["y"].get<float>();
+        g_serverIcon.m_fIconSize[0] = g_Config["serverIcon"]["width"].get<float>();
+        g_serverIcon.m_fIconSize[1] = g_Config["serverIcon"]["height"].get<float>();
         // --------
 
         /*
             Возрващает самповский худ
-            .text:0002B81D - start nop
-            .text:0002B97A - end
-            ---
-            size = 0x168
+            push    ecx // nop
+            mov     dword_D8BA4, eax // save
+            jmp     $+162 // 162-5=15D
         */
-        patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x15D, 0x90);
+        //patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x162/*0x15D*/, 0x90);
+        auto addr = g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK);
+        patch__fill(addr, 0x1, 0x90);
+        patch__setRaw(addr + 6, "\xE9\x5D\x01\x00\x00", 5);
 
         /* Возвращает часы */
         patch__fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);

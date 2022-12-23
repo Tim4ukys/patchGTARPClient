@@ -21,7 +21,7 @@ public:
         /* Sig: 83 F8 FF 75 14 6A 00 FF 15 ? ? ? ? 50 FF 15 ? ? ? ? E9 ? ? ? ? */
         LOCKCONNECTTOOTHERSERVER = 0x5119,
         /* Sig(offs: +5h): A3 ? ? ? ? B9 ? ? ? ? 8B C4 C7 00 ? ? ? ? E8 ? ? ? ? 51 89 45 94  */
-        INITTEXTURE_INITHOOK = 0x1C3AD,
+        INITTEXTURE_INITHOOK = 0x1C3A7,
         /* Sig: 55 8B EC 83 EC 70 */
         INITTEXTURE_FNC = 0x1BD80,
 
@@ -29,14 +29,11 @@ public:
         ARRAYSERVERLOGO = 0xD8DBC, /* 01 - +0h, 02 - +4h, test - +8h*/
         /* Sig(offs: +6h): 0F 82 ? ? ? ? A1 ? ? ? ? */
         SERVERID = 0xCDB20, // 2 - test server
-        /* HALLOWEEN | Temporarily */
-        X2_PAYDAY = 0xD373C,
-        ARRAYSERVERHALLOWEEN = 0xD8B50,
 
         /* Sig: 55 8B EC 83 EC 48 A1 ? ? ? ? 33 C5 89 45 FC 56 */
         DRAWHUD = 0x1C770,
         /* Sig: 85 C0 75 1F C7 05 ? ? ? ? ? ? ? ? */
-        DRAWSPEEDOMETER_DRAWRAMKA = 0x25CBA,
+        DRAWSPEEDOMETER_DRAWRAMKA = 0x25C9A,
 
         /* [can be found in] Sig: 8B 0D ? ? ? ? 83 C4 08 85 C9 */
         WANTEDLEVEL = 0xD8B70,
@@ -48,7 +45,7 @@ public:
 
         /* Sig(offs: +5h): A3 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? 51 */
         DISABLE_CALL_SET_CUSTOM_RADAR = 0xF366,
-        /* Sig: FF D7 83 C4 10 8B D8 E9 ? ? ? ? 68 ? ? ? ? 56 E8 ? ? ? ? 83 C4 08 85 C0 75 45 */
+        /* Sig: FF D7 83 C4 10 8B D8 */
         CUSTOM_PATH_TXD_HUD = 0x2EC08, 
         
         /* Sig: 85 C0 0F 95 45 F4 88 1E */
