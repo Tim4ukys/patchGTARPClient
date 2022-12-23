@@ -21,7 +21,7 @@ public:
         /* Sig: 83 F8 FF 75 14 6A 00 FF 15 ? ? ? ? 50 FF 15 ? ? ? ? E9 ? ? ? ? */
         LOCKCONNECTTOOTHERSERVER = 0x5119,
         /* Sig(offs: +5h): A3 ? ? ? ? B9 ? ? ? ? 8B C4 C7 00 ? ? ? ? E8 ? ? ? ? 51 89 45 94  */
-        INITTEXTURE_INITHOOK = 0x1C3AD,
+        INITTEXTURE_INITHOOK = 0x1C3A7,
         /* Sig: 55 8B EC 83 EC 70 */
         INITTEXTURE_FNC = 0x1BD80,
 

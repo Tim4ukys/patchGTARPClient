@@ -101,7 +101,7 @@ NOINLINE void   loadTextureHudDetourFNC() {
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::SERVERID));
     if (serverID < 0 || serverID > 1) serverID = 2;
     g_serverIcon.m_Sprite.m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[serverID];
-    }
+}
 
 // -----------------------------
 // return old path TXD
@@ -136,12 +136,14 @@ void OldHUD::Process() {
 
         /*
             Возрващает самповский худ
-            .text:0002B81D - start nop
-            .text:0002B97A - end
-            ---
-            size = 0x168
+            push    ecx // nop
+            mov     dword_D8BA4, eax // save
+            jmp     $+162 // 162-5=15D
         */
-        patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x15D, 0x90);
+        //patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x162/*0x15D*/, 0x90);
+        auto addr = g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK);
+        patch__fill(addr, 0x1, 0x90);
+        patch__setRaw(addr + 6, "\xE9\x5D\x01\x00\x00", 5);
 
         /* Возвращает часы */
         patch__fill(g_sampBase.GET_ADDR(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);
