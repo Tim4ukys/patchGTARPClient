@@ -62,8 +62,11 @@ NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE
     if (!wcscmp(name->Buffer, L"gtarp_clientside.asi"))
     {
         if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
-            auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-            auto [vMaj, vMin, vPatch] = snippets::versionParse(j["vers"].get<std::string>());
+            auto        j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+            std::string s;
+            j["vers"].get_to(s);
+            auto [vMaj, vMin, vPatch] = snippets::versionParse(s);
+            g_Log.Write("Git version: vMaj: %d | vMid: %d | vPatch: %d", vMaj, vMin, vPatch);
 
             if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
             {
@@ -149,8 +152,10 @@ NOINLINE void   gameLoopDetourFNC() {
     static auto s_oldTime = GetTickCount64();
     if (GetTickCount64() - s_oldTime > UPDATE_DELAY)
     {
-        auto j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-        auto [vMaj, vMin, vPatch] = snippets::versionParse(j["vers"].get<std::string>());
+        auto        j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
+        std::string s;
+        j["vers"].get_to(s);
+        auto [vMaj, vMin, vPatch] = snippets::versionParse(s);
         if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
         {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}ВНИМАНИЕ: {FF9900}Вышло обновление!");
