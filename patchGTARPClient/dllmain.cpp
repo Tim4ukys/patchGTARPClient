@@ -24,8 +24,8 @@ constexpr DWORD GTARP_TIMESTAMP = 0x63688148;
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(9, 0, 0)
-#define CURRENT_VERSION "9.0.0"
+DECLARATION_VERSION(9, 1, 0)
+#define CURRENT_VERSION "9.1.0"
 const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
