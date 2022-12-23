@@ -33,7 +33,7 @@ public:
         /* Sig: 55 8B EC 83 EC 48 A1 ? ? ? ? 33 C5 89 45 FC 56 */
         DRAWHUD = 0x1C770,
         /* Sig: 85 C0 75 1F C7 05 ? ? ? ? ? ? ? ? */
-        DRAWSPEEDOMETER_DRAWRAMKA = 0x25CBA,
+        DRAWSPEEDOMETER_DRAWRAMKA = 0x25C9A,
 
         /* [can be found in] Sig: 8B 0D ? ? ? ? 83 C4 08 85 C9 */
         WANTEDLEVEL = 0xD8B70,
@@ -45,7 +45,7 @@ public:
 
         /* Sig(offs: +5h): A3 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? 51 */
         DISABLE_CALL_SET_CUSTOM_RADAR = 0xF366,
-        /* Sig: FF D7 83 C4 10 8B D8 E9 ? ? ? ? 68 ? ? ? ? 56 E8 ? ? ? ? 83 C4 08 85 C0 75 45 */
+        /* Sig: FF D7 83 C4 10 8B D8 */
         CUSTOM_PATH_TXD_HUD = 0x2EC08, 
         
         /* Sig: 85 C0 0F 95 45 F4 88 1E */
