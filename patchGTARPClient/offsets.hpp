@@ -29,9 +29,6 @@ public:
         ARRAYSERVERLOGO = 0xD8DBC, /* 01 - +0h, 02 - +4h, test - +8h*/
         /* Sig(offs: +6h): 0F 82 ? ? ? ? A1 ? ? ? ? */
         SERVERID = 0xCDB20, // 2 - test server
-        /* HALLOWEEN | Temporarily */
-        X2_PAYDAY = 0xD373C,
-        ARRAYSERVERHALLOWEEN = 0xD8B50,
 
         /* Sig: 55 8B EC 83 EC 48 A1 ? ? ? ? 33 C5 89 45 FC 56 */
         DRAWHUD = 0x1C770,

@@ -69,18 +69,17 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...) {
 // Фиксит положение иконки сервера и его размер
 
 struct stServerIcon {
-    CSprite2d* m_pSprites = nullptr;
+    CSprite2d  m_Sprite;
     float      m_fIconPos[2];
     bool       m_bState;
-    int*       m_pIsX2PayDay = nullptr;
 } g_serverIcon;
 
 int   drawServerIcon() {
     if (g_serverIcon.m_bState) {
-        g_serverIcon.m_pSprites[*g_serverIcon.m_pIsX2PayDay].Draw(
+        g_serverIcon.m_Sprite.Draw(
             SCREEN_COORD_LEFT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->width / 2)),
-            SCREEN_COORD(static_cast<float>(g_serverIcon.m_pSprites->m_pTexture->raster->height / 2)),
+            SCREEN_COORD(static_cast<float>(g_serverIcon.m_Sprite.m_pTexture->raster->width / 2)),
+            SCREEN_COORD(static_cast<float>(g_serverIcon.m_Sprite.m_pTexture->raster->height / 2)),
             CRGBA(0xFF, 0xFF, 0xFF));
     }
 
@@ -101,20 +100,8 @@ NOINLINE void   loadTextureHudDetourFNC() {
 
     auto serverID = *reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::SERVERID));
     if (serverID < 0 || serverID > 1) serverID = 2;
-    if (serverID != 2) {
-        RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERHALLOWEEN));
-        g_serverIcon.m_pSprites = new CSprite2d[2];
-        g_serverIcon.m_pSprites[0].m_pTexture = serverIcon[serverID * 2];
-        g_serverIcon.m_pSprites[1].m_pTexture = serverIcon[serverID * 2 + 1];
-
-        g_serverIcon.m_pIsX2PayDay = reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::X2_PAYDAY));
-    } else {
-        static int s_fakeX2 = 0;
-        g_serverIcon.m_pSprites = new CSprite2d;
-        g_serverIcon.m_pSprites->m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[2];
-        g_serverIcon.m_pIsX2PayDay = &s_fakeX2;
+    g_serverIcon.m_Sprite.m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[serverID];
     }
-}
 
 // -----------------------------
 // return old path TXD
