@@ -17,15 +17,15 @@ FSignal<void()> g_onDetachPlugin;
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 //const char GTARP_CMP[] = "4C00750883C8FFE9A302";
-constexpr DWORD GTARP_TIMESTAMP = 0x63688148;
+constexpr DWORD GTARP_TIMESTAMP = 0x63AB6949;
 
 #define DECLARATION_VERSION(v_maj, v_min, v_patch) \
     const int CURRENT_VERSION_MAJ = v_maj; \
     const int CURRENT_VERSION_MIN = v_min; \
     const int CURRENT_VERSION_PAT = v_patch;
 
-DECLARATION_VERSION(9, 1, 0)
-#define CURRENT_VERSION "9.1.0"
+DECLARATION_VERSION(10, 0, 0)
+#define CURRENT_VERSION "10.0.0"
 const char* g_szCurrentVersion = CURRENT_VERSION;
 #define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
     (NEW_MAJ > old_maj ||  \
