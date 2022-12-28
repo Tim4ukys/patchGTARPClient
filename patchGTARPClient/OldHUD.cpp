@@ -69,15 +69,28 @@ int drawClockSprintfDetourFNC(char* buff, const char* f, ...) {
 // Фиксит положение иконки сервера и его размер
 
 struct stServerIcon {
-    CSprite2d  m_Sprite;
+    CSprite2d  m_Sprite[4];
     float      m_fIconPos[2];
     float      m_fIconSize[2];
     bool       m_bState;
+
+    int* m_pIsX2;
+    UINT m_uiTickCount{};
+    int  m_nLamp{};
 } g_serverIcon;
 
 int   drawServerIcon() {
     if (g_serverIcon.m_bState) {
-        g_serverIcon.m_Sprite.Draw(
+        int nLamp;
+        if (GetTickCount() - g_serverIcon.m_uiTickCount <= 1000) {
+            nLamp = g_serverIcon.m_nLamp;
+        } else {
+            g_serverIcon.m_uiTickCount = GetTickCount();
+            nLamp = g_serverIcon.m_nLamp ^ 1;
+            g_serverIcon.m_nLamp ^= 1u;
+        }
+
+        g_serverIcon.m_Sprite[nLamp + *g_serverIcon.m_pIsX2 * 2].Draw(
             SCREEN_COORD_RIGHT(g_serverIcon.m_fIconPos[0]), SCREEN_COORD_TOP(g_serverIcon.m_fIconPos[1]),
             SCREEN_COORD(g_serverIcon.m_fIconSize[0]),
             SCREEN_COORD(g_serverIcon.m_fIconSize[1]),
@@ -99,9 +112,13 @@ NOINLINE void   loadTextureHudDetourFNC() {
     //RwTexture** serverIcon = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERHALLOWEEN));
     //while (!serverIcon[0] || !serverIcon[1] || !serverIcon[2]) Sleep(100);
 
-    auto serverID = *reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::SERVERID));
-    if (serverID < 0 || serverID > 1) serverID = 2;
-    g_serverIcon.m_Sprite.m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[serverID];
+    //auto serverID = *reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::SERVERID));
+    //if (serverID < 0 || serverID > 1) serverID = 2;
+    g_serverIcon.m_pIsX2 = reinterpret_cast<int*>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::NEWYEAR_ISX2));
+    
+    //g_serverIcon.m_Sprite.m_pTexture = reinterpret_cast<RwTexture**>(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::ARRAYSERVERLOGO))[serverID];
+    for (size_t i{}; i < 4; ++i)
+        g_serverIcon.m_Sprite[i].m_pTexture = ((RwTexture**)g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::NEWYEAR_SERVERLOGO))[i];
 }
 
 // -----------------------------
