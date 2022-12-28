@@ -48,6 +48,7 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 #include "CustomHelp.h"
 #include "FastScreenshot.h"
 #include "tfro.h"
+#include "DisableSnowWindow.h"
 
 #include "Menu.h"
 
@@ -116,7 +117,7 @@ NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE
 #define PROCESS(a) {std::thread(a::Process)}
         std::thread cock[]{PROCESS(OldHUD), PROCESS(UnlockConect), PROCESS(CustomFont), PROCESS(WhiteID), /*PROCESS(ReplaceableTXD),*/
                            PROCESS(DelCarTable), PROCESS(SortScreenshot), PROCESS(CustomHelp), PROCESS(FastScreenshot),
-                           PROCESS(Menu), PROCESS(TFRO)};
+                           PROCESS(Menu), PROCESS(TFRO), PROCESS(DisableSnowWindow)};
         for (auto& thr : cock)
             thr.join();
 #undef PROCESS
@@ -162,8 +163,8 @@ NOINLINE void   gameLoopDetourFNC() {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
-        /*g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}У нас появился {990000}Telegram-Bot{FF9900}!");
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Подробнее: {990000}https://t.me/patchClient_bot");*/
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Все самые свежие новости о разработке в нашем tg канале!");
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Ссылка: {990000}https://t.me/+LVGCHEsDZEhmY2My");
         g_Log.Write("[UPDATE]: Last version: %d.%d.%d", vMaj, vMin, vPatch);
         s_bIsInit = true;
     }

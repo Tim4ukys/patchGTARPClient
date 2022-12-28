@@ -94,6 +94,9 @@
     <ClInclude Include="tfro.h">
       <Filter>md\gtasa</Filter>
     </ClInclude>
+    <ClInclude Include="DisableSnowWindow.h">
+      <Filter>md\gtarp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -159,6 +162,9 @@
     </ClCompile>
     <ClCompile Include="tfro.cpp">
       <Filter>md\gtasa</Filter>
+    </ClCompile>
+    <ClCompile Include="DisableSnowWindow.cpp">
+      <Filter>md\gtarp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
