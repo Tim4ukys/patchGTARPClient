@@ -93,7 +93,7 @@
 
 // my library
 #include "FSignal.h"
-#include "patch.h" 
+#include "patch.hpp" 
 #include "client.h"
 #include "snippets.h"
 #include "Log.h"

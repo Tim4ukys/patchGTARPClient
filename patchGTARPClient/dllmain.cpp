@@ -96,9 +96,8 @@ NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE
             );
             g_Log.Write("gtarp_timestamp: %d", ntheader->FileHeader.TimeDateStamp);
             TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
-        } 
-        else if (patch__getHEX(g_sampBase.getAddress(0xBABE), hexBuff, 10); 
-            strcmp(hexBuff, SAMP_CMP)) {
+        } else if (auto str = std::move(patch::getHEX(g_sampBase.getAddress(0xBABE), 10));
+                   str == SAMP_CMP) {
             MessageBoxW(
                 NULL,
                 L"ERROR: Эта версия плагина ещё не поддерживает эту версию SAMP.\n\n"
@@ -106,7 +105,7 @@ NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags, PUNICODE
                 L"GitHub: " GITHUB_URL,
                 L"!000patchGTARPClientByTim4ukys.ASI",
                 MB_ICONERROR);
-            g_Log.Write("samp_cmp: %s", hexBuff);
+            g_Log.Write("samp_cmp: %s", str.c_str());
             TerminateProcess(GetCurrentProcess(), EXIT_FAILURE);
         } 
         else

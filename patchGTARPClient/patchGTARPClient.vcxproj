@@ -188,7 +188,7 @@
     <ClInclude Include="OldHUD.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="offsets.hpp" />
-    <ClInclude Include="patch.h" />
+    <ClInclude Include="patch.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ReplaceableTXD.h" />
     <ClInclude Include="resource.h" />
