@@ -214,19 +214,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             exit(EXIT_FAILURE);
         }
 
-        // ------------
-
-        OSVERSIONINFOA vers;
-        ZeroMemory(&vers, sizeof(OSVERSIONINFOA));
-        vers.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-
-        if (GetVersionExA(&vers)) {
-            g_Log.Write("[PC INFO]: Windows version: %s %u.%u build: %u | PlatformID - %u", vers.szCSDVersion, vers.dwMajorVersion,
-                        vers.dwMinorVersion, vers.dwBuildNumber, vers.dwPlatformId);
-        }
-
-        // ------------
-        // Проверка на обновления
         g_pSAMP = new SAMP();
         g_pGameLoopDetour = std::make_unique<PLH::x86Detour>(UINT64(OFFSETS::GTA_SA::GAMELOOP),
                                                              UINT64(&gameLoopDetourFNC),

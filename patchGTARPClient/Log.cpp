@@ -18,6 +18,15 @@ Log::Log(std::string fileName)
     if (std::filesystem::exists(file)) {
         std::filesystem::remove(file);
     }
+
+    OSVERSIONINFOA vers;
+    ZeroMemory(&vers, sizeof(OSVERSIONINFOA));
+    vers.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+
+    if (GetVersionExA(&vers)) {
+        Write("[PC INFO]: Windows version: %s %u.%u build: %u | PlatformID - %u", vers.szCSDVersion, vers.dwMajorVersion,
+              vers.dwMinorVersion, vers.dwBuildNumber, vers.dwPlatformId);
+    }
 }
 Log::~Log() {}
 
