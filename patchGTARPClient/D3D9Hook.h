@@ -13,7 +13,7 @@ class D3D9Hook {
 public:
 
 	D3D9Hook();
-    ~D3D9Hook();
+    ~D3D9Hook() = default;
 
     FSignal<void(IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*)> onPresentEvent;
     FSignal<void(LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*)>                         onLostDevice;
@@ -24,10 +24,6 @@ private:
 
     static NOINLINE HRESULT __stdcall HookedPresent(IDirect3DDevice9* pDevice, CONST RECT* pSrcRect, CONST RECT* pDestRect, HWND hDestWindow, CONST RGNDATA* pDirtyRegion);
     static NOINLINE HRESULT __stdcall HookedReset(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams);
-
-    patch::callHook* m_pInitDevice;
-    static void               initDeviceHook();
-    void        initHooks();
 
 	struct stHookData {
         uint64_t m_uiJump;
@@ -47,9 +43,5 @@ private:
 	stHookData present;
     stHookData reset;
 
-    //
-
-    DWORD findDevice(DWORD len);
     DWORD getDeviceAddress(int VTableIndex);
-
 };
