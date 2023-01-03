@@ -159,11 +159,14 @@ void OldHUD::init() {
             push    ecx // nop
             mov     dword_D8BA4, eax // save
             jmp     $+162 // 162-5=15D
+            ...
+            mov     ecx, [ebp+var_4] // save, эта хуйня как-то cookie связана, тип чекает стек и т.д.
+            add     esp, 8 // nop нахуй
         */
-        //patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::INITTEXTURE_INITHOOK), 0x162/*0x15D*/, 0x90);
         auto addr = g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::INITTEXTURE_INITHOOK);
         patch::fill(addr, 0x1, 0x90);
-        patch::setRaw(addr + 6, "\xE9\x5D\x01\x00\x00"); // jmp ... 
+        patch::setJump<patch::TYPE_JMP::lrg>(addr + 6, 0x162);
+        patch::fill(addr + (6 + 0x162 + 3), 3u, 0x90);
 
         /* Возвращает часы */
         patch::fill(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::ENABLECLOCK), 2, 0x90);
