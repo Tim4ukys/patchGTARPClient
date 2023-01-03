@@ -11,35 +11,6 @@
 #include "pch.h"
 #include "snippets.h"
 
-snippets::DynamicLibrary::DynamicLibrary(const char* libName) {
-    m_unDllAddress.pHandl = nullptr;
-
-    m_pModuleName = new char[strlen(libName) + 1];
-    strcpy(m_pModuleName, libName);
-}
-snippets::DynamicLibrary::~DynamicLibrary() {
-    delete[] m_pModuleName;
-}
-
-DWORD snippets::DynamicLibrary::getAddress() noexcept {
-    if (!m_unDllAddress.pHandl) {
-        std::lock_guard<std::mutex> lock(m_lock);
-        m_unDllAddress.pHandl = GetModuleHandleA(m_pModuleName);
-    }
-
-    return m_unDllAddress.dwHandl;
-}
-DWORD snippets::DynamicLibrary::getAddress(DWORD offset) noexcept {
-    if (!m_unDllAddress.pHandl) {
-        std::lock_guard<std::mutex> lock(m_lock);
-        m_unDllAddress.pHandl = GetModuleHandleA(m_pModuleName);
-    }
-
-    return m_unDllAddress.dwHandl + offset;
-}
-
-// -------------------------
-
 std::string snippets::UTF8_to_CP1251(std::string const& utf8) {
     if (!utf8.empty()) {
         int wchlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), utf8.size(), NULL, 0);
