@@ -20,6 +20,6 @@ void DisableSnowWindow::turnOn() {
 }
 
 void DisableSnowWindow::init() {
-    if (m_bState = !g_Config["vehicleHud"]["isDisableSnowWindow"].get<bool>())
+    if (m_bState = g_Config["vehicleHud"]["isDisableSnowWindow"].get<bool>())
         turnOn();
 }
