@@ -13,66 +13,15 @@
 #include "pch.h"
 #include "BlurEffect.h"
 
-BlurEffect::BlurEffect(IDirect3DDevice9* const pDevice)
-    : pDevice(pDevice) {
-    assert(pDevice != nullptr);
-
-    ID3DXBuffer* pErrorBuffer{};
-    D3DXCreateEffectFromResourceW(pDevice, GetModuleHandleA("!000patchGTARPClientByTim4ukys.ASI"), MAKEINTRESOURCE(IDR_BLUR1),
-                                  NULL, NULL, D3DXFX_DONOTSAVESTATE | D3DXFX_NOT_CLONEABLE | D3DXSHADER_OPTIMIZATION_LEVEL3,
-                                  NULL, &this->pEffect, &pErrorBuffer);
-
-    const D3DVERTEXELEMENT9 vertexElements[] =
-    {
-        {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0},
-        {0, 12, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
-        D3DDECL_END()
-    };
-
-    pDevice->CreateVertexDeclaration(vertexElements, &this->pVertexDeclaration);
-}
-BlurEffect::~BlurEffect() noexcept {
-    this->pDeviceBackBuffer->Release();
-    this->pEffect->Release();
-    this->pVertexDeclaration->Release();
-    this->pBackBufferSurface->Release();
-    this->pBackBufferTexture->Release();
-    this->pTempBufferSurface->Release();
-    this->pTempBufferTexture->Release();
-    this->pFrontBufferSurface->Release();
-    this->pFrontBufferTexture->Release();
-}
-
-void BlurEffect::onLostDevice() {
-    this->pEffect->OnLostDevice();
-
-    SAFE_RELEASE(pDeviceBackBuffer);
-
-    SAFE_RELEASE(pBackBufferSurface);
-    SAFE_RELEASE(pTempBufferSurface);
-    SAFE_RELEASE(pFrontBufferSurface);
-
-    SAFE_RELEASE(pBackBufferTexture);
-    SAFE_RELEASE(pTempBufferTexture);
-    SAFE_RELEASE(pFrontBufferTexture);
-}
-void BlurEffect::onResetDevice(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
-    this->pDevice = pDevice;
-    this->pEffect->OnResetDevice();
-
+void BlurEffect::createObject() {
     pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &this->pDeviceBackBuffer);
-    
+
     HRESULT hr;
-    if (pPresentParams != nullptr) {
-        this->backBufferHeight = pPresentParams->BackBufferHeight;
-        this->backBufferWidth = pPresentParams->BackBufferWidth;
-    } else {
-        D3DSURFACE_DESC backBufferDesc;
-        hr = pDeviceBackBuffer->GetDesc(&backBufferDesc);
-        if (SUCCEEDED(hr)) {
-            this->backBufferWidth = backBufferDesc.Width;
-            this->backBufferHeight = backBufferDesc.Height;
-        }
+    D3DSURFACE_DESC backBufferDesc;
+    hr = pDeviceBackBuffer->GetDesc(&backBufferDesc);
+    if (SUCCEEDED(hr)) {
+        this->backBufferWidth = backBufferDesc.Width;
+        this->backBufferHeight = backBufferDesc.Height;
     }
     const float iResolution[] = {static_cast<const float>(this->backBufferWidth), static_cast<const float>(this->backBufferHeight)};
 
@@ -105,6 +54,57 @@ void BlurEffect::onResetDevice(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS*
         this->pFrontBufferSurface = nullptr;
         this->pFrontBufferTexture = nullptr;
     }
+}
+
+BlurEffect::BlurEffect(IDirect3DDevice9* const pDevice)
+    : pDevice(pDevice) {
+    assert(pDevice != nullptr);
+
+    ID3DXBuffer* pErrorBuffer{};
+    D3DXCreateEffectFromResourceW(pDevice, g_DLLModule, MAKEINTRESOURCE(IDR_BLUR1),
+                                  NULL, NULL,
+                                  D3DXFX_DONOTSAVESTATE | D3DXFX_NOT_CLONEABLE | D3DXSHADER_OPTIMIZATION_LEVEL3,
+                                  NULL, &this->pEffect, &pErrorBuffer);
+
+    const D3DVERTEXELEMENT9 vertexElements[] =
+    {
+        {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITIONT, 0},
+        {0, 12, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+        D3DDECL_END()
+    };
+
+    pDevice->CreateVertexDeclaration(vertexElements, &this->pVertexDeclaration);
+    createObject();
+}
+BlurEffect::~BlurEffect() noexcept {
+    this->pDeviceBackBuffer->Release();
+    this->pEffect->Release();
+    this->pVertexDeclaration->Release();
+    this->pBackBufferSurface->Release();
+    this->pBackBufferTexture->Release();
+    this->pTempBufferSurface->Release();
+    this->pTempBufferTexture->Release();
+    this->pFrontBufferSurface->Release();
+    this->pFrontBufferTexture->Release();
+}
+
+void BlurEffect::onLostDevice() {
+    this->pEffect->OnLostDevice();
+
+    SAFE_RELEASE(pDeviceBackBuffer);
+
+    SAFE_RELEASE(pBackBufferSurface);
+    SAFE_RELEASE(pTempBufferSurface);
+    SAFE_RELEASE(pFrontBufferSurface);
+
+    SAFE_RELEASE(pBackBufferTexture);
+    SAFE_RELEASE(pTempBufferTexture);
+    SAFE_RELEASE(pFrontBufferTexture);
+}
+void BlurEffect::onResetDevice(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
+    this->pDevice = pDevice;
+    this->pEffect->OnResetDevice();
+    createObject();
 }
 
 void BlurEffect::Render(const RECT& r, const float level) const noexcept {
