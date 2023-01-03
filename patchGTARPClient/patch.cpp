@@ -13,6 +13,55 @@
 
 namespace patch {
 
+    BOOL patch::setJumpThroughJump(std::uintptr_t address, std::uintptr_t detour, std::size_t saveByte, BOOL isSave) {
+        DWORD oldProtect;
+
+        std::size_t size = saveByte < 5u ? 5u : saveByte;
+
+        if (VirtualProtect((PVOID)address, size, PAGE_READWRITE, &oldProtect)) {
+            // Копируем память, чтобы потом вставить её в конец
+            std::uint8_t* aSaveByte = NULL;
+            if (isSave) {
+                aSaveByte = (std::uint8_t*)malloc(size);
+                memcpy(aSaveByte, (PVOID)address, size);
+            }
+
+            // NOP'им память
+            FillMemory((PVOID)address, size, 0x90);
+
+            // Создаём островок, где будем вызывать detour
+            const auto    szMemIsland = 5u * 2 + (isSave ? size : 0U);
+            std::uint8_t* memIsland = (std::uint8_t*)malloc(szMemIsland);
+            // VirtualProtect(memIsland, szMemIsland, , NULL);
+
+            // Делаем прыжок на островок
+            *(std::uint8_t*)address = 0xE9; /* jump */
+            *(std::uint32_t*)(address + 1) = (std::uint32_t)memIsland - address - 5u;
+
+            // Вызываем detour
+            *memIsland = 0xE8; /* call */
+            *(uint32_t*)(memIsland + 1) = detour - (uint32_t)memIsland - 5u;
+            memIsland += 5u;
+
+            // Вставляем сохранёные байты
+            if (isSave) {
+                memcpy(memIsland, aSaveByte, size);
+                memIsland += size;
+
+                free(aSaveByte);
+            }
+
+            // Делаем прыжок назад
+            *memIsland = 0xE9; /* jump */
+            *(std::uint32_t*)((std::uint32_t)memIsland + 1) = address + 5u - (std::uint32_t)memIsland - 5u;
+
+            VirtualProtect((PVOID)address, size, oldProtect, &oldProtect);
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
     BOOL setRawThroughJump(std::uintptr_t address, const char* raw,
                            std::size_t rawSize, std::size_t saveByte, BOOL isSave) {
         DWORD oldProtect;
