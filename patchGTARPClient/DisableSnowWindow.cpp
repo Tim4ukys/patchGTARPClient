@@ -12,8 +12,14 @@
 #include "DisableSnowWindow.h"
 #include "offsets.hpp"
 
-void DisableSnowWindow::Process() {
-    if (!g_Config["vehicleHud"]["isDisableSnowWindow"].get<bool>()) {
-        patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), "\xEB", 1);
-    }
+void DisableSnowWindow::turnOff() {
+    patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0x74);
+}
+void DisableSnowWindow::turnOn() {
+    patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0xEB);
+}
+
+void DisableSnowWindow::init() {
+    if (m_bState = !g_Config["vehicleHud"]["isDisableSnowWindow"].get<bool>())
+        turnOn();
 }

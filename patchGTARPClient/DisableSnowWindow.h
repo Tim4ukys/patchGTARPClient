@@ -9,7 +9,10 @@
  *                                                   *
  ****************************************************/
 #pragma once
-class DisableSnowWindow {
+class DisableSnowWindow : public MLoad {
+    void turnOn() override;
+    void turnOff() override;
+
 public:
-    static void Process();
+    void init() override;
 };

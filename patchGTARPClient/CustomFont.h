@@ -9,11 +9,17 @@
 *                                                   *
 ****************************************************/
 #pragma once
-class CustomFont {
+class CustomFont : public MLoad {
+    void turnOn() override;
+    void turnOff() override;
+
 public:
-    static void Process();
+    void init() override;
+    ~CustomFont() override;
 
 private:
+
+    std::uint8_t m_oldByte[2][9];
 
     static std::string s_fontFaceName;
 

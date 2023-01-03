@@ -16,8 +16,14 @@
 * Этот файл убирает табличку, которая появляется когда перс садится в авто
 */
 
-void DelCarTable::Process() {
-    if (!g_Config["vehicleHud"]["isDrawHelpTablet"].get<bool>()) {
-        patch__fill(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::DRAWSPEEDOMETER_DRAWRAMKA), 0x1E, 0x90 /*NOP*/);
-    }
+void DelCarTable::turnOn() {
+    patch::setJump<patch::TYPE_JMP::sml>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::DRAWSPEEDOMETER_DRAWRAMKA), 30);
+}
+void DelCarTable::turnOff() {
+    patch::setRaw(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::DRAWSPEEDOMETER_DRAWRAMKA), "\x85\xC0");
+}
+
+void DelCarTable::init() {
+    if (m_bState = !g_Config["vehicleHud"]["isDrawHelpTablet"].get<bool>())
+        turnOn();
 }

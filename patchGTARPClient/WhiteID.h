@@ -9,7 +9,13 @@
 *                                                   *
 ****************************************************/
 #pragma once
-class WhiteID {
+class WhiteID : public MLoad {
+    std::uint8_t m_oldBytes[3][5];
+
+    void turnOn() override;
+    void turnOff() override;
+
 public:
-    static void Process();
+    void init() override;
+    ~WhiteID() override;
 };

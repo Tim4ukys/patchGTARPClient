@@ -14,27 +14,39 @@
 
 /* Этот файл сортирует скриншоты по датам */
 
-void SortScreenshot::Process() {
-    if (g_Config["samp"]["isSortingScreenshots"].get<bool>()) {
-        static char s_fullPathScreenshot[22] = "%s"; // '%s\\screens\\xxxx-xx-xx'
-        static char s_pathScreenshot[35];            // '\\screens\\xxxx-xx-xx\\sa-mp-%03i.png'
+void SortScreenshot::init() {
+    SYSTEMTIME timeInfo{};
+    GetLocalTime(&timeInfo);
 
-        /*
-        auto t = time(0);
-        auto pLocalTime = localtime(&t);
-        
-        SYSTEMTIME - быстрее в ~7 раз
-        */
+    sprintf_s(m_pathScreenshot, "\\screens\\%d-%02d-%02d", timeInfo.wYear, timeInfo.wMonth, timeInfo.wDay);
 
-        SYSTEMTIME timeInfo;
-        GetLocalTime(&timeInfo);
+    strcat(m_fullPathScreenshot, m_pathScreenshot);
+    strcat(m_pathScreenshot, "\\sa-mp-%03i.png");
 
-        sprintf_s(s_pathScreenshot, "\\screens\\%d-%02d-%02d", timeInfo.wYear, timeInfo.wMonth, timeInfo.wDay);
+    // ----
 
-        strcat(s_fullPathScreenshot, s_pathScreenshot);
-        strcat(s_pathScreenshot, "\\sa-mp-%03i.png");
+    patch::getBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FORMATPATHSCREENSHOT), m_oldBytes[0]);
+    patch::getBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FORMATFULLPATHSCREENSHOT), m_oldBytes[1]);
 
-        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::FORMATPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_pathScreenshot));
-        patch__setPushOffset(g_sampBase.GET_ADDR(OFFSETS::SAMP::FORMATFULLPATHSCREENSHOT), reinterpret_cast<uint32_t>(s_fullPathScreenshot));
-    }
+    // ----
+
+    if (m_bState = g_Config["samp"]["isSortingScreenshots"].get<bool>())
+        turnOn();
+}
+SortScreenshot::~SortScreenshot() {
+    if (m_bState)
+        turnOff();
+}
+
+void SortScreenshot::turnOff() {
+    patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FORMATPATHSCREENSHOT), m_oldBytes[0]);
+    patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FORMATFULLPATHSCREENSHOT), m_oldBytes[1]);
+}
+
+void SortScreenshot::turnOn() {
+    std::uint8_t buff[5]{0x68}; // push ...
+    *reinterpret_cast<std::uint32_t*>(buff + 1) = (std::uint32_t)m_pathScreenshot;
+    patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FORMATPATHSCREENSHOT), buff);
+    *reinterpret_cast<std::uint32_t*>(buff + 1) = (std::uint32_t)m_fullPathScreenshot;
+    patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FORMATFULLPATHSCREENSHOT), buff);
 }
