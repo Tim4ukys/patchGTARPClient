@@ -46,6 +46,13 @@ void Log::Write(const char* fmt, ...) {
 
     std::ofstream fstr(m_fileName, std::ios_base::app);
     fstr << timeBuff << ": " << buff << "\n";
+
+    if (m_fncSFLog || g_SF.getAddr<std::uintptr_t>()) {
+        if (!m_fncSFLog) {
+            m_fncSFLog = g_SF.getFnc<void(PVOID, const char*, ...)>("?LogConsole@SAMPFUNCS@@QAAXPBDZZ");
+        }
+        m_fncSFLog(nullptr, "{FFAA00}[patchGTARPClient]: {FFFFFF}%s", buff);
+    }
 }
 
 Log& Log::operator<<(const char* r) {

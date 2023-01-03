@@ -18,10 +18,8 @@ public:
     Log& operator<<(const char* r);
 
 private:
-
-    std::mutex m_lock;
-
+    std::mutex  m_lock;
     std::string m_fileName;
-    //std::ofstream *m_fileStream;
 
+    void(*m_fncSFLog)(PVOID, const char*, ...) = nullptr;
 };

@@ -101,16 +101,22 @@
 #include "SAMP.h"
 #include "D3D9Hook.h"
 
-extern SAMP*    g_pSAMP;
-extern D3D9Hook *g_pD3D9Hook;
-extern Log      g_Log;
-extern Config   g_Config;
+#include "MLoad.h"
+
+extern SAMP*     g_pSAMP;
+extern D3D9Hook* g_pD3D9Hook;
+extern Log       g_Log;
+extern Config    g_Config;
+extern HMODULE   g_DLLModule;
 extern snippets::DynamicLibrary g_gtarpclientBase;
 extern snippets::DynamicLibrary g_sampBase;
+extern snippets::DynamicLibrary g_D3DX9_25;
+extern snippets::DynamicLibrary g_SF;
 
-extern FSignal<void()> g_initAudioTracks;
-extern FSignal<void()> g_onDetachPlugin;
+extern FSignal<void()> g_onInitAudio;
 extern FSignal<void()> g_onInitSamp;
+
+extern snippets::FastMap<std::string, std::shared_ptr<MLoad>> g_modules;
 
 extern const char* g_szCurrentVersion;
 
