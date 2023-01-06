@@ -51,17 +51,19 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 
 #define MK_MOD(a) \
     { std::string(#a), std::make_shared<a>() }
-snippets::FastMap<std::string, std::shared_ptr<MLoad>> g_modules{
-    {MK_MOD(OldHUD),
-     MK_MOD(UnlockConect),
-     MK_MOD(CustomFont),
-     MK_MOD(WhiteID),
-     MK_MOD(DelCarTable),
-     MK_MOD(SortScreenshot),
-     MK_MOD(CustomHelp),
-     MK_MOD(FastScreenshot),
-     MK_MOD(TFRO),
-     MK_MOD(DisableSnowWindow)}
+std::map<std::string, std::shared_ptr<MLoad>> g_modules{
+    {
+        MK_MOD(OldHUD),
+        MK_MOD(UnlockConect),
+        MK_MOD(CustomFont),
+        MK_MOD(WhiteID),
+        MK_MOD(DelCarTable),
+        MK_MOD(SortScreenshot),
+        MK_MOD(CustomHelp),
+        MK_MOD(FastScreenshot),
+        MK_MOD(TFRO),
+        MK_MOD(DisableSnowWindow)
+    }
 };
 #undef MK_MOD
 
@@ -123,9 +125,9 @@ NOINLINE NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags,
         g_Log << "[loader]: gtarp_clientside.asi - injected. Start patching.";
         Menu::init();
         
-        auto&           modules = g_modules.getVars();
-        std::atomic_int countRun = modules.size();
-        for (auto& point : modules) {
+        //auto&           modules = g_modules.getVars();
+        std::atomic_int countRun = g_modules.size();
+        for (auto& [key, point] : g_modules) {
             std::thread([&countRun](std::shared_ptr<MLoad>& p) {
                 p->init();
                 --countRun;
@@ -159,7 +161,7 @@ NOINLINE void   gameLoopDetourFNC() {
         g_onInitSamp.call();
         s_bIsInitCocks = true;
     }
-    
+
     if (static auto s_timer = snippets::Timer<UPDATE_DELAY>();
         s_timer)
     {
@@ -227,7 +229,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             exit(EXIT_FAILURE);
         }
 
-        g_pSAMP = new SAMP();
         g_pGameLoopDetour = std::make_unique<PLH::x86Detour>(UINT64(OFFSETS::GTA_SA::GAMELOOP),
                                                              UINT64(&gameLoopDetourFNC),
                                                              &g_ui64GameLoopJumpTrampline);
