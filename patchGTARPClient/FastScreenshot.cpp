@@ -27,14 +27,12 @@ struct stImgFormat {
 static decltype(D3DXSaveSurfaceToFileA)* s_fncSaveSurfaceToFileA;
 static decltype(D3DXCreateTexture)*      s_fncCreateTexture;
 
-void saveTexture(std::shared_ptr<std::string> szFileName, LPDIRECT3DTEXTURE9 frontBuff,
-                 LPDIRECT3DSURFACE9 pTemp, std::shared_ptr<RECT> r) {
+void saveTexture(std::shared_ptr<std::string> szFileName, LPDIRECT3DSURFACE9 pTemp, std::shared_ptr<RECT> r) {
     static std::mutex           s_log{};
     std::lock_guard<std::mutex> lock{s_log};
 
     s_fncSaveSurfaceToFileA(szFileName->c_str(), g_imgFormat.m_d3dFormat, pTemp, NULL, r.get());
     pTemp->Release();
-    frontBuff->Release();
 }
 
 int GetScreenshotFileName(std::string& FileName) {
@@ -67,12 +65,6 @@ int GetScreenshotFileName(std::string& FileName) {
     return i;
 }
 
-inline std::pair<UINT, UINT> getResolution() {
-    RECT r;
-    GetClientRect(*(HWND*)0xC97C1C, &r);
-    return {r.right - r.left, r.bottom - r.top};
-}
-
 void FastScreenshot::hkTakeScreenshot() {
 #ifdef DEBUG_SOUND
     BASS_ChannelSetAttribute(g_hTakeSound, BASS_ATTRIB_VOL, 1.0f);
@@ -83,23 +75,17 @@ void FastScreenshot::hkTakeScreenshot() {
     std::shared_ptr<std::string> sFileName = std::make_shared<std::string>();
     int                          iCount = GetScreenshotFileName(*sFileName);
 
-    LPDIRECT3DTEXTURE9 pFrontBuff{};
     LPDIRECT3DSURFACE9 pSurfFrontTexture{};
-    auto [resX, resY] = getResolution();
-    s_fncCreateTexture(pDevice,
-                       UINT(std::roundf((float)resX / 4.0f)) * 4, UINT(std::roundf((float)resY / 4.0f)) * 4,
-                       1, NULL, D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH, &pFrontBuff);
-    pDevice->CreateOffscreenPlainSurface(resX, resY, D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH,
+    pDevice->CreateOffscreenPlainSurface(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+                                         D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH,
                                          &pSurfFrontTexture, nullptr);
 
     try {
-        if (!pFrontBuff)
-            throw std::string("pFrontBuff == nullptr");
-        pFrontBuff->GetSurfaceLevel(0, &pSurfFrontTexture);
         if (!pSurfFrontTexture)
             throw std::string("pSurfFrontTexture == nullptr");
 
-        if (SUCCEEDED(pDevice->GetFrontBufferData(0, pSurfFrontTexture))) {
+        auto hr = pDevice->GetFrontBufferData(0, pSurfFrontTexture);
+        if (SUCCEEDED(hr)) {
 
             if (iCount == 999) {
                 g_pSAMP->addChatMessage(0x88'AA'62, "Достигнут лимит кол-ва скриншотов! Пожалуйста, {FFA500}освободите папку{88AA62}.");
@@ -117,7 +103,7 @@ void FastScreenshot::hkTakeScreenshot() {
             std::ofstream oufstr{*sFileName};
             oufstr << "temp";
             oufstr.close();
-            std::thread thr(saveTexture, sFileName, pFrontBuff, pSurfFrontTexture, rect);
+            std::thread thr(saveTexture, sFileName, pSurfFrontTexture, rect);
             thr.detach();
             g_pSAMP->addChatMessage(0x88'AA'62,
                                     "Скриншот сохранен {FFA500}sa-mp-%03i.%s {88AA62}(нажмите  {FFA500}ПКМ -> Скриншоты {88AA62}на иконке лаунчера в трее)",
@@ -129,13 +115,12 @@ void FastScreenshot::hkTakeScreenshot() {
         } else {
             throw std::string("GetFrontBufferData != SUCCEEDED");
         }
-
-        *g_sampBase.getAddr<LPBOOL>(OFFSETS::SAMP::TAKESCREENSHOT) = FALSE; // g_bTakeScreenshot
     } catch (const std::string& text) {
         g_pSAMP->addChatMessage(0x88'AA'62, "Не удалось сохранить скриншот: {808080}%s", text.c_str());
         SAFE_RELEASE(pSurfFrontTexture);
-        SAFE_RELEASE(pFrontBuff);
     }
+    *g_sampBase.getAddr<LPBOOL>(OFFSETS::SAMP::TAKESCREENSHOT) = FALSE; // g_bTakeScreenshot
+
 #endif
 }
 
@@ -151,6 +136,19 @@ void FastScreenshot::turnOff() {
     patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(OFFSETS::SAMP::FNCTAKESCREENSHOT), m_byteOrig);
 }
 
+void FastScreenshot__updateFormat(const char* fm) {
+    if (!strcmp(fm, "JPEG")) {
+        g_imgFormat.m_d3dFormat = D3DXIFF_JPG;
+        g_imgFormat.m_pFormat = "jpg";
+    } else if (!strcmp(fm, "TGA")) {
+        g_imgFormat.m_d3dFormat = D3DXIFF_TGA;
+        g_imgFormat.m_pFormat = "tga";
+    } else {
+        g_imgFormat.m_d3dFormat = D3DXIFF_PNG;
+        g_imgFormat.m_pFormat = "png";
+    }
+}
+
 void FastScreenshot::init() {
     // Load config
     if (auto ext = g_Config["samp"]["formatScreenshotIMG"].get<std::string>();
@@ -164,6 +162,7 @@ void FastScreenshot::init() {
         g_imgFormat.m_d3dFormat = D3DXIFF_PNG;
         g_imgFormat.m_pFormat = "png";
     }
+    FastScreenshot__updateFormat(g_Config["samp"]["formatScreenshotIMG"].get<std::string>().c_str());
 
     g_onInitAudio += []() {
         struct {

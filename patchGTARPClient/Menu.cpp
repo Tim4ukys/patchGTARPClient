@@ -25,6 +25,8 @@ struct stServerIcon {
 };
 extern stServerIcon g_serverIcon;
 
+extern void FastScreenshot__updateFormat(const char* l);
+
 BlurEffect* g_pBlurEffect{};
 
 //#define DEBUG_NEWS
@@ -222,7 +224,7 @@ void Menu::init() {
             if (desc && ImGui::IsItemHovered())
                 ImGui::SetTooltip(desc);
         };
-        auto combo = [](const char* label, nlohmann::json& j, const char const* params[], int count, const char* desc = nullptr) {
+        auto combo = [](const char* label, nlohmann::json& j, const char const* params[], int count, void (*fnc)(const char*) = nullptr, const char* desc = nullptr) {
             static std::map<const char*, int> s_labels;
             if (s_labels.find(label) == s_labels.end()) {
                 if (auto find_str = std::find_if(params, params + count, [&](const char* fstr) -> bool { return j.get<std::string>() == fstr; });
@@ -234,6 +236,8 @@ void Menu::init() {
             }
             if (ImGui::Combo(label, &s_labels[label], params, count)) {
                 j = params[s_labels[label]];
+                if (fnc)
+                    fnc(params[s_labels[label]]);
                 g_Config.saveFile();
             }
             if (desc && ImGui::IsItemHovered())
@@ -295,6 +299,7 @@ void Menu::init() {
 
                 const char* fmtIMG[]{"PNG", "JPEG", "TGA"};
                 combo(u8"Формат изображения", g_Config["samp"]["formatScreenshotIMG"], fmtIMG, ARRAYSIZE(fmtIMG),
+                      [](const char* f) { FastScreenshot__updateFormat(f); },
                       u8"Формат, в котором будут сохраняться скриншоты");
             }
 

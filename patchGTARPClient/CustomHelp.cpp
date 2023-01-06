@@ -72,6 +72,11 @@ void CustomHelp::init() {
                                                        pDevice, &m_pSprite);
 
         g_wndProcHangler = snippets::WinProcHeader::regWinProc(WndProcHandler, &m_pWindowProc);
+
+        RECT r;
+        GetClientRect(*(HWND*)0xC97C1C, &r);
+        m_uiWindowSize[0] = r.right - r.left;
+        m_uiWindowSize[1] = r.bottom - r.top;
     };
     g_pD3D9Hook->onLostDevice += [this](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
         m_pSprite->OnLostDevice();
