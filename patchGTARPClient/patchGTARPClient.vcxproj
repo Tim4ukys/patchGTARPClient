@@ -73,16 +73,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.ASI</TargetExt>
-    <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0;$(SolutionDir)third-party\PolyHook_2_0\zydis\include;$(SolutionDir)third-party\PolyHook_2_0\zydis\dependencies\zycore\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\build32\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\asmtk\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\dependencies\zycore\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\include;$(BOOST_ROOT);$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\lib;$(LibraryPath)</LibraryPath>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
     <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.ASI</TargetExt>
-    <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0;$(SolutionDir)third-party\PolyHook_2_0\zydis\include;$(SolutionDir)third-party\PolyHook_2_0\zydis\dependencies\zycore\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\build32\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\asmtk\$(Configuration);$(SolutionDir)third-party\PolyHook_2_0\build32\zydis\dependencies\zycore\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\include;$(BOOST_ROOT);$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\lib;$(LibraryPath)</LibraryPath>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
     <OutDir>D:\Games\GTA RP\</OutDir>
   </PropertyGroup>
@@ -104,8 +104,9 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(BOOST_ROOT);G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,9 +126,10 @@
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(BOOST_ROOT);G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
