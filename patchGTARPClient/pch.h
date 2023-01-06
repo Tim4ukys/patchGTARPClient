@@ -116,7 +116,7 @@ extern snippets::DynamicLibrary g_SF;
 extern FSignal<void()> g_onInitAudio;
 extern FSignal<void()> g_onInitSamp;
 
-extern snippets::FastMap<std::string, std::shared_ptr<MLoad>> g_modules;
+extern std::map<std::string, std::shared_ptr<MLoad>> g_modules;
 
 extern const char* g_szCurrentVersion;
 
