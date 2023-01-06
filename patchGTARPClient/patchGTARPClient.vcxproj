@@ -112,7 +112,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin_d.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,7 +133,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -185,10 +185,11 @@
     <ClInclude Include="FastScreenshot.h" />
     <ClInclude Include="FSignal.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="MLoad.h" />
     <ClInclude Include="OldHUD.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="offsets.hpp" />
-    <ClInclude Include="patch.h" />
+    <ClInclude Include="patch.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ReplaceableTXD.h" />
     <ClInclude Include="resource.h" />

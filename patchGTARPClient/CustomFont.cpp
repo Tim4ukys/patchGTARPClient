@@ -28,8 +28,8 @@ void __fastcall CustomFont::onChatFontReset(PVOID p_this, PVOID trash) {
     SAFE_RELEASE(s_pFontCE->m_pFont);
     SAFE_RELEASE(s_pShadowFont);
 
-    const int iFontSize = ((int (*)())g_sampBase.getAddress(0xC5B20))();
-    const int iFontWeight = ((int (*)())g_sampBase.getAddress(0xC5BD0))();
+    const int iFontSize = g_sampBase.getAddr<int (*)()>(0xC5B20)();
+    const int iFontWeight = g_sampBase.getAddr<int (*)()>(0xC5BD0)();
 
     g_Log.Write("[CustomFont]: iFontSize: %d | iFontWeight: %d", iFontSize, iFontWeight);
 
@@ -60,45 +60,66 @@ void __fastcall CustomFont::onResetDevice(PVOID p_this, PVOID trash) {
     s_pShadowFont->OnResetDevice();
 }
 
-void CustomFont::Process() {
-    if (!g_Config["samp"]["isCustomFont"].get<bool>())
-        return;
+void CustomFont::turnOn() {
+    patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(0x66D06), m_oldByte[1]);
+}
 
+void CustomFont::turnOff() {
+    patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(0x66D06), m_oldByte[0]);
+}
+
+void CustomFont::init() {
     s_fontFaceName = g_Config["samp"]["fontFaceName"].get<std::string>();
 
-    s_pFontCE = (stFont*) new uint8_t[sizeof(stFont)];
+    s_pFontCE = (stFont*)new uint8_t[sizeof(stFont)];
     ZeroMemory(s_pFontCE, sizeof(stFont));
     // Ставим VTable из SA-MP. В нём находятся функции из сампа, которые делают такие секас цвета
-    *(DWORD*)s_pFontCE = g_sampBase.getAddress(0xEA3B8);
+    *(DWORD*)s_pFontCE = g_sampBase.getAddr<DWORD>(0xEA3B8);
 
-    ///
-
-    s_onChatFontReset = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0x6B170)),
+    s_onChatFontReset = std::make_unique<PLH::x86Detour>(g_sampBase.getAddr<UINT64>(0x6B170),
                                                          UINT64(&onChatFontReset),
                                                          &s_ui64OnChatFontReset);
-    s_onChatFontReset->hook();
-
-    s_onLostDevice = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0x6AA10)),
+    s_onLostDevice = std::make_unique<PLH::x86Detour>(g_sampBase.getAddr<UINT64>(0x6AA10),
                                                       UINT64(&onLostDevice),
                                                       &s_ui64OnLostDevice);
-    s_onLostDevice->hook();
-
-    s_onResetDevice = std::make_unique<PLH::x86Detour>(UINT64(g_sampBase.getAddress(0x6AA50)),
+    s_onResetDevice = std::make_unique<PLH::x86Detour>(g_sampBase.getAddr<UINT64>(0x6AA50),
                                                        UINT64(&onResetDevice),
                                                        &s_ui64OnResetDevice);
+
+    s_onChatFontReset->hook();
+    s_onLostDevice->hook();
     s_onResetDevice->hook();
 
-    ///
+    patch::getBytes(g_sampBase.getAddr<std::uintptr_t>(0x66D06), m_oldByte[0]);
 
     char raw[]{
-        '\xbe', 0, 0, 0, 0, // mov esi, &pFontCE
-        '\x8B', '\x06', // mov eax, [esi]
+        '\xbe', 0, 0, 0, 0,             // mov esi, &pFontCE
+        '\x8B', '\x06',                 // mov eax, [esi]
         '\x89', '\x44', '\x24', '\x10', // mov [esp+214h+pFontCE], eax
-        '\xb8', 0, 0, 0, 0, // mov eax, &pFont
-        '\x8b', '\x30' // mov esi, [eax]
+        '\xb8', 0, 0, 0, 0,             // mov eax, &pFont
+        '\x8b', '\x30'                  // mov esi, [eax]
     };
 
     *(stFont***)(raw + 1) = &s_pFontCE;
     *(ID3DXFont***)(raw + 12) = &s_pShadowFont;
-    patch__setRawThroughJump(g_sampBase.getAddress(0x66D06), raw, ARRAYSIZE(raw), 9, FALSE);
+    patch::setRawThroughJump(g_sampBase.getAddr<std::uintptr_t>(0x66D06), raw, ARRAYSIZE(raw),
+                             9, FALSE);
+
+    // ----
+
+    patch::getBytes(g_sampBase.getAddr<std::uintptr_t>(0x66D06), m_oldByte[1]);
+
+    // ----
+
+    if (!(m_bState = g_Config["samp"]["isCustomFont"].get<bool>()))
+        turnOff();
+}
+CustomFont::~CustomFont() {
+    s_onChatFontReset->unHook();
+    s_onLostDevice->unHook();
+    s_onResetDevice->unHook();
+
+    SAFE_RELEASE(s_pFontCE->m_pFont);
+    SAFE_RELEASE(s_pShadowFont);
+    delete[] (std::uint8_t*)s_pFontCE;
 }

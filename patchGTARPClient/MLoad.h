@@ -8,18 +8,22 @@
  *    License: GNU GPLv3                             *
  *                                                   *
  ****************************************************/
-#include "pch.h"
-#include "DisableSnowWindow.h"
-#include "offsets.hpp"
+#pragma once
 
-void DisableSnowWindow::turnOff() {
-    patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0x74);
-}
-void DisableSnowWindow::turnOn() {
-    patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0xEB);
-}
+class MLoad {
+protected:
+    bool m_bState{};
 
-void DisableSnowWindow::init() {
-    if (m_bState = g_Config["vehicleHud"]["isDisableSnowWindow"].get<bool>())
-        turnOn();
-}
+    virtual void turnOn(){};
+    virtual void turnOff(){};
+
+public:
+    virtual ~MLoad(){};
+    virtual void init() = NULL;
+
+    void Toggle(){
+        if (m_bState) turnOff();
+        else turnOn();
+        m_bState = !m_bState; 
+    };
+};

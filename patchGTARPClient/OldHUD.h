@@ -9,7 +9,7 @@
 *                                                   *
 ****************************************************/
 #pragma once
-class OldHUD {
+class OldHUD : public MLoad {
 public:
-	static void Process();
+    void init() override;
 };

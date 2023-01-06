@@ -9,7 +9,16 @@
 *                                                   *
 ****************************************************/
 #pragma once
-class FastScreenshot {
+class FastScreenshot : public MLoad {
+    std::uint8_t m_byteOrig[5];
+    static DWORD s_hTakeSound;
+
+    static void __cdecl hkTakeScreenshot();
+
+    void turnOn() override;
+    void turnOff() override;
+
 public:
-    static void Process();
+    void init() override;
+    ~FastScreenshot() override;
 };

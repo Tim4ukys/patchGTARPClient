@@ -36,6 +36,8 @@ public:
 public:
     void Render(const RECT& r, float level) const noexcept;
 
+    void createObject();
+
     void onLostDevice();
     void onResetDevice(LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams);
 

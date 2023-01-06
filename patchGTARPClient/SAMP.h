@@ -43,6 +43,7 @@ public:
     void cmdRect(const char* szCmdName, CMDPROC pCmdProc);
 
     void setCursorMode(int nMode, BOOL bImmediatelyHideCursor);
+    void redraw();
 
 private:
 

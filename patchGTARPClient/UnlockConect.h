@@ -9,9 +9,7 @@
 *                                                   *
 ****************************************************/
 #pragma once
-class UnlockConect {
+class UnlockConect : public MLoad {
 public:
-
-	static void Process();
-
+	void init() override;
 };
