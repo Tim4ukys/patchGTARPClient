@@ -14,8 +14,6 @@
 
 D3D9Hook::D3D9Hook() {
     g_onInitSamp += [this]() {
-        snippets::WinProcHeader::Init();
-
         PVOID hookPrs = reinterpret_cast<void*>(getDeviceAddress(17));
         PVOID hookRes = reinterpret_cast<void*>(getDeviceAddress(16));
 

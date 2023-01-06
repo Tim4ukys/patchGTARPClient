@@ -208,6 +208,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     {
         g_DLLModule = hModule;
         g_pD3D9Hook = new D3D9Hook();
+        g_pSAMP = new SAMP();
+
+        plugin::Events::initGameEvent += []() {
+            snippets::WinProcHeader::Init();
+        };
 
         // ------------
 
