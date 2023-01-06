@@ -28,7 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="patch.h">
+    <ClInclude Include="patch.hpp">
       <Filter>core\libs</Filter>
     </ClInclude>
     <ClInclude Include="client.h">
@@ -96,6 +96,9 @@
     </ClInclude>
     <ClInclude Include="DisableSnowWindow.h">
       <Filter>md\gtarp</Filter>
+    </ClInclude>
+    <ClInclude Include="MLoad.h">
+      <Filter>md</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

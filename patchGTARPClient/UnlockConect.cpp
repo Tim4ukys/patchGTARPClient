@@ -16,6 +16,6 @@
 * Этот файл выключает блокировку на подключения на стороние сервера
 */
 
-void UnlockConect::Process() {
-    patch__setRaw(g_gtarpclientBase.GET_ADDR(OFFSETS::GTARP::LOCKCONNECTTOOTHERSERVER), "\xEB\x17\x90", 3);
+void UnlockConect::init() {
+    patch::setRaw(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::LOCKCONNECTTOOTHERSERVER), "\xEB\x17\x90");
 }

@@ -68,7 +68,14 @@ public:
 
         SCALE_HUD_FIX = 0x68'100,
         SCALE_HUD_FIX_STATE = 0x117'478,
-        DISABLE_LOAD_SCALE_STATE = 0xC5'23B
+        DISABLE_LOAD_SCALE_STATE = 0xC5'23B,
+
+        FNCTAKESCREENSHOT = 0x74EB0,
+        TAKESCREENSHOT = 0x12DD3C,
+
+        D3D9DEVICE = 0x26E888,
+
+        SHOWHELP = 0x6B3C0
     };
     
     enum class GTA_SA : unsigned int {

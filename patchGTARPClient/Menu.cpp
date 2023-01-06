@@ -25,6 +25,8 @@ struct stServerIcon {
 };
 extern stServerIcon g_serverIcon;
 
+extern void FastScreenshot__updateFormat(const char* l);
+
 BlurEffect* g_pBlurEffect{};
 
 //#define DEBUG_NEWS
@@ -98,7 +100,7 @@ void Menu::title_menu() {
     ImGui::GetStyle().WindowPadding.y = oldWindowPadding;
 }
 
-void Menu::Process() {
+void Menu::init() {
     g_onInitSamp += []() {
         g_pSAMP->cmdRect("patch_open",
                          [](const char* param) {
@@ -183,179 +185,185 @@ void Menu::Process() {
         g_pBlurEffect->onResetDevice(pDevice, pPresentParams);
     };
     g_pD3D9Hook->onPresentEvent += [](IDirect3DDevice9* pDevice, const RECT*, const RECT*, HWND, const RGNDATA*) {
+        if (!g_menuData.m_bOpen)
+            return;
+
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        if (g_menuData.m_bOpen) {
-            ImGui::SetNextWindowSize({670.f, 342.f});
-            ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
-            title_menu();
+        ImGui::SetNextWindowSize({670.f, 342.f});
+        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
+        title_menu();
 
-            auto checkbox = [](const char* label, nlohmann::json& j, void (*fnc)(bool) = nullptr, const char* desc = nullptr) {
-                if (ImGui::Checkbox(label, j.get_ptr<bool*>())) {
-                    if (fnc)
-                        fnc(j.get<bool>());
-                    g_Config.saveFile();
-                }
-                if (desc && ImGui::IsItemHovered())
-                    ImGui::SetTooltip(desc);
-            };
-            auto textInput = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
-                if (ImGui::InputText(label, j.get_ptr<std::string*>())) {
-                    g_Config.saveFile();
-                }
-                if (desc && ImGui::IsItemHovered()) 
-                    ImGui::SetTooltip(desc);
-            };
-            auto doubleInput = [](const char* label, nlohmann::json& j, void (*fnc)(float) = nullptr, const char* desc = nullptr) {
-                if (ImGui::InputDouble(label, j.get_ptr<double*>())) {
-                    if (fnc)
-                        fnc(j.get<float>());
-                    g_Config.saveFile();
-                }
-                if (desc && ImGui::IsItemHovered())
-                    ImGui::SetTooltip(desc);
-            };
-            auto combo = [](const char* label, nlohmann::json& j, const char const* params[], int count, const char* desc = nullptr) {
-                static std::map<const char*, int> s_labels;
-                if (s_labels.find(label) == s_labels.end()) {
-                    if (auto find_str = std::find_if(params, params + count, [&](const char* fstr) -> bool { return j.get<std::string>() == fstr; });
-                        find_str != params + count) 
-                    {
-                        s_labels.emplace(label, int(DWORD(find_str) - DWORD(params)) / int(sizeof(sizeof(const char*))));
-                    } else {
-                        s_labels.emplace(label, 0);
-                    }
-                }
-                if (ImGui::Combo(label, &s_labels[label], params, count)) {
-                    j = params[s_labels[label]];
-                    g_Config.saveFile();
-                }
-                if (desc && ImGui::IsItemHovered())
-                    ImGui::SetTooltip(desc);
-            };
-
-            constexpr auto TAB_SIZE = 20;
-
-            if (g_menuData.m_pSelected)
-                ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false);
-            switch (g_menuData.m_iSelected) {
-            case eTitles_INFO:
-                render_doska();
-                ImGui::Separator();
-                ImGui::Text(u8"Сайт проекта GitHub: github.com/Tim4ukys/patchGTARPClient\n"
-                            u8"DonationAlerts: www.donationalerts.com/r/tim4ukys");
-                /*ImGui::TextWrapped(u8"Донат нужен для аренды облака, с помощью которого работает tg-bot, "
-                            u8"а в будущем он нужен будет для работы и самого плагина. "
-                            u8"Цена аренды 270-320 рублей. Я не хочу отбирать деньги просто так, и ради этого "
-                            u8"я создал цель сбора. Если нужная сумма набирается, то этот сбор закрывается, "
-                            u8"и где-то через месяц я создаю новый. "
-                            u8"Все прозрачно. Вы сами сможете видеть, сколько ещё нужно до цели. Главное, чтобы "
-                            u8"при донате Вы не забывали выбрать \"цель\" доната. (Host: RuVDS)");
-                ImGui::TextWrapped(u8"Буду рад и 10 рублям. Весь этот проект(я про патч) создавался не из-за "
-                                   u8"каких-то карыстных побуждений, а на голом энтузиазме. Спасибо за понимание.");*/
-                break;
-            case eTitles_News:
-                ImGui::Text(u8"Все изменения, которые произошли пока Вы не обновляли плагин:");
-                for (const auto& news : g_menuData.m_arrNews) {
-                    ImGui::Text("%s:", news.first.c_str());
-                    for (size_t i{}; i < news.second.size(); ++i) {
-                        ImGui::Text("\t%d) %s", i + 1, news.second[i].c_str());
-                    }
-                }
-                break;
-            case eTitles_SAMP:
-                checkbox(u8"Новое меню на F1", g_Config["samp"]["isCustomF1"]);
-                checkbox(u8"Белые ID", g_Config["samp"]["isWhiteID"], nullptr,
-                         u8"ID легче читать. Очень полезно в тех случаях когда чел, на которого\n"
-                         u8"нужно написать донос в репорт, одел маску.");
-                
-                checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], nullptr, 
-                         u8"Заменяет стандартный шрифт");
-                if (g_Config["samp"]["isCustomFont"].get<bool>()) {
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    textInput(u8"Название шрифта", g_Config["samp"]["fontFaceName"], 
-                              u8"Например: \tSegoe UI Light\n"
-                              u8"\t\t\t\t\t\tComic Sans MS\n"
-                              u8"\t\t\t\t\t\tJetBrains Mono");
-                }
-                checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"], nullptr,
-                         u8"Ускоряет создание скриншотов в несколько раз.");
-                if (g_Config["samp"]["isMakeQuickScreenshot"].get<bool>()) {
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"], nullptr,
-                             u8"После создания скриншота будет проигрываться мелодия(копипаста из STEAM).");
-
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-
-                    const char* fmtIMG[]{"PNG", "JPEG", "TGA"};
-                    combo(u8"Формат изображения", g_Config["samp"]["formatScreenshotIMG"], fmtIMG, ARRAYSIZE(fmtIMG),
-                          u8"Формат, в котором будут сохраняться скриншоты");
-                }
-
-                checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"], nullptr,
-                         u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\n"
-                         u8"Например:\t screens\\2005-11-29");
-                
-                break;
-            case eTitles_GTASA:
-                checkbox(u8"Turn Fucking Radio Off", g_Config["gtasa"]["tfro"], nullptr,
-                         u8"При посадке в авто радио будет автоматически выключенно.\n"
-                         u8"Автор оригинала: NarutoUA (blast.hk/members/2504)");
-                break;
-            case eTitles_GTARP:
-                checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"], nullptr,
-                         u8"Подсказка с клавишами, которая появляется, когда персонаж садится в авто.");
-                checkbox(u8"Убрать наледь на окне при езде", g_Config["vehicleHud"]["isDisableSnowWindow"], nullptr);
-                checkbox(u8"Старый худ", g_Config["oldHud"]["hud"], nullptr,
-                         u8"Возвращает старый худ из GTA SA");
-                if (g_Config["oldHud"]["hud"].get<bool>()) {
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Часовой пояс на часах МСК", g_Config["clock"]["fixTimeZone"], nullptr,
-                             u8"Подстраивает время на часах относительно московского часового пояса.");
-
-                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                    checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"], nullptr/*[](bool a) { g_serverIcon.m_bState = a; }*/,
-                             u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
-                    if (g_Config["serverIcon"]["state"].get<bool>()) {
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
-                        doubleInput(u8"X", g_Config["serverIcon"]["x"], [](float a) { g_serverIcon.m_fIconPos[0] = a; });
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
-                        doubleInput(u8"Y", g_Config["serverIcon"]["y"], [](float a) { g_serverIcon.m_fIconPos[1] = a; });
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
-                        doubleInput(u8"Ширина", g_Config["serverIcon"]["width"], [](float a) { g_serverIcon.m_fIconSize[0] = a; });
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
-                        doubleInput(u8"Высота", g_Config["serverIcon"]["height"], [](float a) { g_serverIcon.m_fIconSize[1] = a; });
-                    }
-                }
-                checkbox(u8"Старый радар", g_Config["oldHud"]["radar"], nullptr,
-                         u8"Возвращает радар из GTA SA");
-                textInput(u8"Путь до \"HUD.TXD\"", g_Config["oldHud"]["pathToTXDhud"],
-                          u8"Путь относительно корневой папки игры.\n"
-                          u8"Например(Как в настройках->Как в итоге):\n\t"
-                          u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
-                          u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
-                break;
+        auto checkbox = [](const char* label, nlohmann::json& j, const char* keyModule = nullptr,
+                           void (*fnc)(bool) = nullptr, const char* desc = nullptr) {
+            if (ImGui::Checkbox(label, j.get_ptr<bool*>())) {
+                if (keyModule)
+                    g_modules[std::string(keyModule)]->Toggle();
+                if (fnc)
+                    fnc(j.get<bool>());
+                g_Config.saveFile();
             }
-            if (g_menuData.m_pSelected)
-                ImGui::EndChild();
-            background();
-            render_warning();
+            if (desc && ImGui::IsItemHovered())
+                ImGui::SetTooltip(desc);
+        };
+        auto textInput = [](const char* label, nlohmann::json& j, const char* desc = nullptr) {
+            if (ImGui::InputText(label, j.get_ptr<std::string*>())) {
+                g_Config.saveFile();
+            }
+            if (desc && ImGui::IsItemHovered())
+                ImGui::SetTooltip(desc);
+        };
+        auto doubleInput = [](const char* label, nlohmann::json& j, void (*fnc)(float) = nullptr, const char* desc = nullptr) {
+            if (ImGui::InputDouble(label, j.get_ptr<double*>())) {
+                if (fnc)
+                    fnc(j.get<float>());
+                g_Config.saveFile();
+            }
+            if (desc && ImGui::IsItemHovered())
+                ImGui::SetTooltip(desc);
+        };
+        auto combo = [](const char* label, nlohmann::json& j, const char const* params[], int count, void (*fnc)(const char*) = nullptr, const char* desc = nullptr) {
+            static std::map<const char*, int> s_labels;
+            if (s_labels.find(label) == s_labels.end()) {
+                if (auto find_str = std::find_if(params, params + count, [&](const char* fstr) -> bool { return j.get<std::string>() == fstr; });
+                    find_str != params + count) {
+                    s_labels.emplace(label, int(DWORD(find_str) - DWORD(params)) / int(sizeof(sizeof(const char*))));
+                } else {
+                    s_labels.emplace(label, 0);
+                }
+            }
+            if (ImGui::Combo(label, &s_labels[label], params, count)) {
+                j = params[s_labels[label]];
+                if (fnc)
+                    fnc(params[s_labels[label]]);
+                g_Config.saveFile();
+            }
+            if (desc && ImGui::IsItemHovered())
+                ImGui::SetTooltip(desc);
+        };
 
-            ImGui::End();
+        constexpr auto TAB_SIZE = 20;
+
+        if (g_menuData.m_pSelected)
+            ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false);
+        switch (g_menuData.m_iSelected) {
+        case eTitles_INFO:
+            render_doska();
+            ImGui::Separator();
+            ImGui::Text(u8"Сайт проекта GitHub: github.com/Tim4ukys/patchGTARPClient\n"
+                        u8"DonationAlerts: www.donationalerts.com/r/tim4ukys");
+            /*ImGui::TextWrapped(u8"Донат нужен для аренды облака, с помощью которого работает tg-bot, "
+                        u8"а в будущем он нужен будет для работы и самого плагина. "
+                        u8"Цена аренды 270-320 рублей. Я не хочу отбирать деньги просто так, и ради этого "
+                        u8"я создал цель сбора. Если нужная сумма набирается, то этот сбор закрывается, "
+                        u8"и где-то через месяц я создаю новый. "
+                        u8"Все прозрачно. Вы сами сможете видеть, сколько ещё нужно до цели. Главное, чтобы "
+                        u8"при донате Вы не забывали выбрать \"цель\" доната. (Host: RuVDS)");
+            ImGui::TextWrapped(u8"Буду рад и 10 рублям. Весь этот проект(я про патч) создавался не из-за "
+                               u8"каких-то карыстных побуждений, а на голом энтузиазме. Спасибо за понимание.");*/
+            break;
+        case eTitles_News:
+            ImGui::Text(u8"Все изменения, которые произошли пока Вы не обновляли плагин:");
+            for (const auto& news : g_menuData.m_arrNews) {
+                ImGui::Text("%s:", news.first.c_str());
+                for (size_t i{}; i < news.second.size(); ++i) {
+                    ImGui::Text("\t%d) %s", i + 1, news.second[i].c_str());
+                }
+            }
+            break;
+        case eTitles_SAMP:
+            checkbox(u8"Новое меню на F1", g_Config["samp"]["isCustomF1"], "CustomHelp");
+            checkbox(u8"Белые ID", g_Config["samp"]["isWhiteID"], "WhiteID", nullptr,
+                     u8"ID легче читать. Очень полезно в тех случаях когда чел, на которого\n"
+                     u8"нужно написать донос в репорт, одел маску.");
+
+            checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], "CustomFont", 
+                     [](bool) { g_pSAMP->redraw(); }, u8"Заменяет стандартный шрифт");
+            if (g_Config["samp"]["isCustomFont"].get<bool>()) {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                textInput(u8"Название шрифта", g_Config["samp"]["fontFaceName"],
+                          u8"Например: \tSegoe UI Light\n"
+                          u8"\t\t\t\t\t\tComic Sans MS\n"
+                          u8"\t\t\t\t\t\tJetBrains Mono");
+            }
+            checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"], "FastScreenshot", nullptr,
+                     u8"Ускоряет создание скриншотов в несколько раз.");
+            if (g_Config["samp"]["isMakeQuickScreenshot"].get<bool>()) {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                checkbox(u8"Звук создания скриншота", g_Config["samp"]["isPlaySoundAfterMakeScreenshot"], nullptr, nullptr,
+                         u8"После создания скриншота будет проигрываться мелодия(копипаста из STEAM).");
+
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+
+                const char* fmtIMG[]{"PNG", "JPEG", "TGA"};
+                combo(u8"Формат изображения", g_Config["samp"]["formatScreenshotIMG"], fmtIMG, ARRAYSIZE(fmtIMG),
+                      [](const char* f) { FastScreenshot__updateFormat(f); },
+                      u8"Формат, в котором будут сохраняться скриншоты");
+            }
+
+            checkbox(u8"Сортировка скриншотов по папкам", g_Config["samp"]["isSortingScreenshots"], "SortScreenshot", nullptr,
+                     u8"Скриншоты будут сохраняться в папку \"screens\\YYYY-MM-DD\"\n"
+                     u8"Например:\t screens\\2005-11-29");
+
+            break;
+        case eTitles_GTASA:
+            checkbox(u8"Turn Fucking Radio Off", g_Config["gtasa"]["tfro"], "TFRO", nullptr,
+                     u8"При посадке в авто радио будет автоматически выключенно.\n"
+                     u8"Автор оригинала: NarutoUA (blast.hk/members/2504)");
+            break;
+        case eTitles_GTARP:
+            checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"], "DelCarTable", nullptr,
+                     u8"Подсказка с клавишами, которая появляется, когда персонаж садится в авто.");
+            checkbox(u8"Убрать наледь на окне при езде", g_Config["vehicleHud"]["isDisableSnowWindow"], "DisableSnowWindow", nullptr);
+            checkbox(u8"Старый худ", g_Config["oldHud"]["hud"], "OldHUD", nullptr,
+                     u8"Возвращает старый худ из GTA SA");
+            if (g_Config["oldHud"]["hud"].get<bool>()) {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                checkbox(u8"Часовой пояс на часах МСК", g_Config["clock"]["fixTimeZone"], nullptr, nullptr,
+                         u8"Подстраивает время на часах относительно московского часового пояса.");
+
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                checkbox(u8"Иконка сервера", g_Config["serverIcon"]["state"], nullptr, nullptr /*[](bool a) { g_serverIcon.m_bState = a; }*/,
+                         u8"Даёт возможность изменять иконку сервера(его позицию и ВКЛ/ВЫКЛ)");
+                if (g_Config["serverIcon"]["state"].get<bool>()) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                    doubleInput(u8"X", g_Config["serverIcon"]["x"], [](float a) { g_serverIcon.m_fIconPos[0] = a; });
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                    doubleInput(u8"Y", g_Config["serverIcon"]["y"], [](float a) { g_serverIcon.m_fIconPos[1] = a; });
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                    doubleInput(u8"Ширина", g_Config["serverIcon"]["width"], [](float a) { g_serverIcon.m_fIconSize[0] = a; });
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE * 2);
+                    doubleInput(u8"Высота", g_Config["serverIcon"]["height"], [](float a) { g_serverIcon.m_fIconSize[1] = a; });
+                }
+            }
+            checkbox(u8"Старый радар", g_Config["oldHud"]["radar"], nullptr, nullptr,
+                     u8"Возвращает радар из GTA SA");
+            textInput(u8"Путь до \"HUD.TXD\"", g_Config["oldHud"]["pathToTXDhud"],
+                      u8"Путь относительно корневой папки игры.\n"
+                      u8"Например(Как в настройках->Как в итоге):\n\t"
+                      u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
+                      u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
+            break;
         }
+        if (g_menuData.m_pSelected)
+            ImGui::EndChild();
+        background();
+        render_warning();
+
+        ImGui::End();
 
         ImGui::EndFrame();
         ImGui::Render();
         ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
     };
-    g_onDetachPlugin += []() {
-        SAFE_DELETE(g_pBlurEffect);
-        ImGui_ImplDX9_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-    };
+}
+void Menu::remove() {
+    SAFE_DELETE(g_pBlurEffect);
+    ImGui_ImplDX9_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
 }
 
 ImVec2 operator+(ImVec2& a, ImVec2& b) {
@@ -408,16 +416,16 @@ void Menu::background() {
 
 void Menu::show_cursor(bool show) {
     if (show) {
-        patch__fill(0x541DF5, 5u, 0x90);
-        patch__fill(0x53F417, 5u, 0x90);
-        patch__setRaw(0x53F41F, "\x33\xC0\xf\x84", 4u);
+        patch::fill(0x541DF5, 5u, 0x90);
+        patch::fill(0x53F417, 5u, 0x90);
+        patch::setRaw(0x53F41F, "\x33\xC0\xf\x84");
         *(DWORD*)0xB73424 = 0;
         *(DWORD*)0xB73428 = 0;
         ((void (*)())0x541BD0)();
         ((void (*)())0x541DD0)();
-        patch__setRaw(0x6194A0, "\xC3", 1u);
+        patch::writeMemory<std::uint8_t>(0x6194A0, 0xC3);
 
-        *(DWORD*)(*(DWORD*)g_sampBase.getAddress(0x26E8F4) + 0x61) = 2;
+        *(DWORD*)(*g_sampBase.getAddr<DWORD*>(0x26E8F4) + 0x61) = 2;
 
         ImGui::GetIO().MouseDrawCursor = true;
     } else {

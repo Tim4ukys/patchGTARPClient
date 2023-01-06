@@ -9,7 +9,10 @@
 *                                                   *
 ****************************************************/
 #pragma once
-class DelCarTable {
+class DelCarTable : public MLoad {
+    void turnOn() override;
+    void turnOff() override;
+
 public:
-    static void Process();
+    void init() override;
 };
