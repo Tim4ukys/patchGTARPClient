@@ -179,6 +179,7 @@
     <ClInclude Include="BlurEffect.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="CustomConnectScreen.h" />
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="CustomHelp.h" />
     <ClInclude Include="D3D9Hook.h" />
@@ -206,6 +207,7 @@
     <ClCompile Include="BlurEffect.cpp" />
     <ClCompile Include="client.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="CustomConnectScreen.cpp" />
     <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="CustomHelp.cpp" />
     <ClCompile Include="D3D9Hook.cpp" />
