@@ -46,6 +46,7 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 #include "FastScreenshot.h"
 #include "tfro.h"
 #include "DisableSnowWindow.h"
+#include "CustomConnectScreen.h"
 
 #include "Menu.h"
 
@@ -62,7 +63,8 @@ std::map<std::string, std::shared_ptr<MLoad>> g_modules{
         MK_MOD(CustomHelp),
         MK_MOD(FastScreenshot),
         MK_MOD(TFRO),
-        MK_MOD(DisableSnowWindow)
+        MK_MOD(DisableSnowWindow),
+        MK_MOD(CustomConnectScreen)
     }
 };
 #undef MK_MOD
