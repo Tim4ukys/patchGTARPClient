@@ -381,14 +381,15 @@ void Menu::render_doska() {
     ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - ImGui::CalcTextSize(brend).x / 2);
     ImGui::Text(brend);
     ImGui::Text(u8"Автор: Tim4ukys(vk.com/tim4ukys)\n"
-                u8"Ранняя помощь: Дмитрий Макаров(vk.com/molodoy_diman), Шамиль Макаров(vk.com/shamilqq)\n"
-                u8"Топ донатеров: пусто =(");
+                u8"Ранняя помощь(тестирование): Шамиль Макаров(vk.com/shamilqq), Дмитрий Макаров(vk.com/molodoy_diman)\n"
+                u8"Топ донатеров:\n"
+                u8"• Salik_Alvarez\n");
 }
 
 void Menu::render_warning() {
     if (g_menuData.m_iSelected == eTitles_News || g_menuData.m_iSelected == eTitles_INFO) return;
 
-    const char msg[] = u8"Внимание: большинство изменённых настройек вступят в силу только после перезагрузки игры";
+    const char msg[] = u8"Внимание: некоторые настройки вступят в силу только после перезагрузки игры";
     auto&& size = ImGui::CalcTextSize(msg);
     auto&& pos = (ImGui::GetWindowPos() + ImGui::GetWindowSize() / 2) - size / 2;
 
