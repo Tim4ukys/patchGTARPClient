@@ -53,6 +53,19 @@ void Config::saveFile() {
         (js)[str_key] = bool_def; \
     }
 
+inline void SET_DEFAULT_ARR(nlohmann::json& js, const char* key, const nlohmann::json& arr, nlohmann::json::value_t type) {
+    if (!js[key].is_array()) {
+        js[key] = arr;
+    } else {
+        for (size_t i{}; i < js[key].size(); ++i) {
+            if (js[key][i].type() != type) {
+                js[key] = arr;
+                break;
+            }
+        }
+    }
+}
+
 void Config::restoreAndCheckKeysCorrect() {
     auto safeLoadStruct = [](nlohmann::json& jch, const char* key, std::function<void(nlohmann::json&)> fnc) -> void {
         if (!jch[key].is_structured() && !jch[key].is_null()) {
@@ -60,6 +73,20 @@ void Config::restoreAndCheckKeysCorrect() {
             jch.erase(key);
         }
         fnc(jch[key]);
+    };
+    auto safeLoadArray = [](nlohmann::json& jch, const char* key, std::function<void(nlohmann::json&)> fnc,
+                            std::function<void(nlohmann::json&)> def_load) -> void {
+        if (!jch[key].is_array() && !jch[key].is_null()) {
+            jch.erase(key);
+        }
+        const auto len = jch[key].size();
+        if (len != 0) {
+            for (size_t i{}; i < len; ++i) {
+                fnc(jch[key][i]);
+            }
+        } else {
+            def_load(jch[key]);
+        }
     };
     //SET_DEFAULT_STR(j, "version", g_szCurrentVersion);
     safeLoadStruct(j, "gtasa", [](nlohmann::json& jn) {
