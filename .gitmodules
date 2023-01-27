@@ -1,3 +1,6 @@
 [submodule "third-party/PolyHook_2_0"]
 	path = third-party/PolyHook_2_0
 	url = https://github.com/Tim4ukys/PolyHook_2_0.git
+[submodule "third-party/RakHook"]
+	path = third-party/RakHook
+	url = https://github.com/Tim4ukys/RakHook.git
