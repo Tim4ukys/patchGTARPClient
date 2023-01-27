@@ -381,9 +381,9 @@ void Menu::render_doska() {
     ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - ImGui::CalcTextSize(brend).x / 2);
     ImGui::Text(brend);
     ImGui::Text(u8"Автор: Tim4ukys(vk.com/tim4ukys)\n"
-                u8"Ранняя помощь(тестирование): Шамиль Макаров(vk.com/shamilqq), Дмитрий Макаров(vk.com/molodoy_diman)\n"
+                u8"Ранняя помощь(тестирование): Шамиль Макаров, Дмитрий Макаров\n"
                 u8"Топ донатеров:\n"
-                u8"• Salik_Alvarez\n");
+                u8"1. Salik_Alvarez\n");
 }
 
 void Menu::render_warning() {
