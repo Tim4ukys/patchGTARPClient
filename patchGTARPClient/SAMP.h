@@ -45,6 +45,8 @@ public:
     void setCursorMode(int nMode, BOOL bImmediatelyHideCursor);
     void redraw();
 
+    void setHour(unsigned char hour);
+
 private:
 
     void initPointerList();
