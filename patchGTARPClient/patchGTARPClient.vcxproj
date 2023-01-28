@@ -71,7 +71,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;$(SolutionDir)third-party\RakHook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -80,7 +80,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin_d.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;rakhook.lib;plugin_d.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -93,7 +93,7 @@
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\include;$(PLUGIN_SDK_DIR)\plugin_sa\;$(PLUGIN_SDK_DIR)\plugin_sa\game_sa\;$(PLUGIN_SDK_DIR)\shared\;$(PLUGIN_SDK_DIR)\shared\game\;$(SolutionDir)third-party\imgui;$(SolutionDir)third-party\RakHook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -105,7 +105,7 @@
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;plugin.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;rakhook.lib;plugin.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

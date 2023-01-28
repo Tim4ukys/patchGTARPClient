@@ -155,13 +155,18 @@ std::unique_ptr<PLH::x86Detour> g_pGameLoopDetour;
 NOINLINE void   gameLoopDetourFNC() {
     ((void (*)())g_ui64GameLoopJumpTrampline)(); // call original
 
-    static bool s_bIsInit{}, s_bIsInitCocks{};
+    static bool s_bIsInit{}, s_bIsInitCocks{}, s_bIsInitRakHook{};
     if (s_bIsInit || !g_pSAMP->isSAMPInit())
         return;
 
     if (!s_bIsInitCocks) {
         g_onInitSamp.call();
         s_bIsInitCocks = true;
+    }
+
+    if (!s_bIsInitRakHook && rakhook::initialize()) {
+        //StringCompressor::AddReference();
+        s_bIsInitRakHook = true;
     }
 
     if (static auto s_timer = snippets::Timer<UPDATE_DELAY>();
