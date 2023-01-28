@@ -428,16 +428,20 @@ void Menu::show_cursor(bool show) {
 
         *(DWORD*)(*g_sampBase.getAddr<DWORD*>(0x26E8F4) + 0x61) = 2;
 
-        ImGui::GetIO().MouseDrawCursor = true;
+        ShowCursor(TRUE);
+        if (!GetCursor()) {
+            SetCursor(LoadCursorA(0, (const char*)0x7F00));
+        }
     } else {
+        ShowCursor(FALSE);
+        SetCursor(0);
         g_pSAMP->setCursorMode(CURSOR_NONE, TRUE);
-        ImGui::GetIO().MouseDrawCursor = false;
     }
 }
 
 void Menu::set_style() {
     auto &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+    //io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
 
     auto& style = ImGui::GetStyle();
