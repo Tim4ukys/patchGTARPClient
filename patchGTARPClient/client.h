@@ -11,12 +11,14 @@
 #pragma once
 
 class client {
+    static std::array<std::string, 3U> sortURLtext(std::string URL);
+
 public:
     /**
     * @brief Скачивает сайт в виде строки
     * @param URL строка
     * @warning поддерживается только HTTP и HTTPS
-    * @example http://youtube.com.ua/cock/suck
+    * @example downloadStringFromURL("http://youtube.com.ua/cock/suck")
     */
-    static std::string downloadStringFromURL(std::string URL);
+    static std::string downloadStringFromURL(std::string_view URL);
 };

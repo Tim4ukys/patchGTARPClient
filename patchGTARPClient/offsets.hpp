@@ -51,7 +51,17 @@ public:
         CUSTOM_PATH_TXD_HUD = 0x2F0A9, // ?
         
         /* Sig: 85 C0 0F 95 45 F4 88 1E */
-        DISABLE_RECHANGE_SCALE_STATE = 0x2F679
+        DISABLE_RECHANGE_SCALE_STATE = 0x2F679,
+
+        /* Gde-to ryadom s "wh" or "strobe" */
+        CONSCREEN_POS_X = 0x2054B + 2,
+        CONSCREEN_POS_Y = 0x205C8 + 2,
+        CONSCREEN_POS_Z = 0x20645 + 2,
+        CONSCREEN_POINT_X = 0x206C2 + 2,
+        CONSCREEN_POINT_Y = 0x2073F + 2,
+        CONSCREEN_POINT_Z = 0x207BC + 2,
+
+        CONSCREEN_TIME = 0x1FD43 + 2
     };
 
     enum class SAMP : unsigned int {

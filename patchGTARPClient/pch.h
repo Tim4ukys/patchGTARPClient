@@ -46,6 +46,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include <string_view>
 
 
 // C (Old-Library)
@@ -89,6 +90,8 @@
 #include "json.hpp"
 #include "bass.h"
 #include "BlurEffect.h"
+#include "RakHook/rakhook.hpp"
+#include "RakNet/StringCompressor.h"
 
 
 // my library
@@ -117,7 +120,5 @@ extern FSignal<void()> g_onInitAudio;
 extern FSignal<void()> g_onInitSamp;
 
 extern std::map<std::string, std::shared_ptr<MLoad>> g_modules;
-
-extern const char* g_szCurrentVersion;
 
 #endif //PCH_H

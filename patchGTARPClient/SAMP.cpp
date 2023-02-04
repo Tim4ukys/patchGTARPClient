@@ -61,3 +61,9 @@ void SAMP::setCursorMode(int nMode, BOOL bImmediatelyHideCursor) {
 
     g_fncSetCursorMode(g_pGame, nMode, bImmediatelyHideCursor);
 }
+
+void SAMP::setHour(unsigned char hour) {
+    if (!g_pNetGame) return;
+
+    *PCHAR(*PDWORD((DWORD)g_pNetGame + 981) + 44) = hour;
+}

@@ -12,26 +12,16 @@
 #include "offsets.hpp"
 #include <process.h>
 #include <SubAuth.h>
+#include "Updater.h"
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
 constexpr DWORD GTARP_TIMESTAMP = 0x63AB6949;
 
-#define DECLARATION_VERSION(v_maj, v_min, v_patch) \
-    const int CURRENT_VERSION_MAJ = v_maj; \
-    const int CURRENT_VERSION_MIN = v_min; \
-    const int CURRENT_VERSION_PAT = v_patch;
-
-DECLARATION_VERSION(10, 1, 0)
-#define CURRENT_VERSION "10.1.0"
-const char* g_szCurrentVersion = CURRENT_VERSION;
-#define CHECK_VERSION(NEW_MAJ, NEW_MIN, NEW_PATCH, old_maj, old_min, old_patch) \
-    (NEW_MAJ > old_maj ||  \
-    (NEW_MAJ == old_maj && NEW_MIN > old_min) || \
-    (NEW_MAJ == old_maj && NEW_MIN == old_min && NEW_PATCH > old_patch))
-
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
 #define UPDATE_DELAY 12000
+
+Updater g_Updater;
 
 // ----------------------------------------
 
@@ -46,6 +36,7 @@ const char* g_szCurrentVersion = CURRENT_VERSION;
 #include "FastScreenshot.h"
 #include "tfro.h"
 #include "DisableSnowWindow.h"
+#include "CustomConnectScreen.h"
 
 #include "Menu.h"
 
@@ -62,7 +53,8 @@ std::map<std::string, std::shared_ptr<MLoad>> g_modules{
         MK_MOD(CustomHelp),
         MK_MOD(FastScreenshot),
         MK_MOD(TFRO),
-        MK_MOD(DisableSnowWindow)
+        MK_MOD(DisableSnowWindow),
+        MK_MOD(CustomConnectScreen)
     }
 };
 #undef MK_MOD
@@ -78,22 +70,13 @@ NOINLINE NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags,
     if (!wcscmp(name->Buffer, L"gtarp_clientside.asi"))
     {
         g_gtarpclientBase.updateBase((std::uintptr_t)*baseAddress);
-        if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe"))) {
-            auto        j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-            std::string s;
-            j["vers"].get_to(s);
-            auto [vMaj, vMin, vPatch] = snippets::versionParse(s);
-            g_Log.Write("Git version: vMaj: %d | vMid: %d | vPatch: %d", vMaj, vMin, vPatch);
-
-            if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
-            {
-                //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
-                PROCESS_INFORMATION info;
-                STARTUPINFOA         infoStart{sizeof(STARTUPINFOA)};
-                CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
-                //system("updater_patchGTARPclient.exe");
-                TerminateProcess(GetCurrentProcess(), -1);
-            }
+        if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe")) && g_Updater.isHaveUpdate()) {
+            //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
+            PROCESS_INFORMATION info;
+            STARTUPINFOA        infoStart{sizeof(STARTUPINFOA)};
+            CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
+            // system("updater_patchGTARPclient.exe");
+            TerminateProcess(GetCurrentProcess(), -1);
         }
 
         if (g_gtarpclientBase.getNTHeader()->FileHeader.TimeDateStamp != GTARP_TIMESTAMP) {
@@ -153,7 +136,7 @@ std::unique_ptr<PLH::x86Detour> g_pGameLoopDetour;
 NOINLINE void   gameLoopDetourFNC() {
     ((void (*)())g_ui64GameLoopJumpTrampline)(); // call original
 
-    static bool s_bIsInit{}, s_bIsInitCocks{};
+    static bool s_bIsInit{}, s_bIsInitCocks{}, s_bIsInitRakHook{};
     if (s_bIsInit || !g_pSAMP->isSAMPInit())
         return;
 
@@ -162,22 +145,22 @@ NOINLINE void   gameLoopDetourFNC() {
         s_bIsInitCocks = true;
     }
 
+    if (!s_bIsInitRakHook && rakhook::initialize()) {
+        //StringCompressor::AddReference();
+        s_bIsInitRakHook = true;
+    }
+
     if (static auto s_timer = snippets::Timer<UPDATE_DELAY>();
         s_timer)
     {
-        auto        j = nlohmann::json::parse(client::downloadStringFromURL(R"(https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/update.json)"));
-        std::string s;
-        j["vers"].get_to(s);
-        auto [vMaj, vMin, vPatch] = snippets::versionParse(s);
-        if (CHECK_VERSION(vMaj, vMin, vPatch, CURRENT_VERSION_MAJ, CURRENT_VERSION_MIN, CURRENT_VERSION_PAT))
+        if (g_Updater.isHaveUpdate())
         {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {990000}ВНИМАНИЕ: {FF9900}Вышло обновление!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Все самые свежие новости о разработке в нашем tg канале!");
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Все самые свежие новости об обновлениях в нашем tg канале!");
         g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Ссылка: {990000}https://t.me/+LVGCHEsDZEhmY2My");
-        g_Log.Write("[UPDATE]: Last version: %d.%d.%d", vMaj, vMin, vPatch);
         s_bIsInit = true;
     }
 }
