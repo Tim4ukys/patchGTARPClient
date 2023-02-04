@@ -132,6 +132,12 @@ void Menu::init() {
         g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
 
         ImGui::CreateContext();
+        auto& io = ImGui::GetIO();
+        auto  conf = ImFontConfig();
+        conf.GlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+        conf.SizePixels = 16;
+        io.Fonts->AddFontDefault(&conf);
+
         ImGui::StyleColorsDark();
         set_style();
 
@@ -551,7 +557,7 @@ void Menu::show_cursor(bool show) {
 void Menu::set_style() {
     auto &io = ImGui::GetIO();
     //io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
+    //io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
 
     auto& style = ImGui::GetStyle();
     auto colors = style.Colors;
