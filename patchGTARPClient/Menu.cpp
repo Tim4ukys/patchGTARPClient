@@ -58,6 +58,19 @@ static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPAR
             Menu::show_cursor(true);
         }
 
+        switch (msg) {
+        case WM_KEYDOWN:
+            switch (wParam) {
+            case VK_ESCAPE:
+                if (!*PBYTE(0xB7CB49)) { // [byte] Menu show
+                    g_menuData.m_bOpen = false;
+                    return 0;
+                }
+                break;
+            }
+            break;
+        }
+
         popen = true;
         ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
     } else {
@@ -89,6 +102,7 @@ void Menu::title_menu() {
     ImGui::GetStyle().WindowPadding.y = 0;
 
     ImGui::SetCursorPos({0, ImGui::GetCurrentWindow()->TitleBarHeight()});
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, {0.280f, 0.280f, 0.280f, 0.000f});
     ImGui::BeginChild("select_item", ImVec2(width, HEIGHT_TITLEMENU), true, ImGuiWindowFlags_NoScrollbar);
     for (size_t i{}, off{static_cast<size_t>(width / TITLES.size())}; i < TITLES.size(); ++i) {
         ImGui::SetCursorPos({static_cast<float>(off * i), 0});
@@ -98,6 +112,7 @@ void Menu::title_menu() {
         }
     }
     ImGui::EndChild();
+    ImGui::PopStyleColor();
 
     ImGui::GetStyle().WindowPadding.y = oldWindowPadding;
 }
@@ -125,7 +140,6 @@ void Menu::init() {
             auto j = json::parse(client::downloadStringFromURL("https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/news.json"));
 
             auto oldVers = snippets::versionParse(g_menuData.m_sOldVersion);
-            auto curVers = snippets::versionParse(g_szCurrentVersion);
             //g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
 
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
@@ -196,7 +210,8 @@ void Menu::init() {
         ImGui::NewFrame();
 
         ImGui::SetNextWindowSize({670.f, 342.f});
-        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
+        ImGui::SetNextWindowPos({plugin::screen::GetScreenCenterX(), plugin::screen::GetScreenCenterY()}, ImGuiCond_Appearing, {0.5f, 0.5f});
+        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings);
         title_menu();
 
         auto checkbox = [](const char* label, nlohmann::json& j, const char* keyModule = nullptr,
@@ -250,7 +265,7 @@ void Menu::init() {
         constexpr auto TAB_SIZE = 20;
 
         if (g_menuData.m_pSelected)
-            ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false);
+            ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false, ImGuiWindowFlags_NoBackground);
         switch (g_menuData.m_iSelected) {
         case eTitles_INFO:
             render_doska();
@@ -348,6 +363,97 @@ void Menu::init() {
                       u8"Например(Как в настройках->Как в итоге):\n\t"
                       u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
                       u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
+            checkbox(u8"Свой экран загрузки на север", g_Config["customScreen"]["state"], nullptr, nullptr,
+                     u8"Заменяет время, погоду, местоположение камеры и куда она смотрит\n"
+                     u8"при коннекте к серверу.");
+            /*
+            if (g_Config["customScreen"]["state"].get<bool>()) {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::BeginChild("customScreen", {0.f, 55.f});
+                for (auto& it : g_Config["customScreen"]["screens"].items()) {
+                    float cum[3];
+                    cum[0] = it.value()["camera"][0].get<float>();
+                    cum[1] = it.value()["camera"][1].get<float>();
+                    cum[2] = it.value()["camera"][2].get<float>();
+                    if (ImGui::InputFloat3("Camera", cum)) {
+                        it.value()["camera"][0] = cum[0];
+                        it.value()["camera"][1] = cum[1];
+                        it.value()["camera"][2] = cum[2];
+                        g_Config.saveFile();
+                    }
+                    
+                }
+                ImGui::EndChild();
+            }
+            */
+            if (g_Config["customScreen"]["state"].get<bool>()) {
+                //auto pCustConScreen = dynamic_cast<CustomConnectScreen*>(g_modules["CustomConnectScreen"].get());
+
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::BeginChild("customScreen", {0.f, 165.f});
+                int i{1};
+                for (auto& [key, value] : g_Config["customScreen"]["screens"].items()) {
+                    char tmp[14]{};
+                    float cum[3]{value["camera"][0].get<float>(), value["camera"][1].get<float>(), value["camera"][2].get<float>()};
+
+                    sprintf(tmp, "Camera[%d]", i);
+                    if (ImGui::InputFloat3(tmp, cum)) {
+                        value["camera"][0] = cum[0]; value["camera"][1] = cum[1]; value["camera"][2] = cum[2];
+                        g_Config.saveFile();
+                    }
+
+                    float point[3]{value["point"][0].get<float>(), value["point"][1].get<float>(), value["point"][2].get<float>()};
+                    sprintf(tmp, "Point[%d]", i);
+                    if (ImGui::InputFloat3(tmp, point)) {
+                        value["point"][0] = point[0]; value["point"][1] = point[1]; value["point"][2] = point[2];
+                        g_Config.saveFile();
+                    }
+
+                    ImGui::BeginChild(("customScreen_" + std::to_string(i)).c_str(), {0.f, 85.f});
+                    for (size_t i{1}; i <= value["time"].size(); ++i) {
+                        char buff[15];
+                        sprintf(buff, "time[%d]", i);
+                        if (ImGui::SliderInt(buff, (int*)value["time"][i-1].get_ptr<long long*>(), 0, 23))
+                            g_Config.saveFile();
+                        sprintf(buff, "weather[%d]", i);
+                        if (ImGui::SliderInt(buff, (int*)value["weather"][i-1].get_ptr<long long*>(), 0, 45))
+                            g_Config.saveFile();
+                        if (i > 1 && ImGui::Button((u8"Удалить time и weather " + std::to_string(i)).c_str())) {
+                            value["time"].erase(i-1);
+                            value["weather"].erase(i-1);
+                            g_Config.saveFile();
+                            break;
+                        }
+                        ImGui::Separator();
+                    }
+                    if (ImGui::Button(u8"Добавить time и weather")) {
+                        value["time"].push_back(2);
+                        value["weather"].push_back(0);
+                        g_Config.saveFile();
+                    }
+                    ImGui::EndChild();
+                    
+                    if (ImGui::Button((u8"Удалить screen " + std::to_string(i)).c_str())) {
+                        g_Config["customScreen"]["screens"].erase(i-1);
+                        g_Config.saveFile();
+                        break;     
+                    }
+
+                    ImGui::Separator(); ++i;
+                }
+
+                if (ImGui::Button(u8"Добавить screen")) {
+                    g_Config["customScreen"]["screens"].push_back(R"({
+                        "camera": [ 835.89148, -94.770203, 40.035099 ],
+                        "point": [ 659.96997, -90.027298, 6.7947001 ],
+                        "time": [ 2 ],
+                        "weather": [ 0 ]
+                    })"_json);
+                    g_Config.saveFile();
+                }
+
+                ImGui::EndChild();
+            }
             break;
         }
         if (g_menuData.m_pSelected)
@@ -452,7 +558,7 @@ void Menu::set_style() {
     colors[ImGuiCol_Text] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
     colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, /*1.000f*/ 0.f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.000f);
+    colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.325f);
     colors[ImGuiCol_PopupBg] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
     colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.000f, 0.000f, 0.000f, 0.000f);
