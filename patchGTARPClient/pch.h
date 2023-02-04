@@ -46,6 +46,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include <string_view>
 
 
 // C (Old-Library)

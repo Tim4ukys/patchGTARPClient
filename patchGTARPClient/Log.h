@@ -11,7 +11,7 @@
 #pragma once
 class Log {
 public:
-    Log(std::string fileName);
+    Log(std::string_view fileName);
     ~Log();
     
     void Write(const char* fmt, ...);

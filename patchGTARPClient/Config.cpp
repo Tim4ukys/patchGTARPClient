@@ -11,8 +11,8 @@
 #include "pch.h"
 #include "Config.h"
 
-Config::Config(std::string fileName)
-    : m_fileName(std::filesystem::current_path().string() + '\\' + fileName) 
+Config::Config(std::string_view fileName)
+    : m_fileName(std::filesystem::current_path().string() + '\\' + fileName.data()) 
 {
     std::filesystem::path cfile{m_fileName};
     if (std::filesystem::exists(cfile)) {
