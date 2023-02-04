@@ -82,6 +82,10 @@
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;rakhook.lib;plugin_d.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -107,6 +111,9 @@
       <AdditionalLibraryDirectories>G:\cpp\OpenSSL\out\Lib\x32\Release\lib;$(PLUGIN_SDK_DIR)\output\lib;$(SolutionDir)$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d9.lib;d3dx9.lib;libcrypto.lib;libssl.lib;Crypt32.lib;rakhook.lib;plugin.lib;PolyHook_2.lib;Zycore.lib;Zydis.lib;bass.lib;imgui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(SolutionDir)third-party\7z\7za.exe" a -tzip "$(OutputPath)patch_out_zip\patchGTARPClientByTim4ukys.zip" "$(OutputPath)$(TargetFileName)" "$(OutputPath)gtarp_clientside.asi" "$(OutputPath)!000patchGTARPClientByTim4ukys.pdb"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BlurEffect.h" />
