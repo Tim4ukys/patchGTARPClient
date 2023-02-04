@@ -120,6 +120,4 @@ extern FSignal<void()> g_onInitSamp;
 
 extern std::map<std::string, std::shared_ptr<MLoad>> g_modules;
 
-extern const char* g_szCurrentVersion;
-
 #endif //PCH_H

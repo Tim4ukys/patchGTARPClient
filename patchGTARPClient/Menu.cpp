@@ -10,6 +10,8 @@
 ****************************************************/
 #include "pch.h"
 #include "Menu.h"
+#include "Updater.h"
+extern Updater g_Updater;
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -128,9 +130,10 @@ void Menu::init() {
 
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
                 auto key = snippets::versionParse(i.key());
-                if (key[0] <= curVers[0] && key[0] > oldVers[0] 
-                    || ((key[0] <= curVers[0] && key[1] <= curVers[1]) && (key[0] == oldVers[0] && key[1] > oldVers[1])) 
-                    || ((key[0] <= curVers[0] && key[1] <= curVers[1] && key[2] <= curVers[2]) && (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2]))) 
+                if (key[0] <= Updater::MAJ::value && key[0] > oldVers[0] 
+                    || ((key[0] <= Updater::MAJ::value && key[1] <= Updater::MIN::value) && (key[0] == oldVers[0] && key[1] > oldVers[1])) 
+                    || ((key[0] <= Updater::MAJ::value && key[1] <= Updater::MIN::value && key[2] <= Updater::PATCH::value) 
+                        && (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2]))) 
                 {
                     std::pair<std::string, std::vector<std::string>> t;
                     t.first = i.key();
@@ -151,14 +154,14 @@ void Menu::init() {
         if (!g_Config["vers"].is_string()) {
             if (!g_Config["vers"].is_null())
                 g_Config.getJSON().erase("vers");
-            g_Config["vers"] = g_szCurrentVersion;
+            g_Config["vers"] = Updater::VERSION;
             g_menuData.m_sOldVersion = "8.0.0";
             g_Config.saveFile();
             fnc_downloadNews();
-        } else if (g_Config["vers"] < g_szCurrentVersion) {
-            //g_Log << R"(g_Config["vers"] < g_szCurrentVersion)";
+        } else if (auto&& [mj, mn, pt] = snippets::versionParse(g_Config["vers"]);
+                   g_Updater.check(mj, mn, pt))  {
             g_menuData.m_sOldVersion = g_Config["vers"];
-            g_Config["vers"] = g_szCurrentVersion;
+            g_Config["vers"] = Updater::VERSION;
             g_Config.saveFile();
         #else 
         {
