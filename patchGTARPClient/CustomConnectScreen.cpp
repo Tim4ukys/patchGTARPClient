@@ -1,3 +1,13 @@
+/****************************************************
+ *                                                   *
+ *    Developer: Tim4ukys                            *
+ *                                                   *
+ *    email: tim4ukys.dev@yandex.ru                  *
+ *    vk: vk.com/tim4ukys                            *
+ *                                                   *
+ *    License: GNU GPLv3                             *
+ *                                                   *
+ ****************************************************/
 #include "pch.h"
 #include "CustomConnectScreen.h"
 #include "offsets.hpp"
@@ -12,7 +22,8 @@ bool __fastcall CustomConnectScreen::sub_1F270(DWORD* pthis, void* trash, void* 
 }
 
 void CustomConnectScreen::init() {
-    if (!g_Config["customScreen"]["state"].get<bool>()) return;
+    if (!g_Config["customScreen"]["state"].get<bool>() || !g_Config["customScreen"]["screens"].size())
+        return;
 
     auto& conf = g_Config["customScreen"]["screens"][snippets::randomInteger(0, g_Config["customScreen"]["screens"].size() - 1)];
     

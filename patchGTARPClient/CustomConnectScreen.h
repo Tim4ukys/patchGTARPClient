@@ -1,3 +1,13 @@
+/****************************************************
+ *                                                   *
+ *    Developer: Tim4ukys                            *
+ *                                                   *
+ *    email: tim4ukys.dev@yandex.ru                  *
+ *    vk: vk.com/tim4ukys                            *
+ *                                                   *
+ *    License: GNU GPLv3                             *
+ *                                                   *
+ ****************************************************/
 #pragma once
 class CustomConnectScreen : public MLoad {
     using sub_1F270_t = bool(__fastcall*)(DWORD*, void*, void*, int, char);
