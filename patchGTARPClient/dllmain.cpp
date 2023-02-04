@@ -71,13 +71,13 @@ NOINLINE NTSTATUS __stdcall LdrLoadDllDetour(PWSTR searchPath, PULONG loadFlags,
     {
         g_gtarpclientBase.updateBase((std::uintptr_t)*baseAddress);
         if (std::filesystem::exists(std::filesystem::path("updater_patchGTARPclient.exe")) && g_Updater.isHaveUpdate()) {
-                //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
-                PROCESS_INFORMATION info;
+            //_spawnl(_P_OVERLAY, "updater_patchGTARPclient.exe", "updater_patchGTARPclient.exe", NULL);
+            PROCESS_INFORMATION info;
             STARTUPINFOA        infoStart{sizeof(STARTUPINFOA)};
-                CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
+            CreateProcessA("updater_patchGTARPclient.exe", NULL, NULL, NULL, FALSE, NULL, NULL, NULL, &infoStart, &info);
             // system("updater_patchGTARPclient.exe");
-                TerminateProcess(GetCurrentProcess(), -1);
-            }
+            TerminateProcess(GetCurrentProcess(), -1);
+        }
 
         if (g_gtarpclientBase.getNTHeader()->FileHeader.TimeDateStamp != GTARP_TIMESTAMP) {
             MessageBoxW(
@@ -159,7 +159,7 @@ NOINLINE void   gameLoopDetourFNC() {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Пожалуйста, обновите плагин!");
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Все самые свежие новости о разработке в нашем tg канале!");
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Все самые свежие новости об обновлениях в нашем tg канале!");
         g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Ссылка: {990000}https://t.me/+LVGCHEsDZEhmY2My");
         s_bIsInit = true;
     }
