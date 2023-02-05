@@ -497,12 +497,13 @@ void Menu::render_warning() {
 
     static D3DXCOLOR s_color = 0xFF'FF'FF'FF;
     static auto      a = 0.05f;
-    if (static snippets::Timer<150> s_tick;
+    if (static snippets::Timer<50> s_tick;
         s_tick) {
         if (s_color.a >= 1.0f || s_color.a <= 0.0f) {
             a *= -1;
         }
         s_color.a += a;
+        s_tick.reset();
     }
     
     ImGui::GetWindowDrawList()->AddText(pos, s_color, msg);
