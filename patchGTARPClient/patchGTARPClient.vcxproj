@@ -116,7 +116,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BlurEffect.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="CustomConnectScreen.h" />
@@ -145,7 +144,6 @@
     <ClInclude Include="WhiteID.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BlurEffect.cpp" />
     <ClCompile Include="client.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="CustomConnectScreen.cpp" />
@@ -185,12 +183,6 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="screenshot.wav" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="effects\blur.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

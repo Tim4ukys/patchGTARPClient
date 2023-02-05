@@ -29,8 +29,6 @@ extern stServerIcon g_serverIcon;
 
 extern void FastScreenshot__updateFormat(const char* l);
 
-BlurEffect* g_pBlurEffect{};
-
 //#define DEBUG_NEWS
 
 struct stMenuData {
@@ -121,7 +119,6 @@ void Menu::init() {
 
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect = new BlurEffect(pDevice);
         g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
 
         ImGui::CreateContext();
@@ -192,12 +189,10 @@ void Menu::init() {
     };
     g_pD3D9Hook->onLostDevice += [](LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*) {
         ImGui_ImplDX9_InvalidateDeviceObjects();
-        g_pBlurEffect->onLostDevice();
     };
     g_pD3D9Hook->onResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
         ImGui_ImplDX9_CreateDeviceObjects();
         g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect->onResetDevice(pDevice, pPresentParams);
     };
     g_pD3D9Hook->onPresentEvent += [](IDirect3DDevice9* pDevice, const RECT*, const RECT*, HWND, const RGNDATA*) {
         if (!g_menuData.m_bOpen)
@@ -458,7 +453,6 @@ void Menu::init() {
         }
         if (g_menuData.m_pSelected)
             ImGui::EndChild();
-        background();
         render_warning();
 
         ImGui::End();
@@ -469,7 +463,6 @@ void Menu::init() {
     };
 }
 void Menu::remove() {
-    SAFE_DELETE(g_pBlurEffect);
     ImGui_ImplDX9_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -504,7 +497,7 @@ void Menu::render_warning() {
 
     static D3DXCOLOR s_color = 0xFF'FF'FF'FF;
     static auto      a = 0.05f;
-    if (static snippets::Timer<50> s_tick;
+    if (static snippets::Timer<150> s_tick;
         s_tick) {
         if (s_color.a >= 1.0f || s_color.a <= 0.0f) {
             a *= -1;
@@ -513,14 +506,6 @@ void Menu::render_warning() {
     }
     
     ImGui::GetWindowDrawList()->AddText(pos, s_color, msg);
-}
-
-void Menu::background() {
-    auto         wsize = ImGui::GetWindowSize();
-    auto         wpos = ImGui::GetWindowPos();
-    //static float s_blurValue{};
-    //ImGui::SliderFloat("Blur value:", &s_blurValue, 0.0f, 100.0f);
-    g_pBlurEffect->Render({long(wpos.x), long(wpos.y), long(wpos.x + wsize.x), long(wpos.y + wsize.y)}, 75.f);
 }
 
 void Menu::show_cursor(bool show) {

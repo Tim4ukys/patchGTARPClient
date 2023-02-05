@@ -89,7 +89,6 @@
 // third_party
 #include "json.hpp"
 #include "bass.h"
-#include "BlurEffect.h"
 #include "RakHook/rakhook.hpp"
 #include "RakNet/StringCompressor.h"
 
