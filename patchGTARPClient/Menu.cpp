@@ -29,8 +29,6 @@ extern stServerIcon g_serverIcon;
 
 extern void FastScreenshot__updateFormat(const char* l);
 
-BlurEffect* g_pBlurEffect{};
-
 //#define DEBUG_NEWS
 
 struct stMenuData {
@@ -92,29 +90,22 @@ enum eTitles {
 };
 
 void Menu::title_menu() {
-    std::array<const char*, 3> TITLES{
-        "Titles_SA-MP", "Titles_GTA SA", "Titles_GTA RP"
+    std::string_view titles[]{
+        "SA-MP", "GTA SA", "GTA RP"
     };
-    constexpr float HEIGHT_TITLEMENU = 40.f;
-    auto            width = ImGui::GetWindowWidth();
-
-    auto oldWindowPadding = ImGui::GetStyle().WindowPadding.y;
-    ImGui::GetStyle().WindowPadding.y = 0;
-
-    ImGui::SetCursorPos({0, ImGui::GetCurrentWindow()->TitleBarHeight()});
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, {0.280f, 0.280f, 0.280f, 0.000f});
-    ImGui::BeginChild("select_item", ImVec2(width, HEIGHT_TITLEMENU), true, ImGuiWindowFlags_NoScrollbar);
-    for (size_t i{}, off{static_cast<size_t>(width / TITLES.size())}; i < TITLES.size(); ++i) {
-        ImGui::SetCursorPos({static_cast<float>(off * i), 0});
-        if (ImGui::Button(TITLES[i] + (ARRAYSIZE("Titles_")-1), ImVec2(static_cast<float>(off), HEIGHT_TITLEMENU))) {
-            g_menuData.m_iSelected = i + 1;
-            g_menuData.m_pSelected = TITLES[i];
+    // constexpr float height_title = 40.f;
+    // ImGui::GetWindow
+    auto len = ImGui::GetCurrentWindow()->Size.x / ARRAYSIZE(titles);
+    if (ImGui::BeginTabBar("mainTitles")) {
+        for (size_t i{}; i < ARRAYSIZE(titles); ++i) {
+            ImGui::SetNextItemWidth(len);
+            if (ImGui::TabItemButton(titles[i].data())) {
+                g_menuData.m_iSelected = static_cast<int>(i + 1);
+                g_menuData.m_pSelected = titles[i].data();
+            }
         }
+        ImGui::EndTabBar();
     }
-    ImGui::EndChild();
-    ImGui::PopStyleColor();
-
-    ImGui::GetStyle().WindowPadding.y = oldWindowPadding;
 }
 
 void Menu::init() {
@@ -128,11 +119,15 @@ void Menu::init() {
 
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect = new BlurEffect(pDevice);
         g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
 
         ImGui::CreateContext();
-        ImGui::StyleColorsDark();
+        auto& io = ImGui::GetIO();
+        auto  conf = ImFontConfig();
+        conf.GlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+        conf.SizePixels = 16;
+        io.Fonts->AddFontDefault(&conf);
+
         set_style();
 
         auto fnc_downloadNews = []() {
@@ -194,12 +189,10 @@ void Menu::init() {
     };
     g_pD3D9Hook->onLostDevice += [](LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*) {
         ImGui_ImplDX9_InvalidateDeviceObjects();
-        g_pBlurEffect->onLostDevice();
     };
     g_pD3D9Hook->onResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
         ImGui_ImplDX9_CreateDeviceObjects();
         g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect->onResetDevice(pDevice, pPresentParams);
     };
     g_pD3D9Hook->onPresentEvent += [](IDirect3DDevice9* pDevice, const RECT*, const RECT*, HWND, const RGNDATA*) {
         if (!g_menuData.m_bOpen)
@@ -209,9 +202,10 @@ void Menu::init() {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowSize({670.f, 342.f});
+        ImGui::SetNextWindowSize({670.f, 342.f}, ImGuiCond_Appearing);
+        ImGui::SetNextWindowSizeConstraints({670.f, 342.f}, {FLT_MAX, FLT_MAX});
         ImGui::SetNextWindowPos({plugin::screen::GetScreenCenterX(), plugin::screen::GetScreenCenterY()}, ImGuiCond_Appearing, {0.5f, 0.5f});
-        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings);
+        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoSavedSettings);
         title_menu();
 
         auto checkbox = [](const char* label, nlohmann::json& j, const char* keyModule = nullptr,
@@ -390,7 +384,8 @@ void Menu::init() {
                 //auto pCustConScreen = dynamic_cast<CustomConnectScreen*>(g_modules["CustomConnectScreen"].get());
 
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                ImGui::BeginChild("customScreen", {0.f, 165.f});
+                ImGui::SetNextWindowSizeConstraints({670.f - TAB_SIZE - 16.f*2, 165.f}, {670.f - TAB_SIZE - 16.f*2, 342.f});
+                ImGui::BeginChild("customScreen", ImVec2(0, 0), true);
                 int i{1};
                 for (auto& [key, value] : g_Config["customScreen"]["screens"].items()) {
                     char tmp[14]{};
@@ -409,7 +404,7 @@ void Menu::init() {
                         g_Config.saveFile();
                     }
 
-                    ImGui::BeginChild(("customScreen_" + std::to_string(i)).c_str(), {0.f, 85.f});
+                    ImGui::BeginChild(("customScreen_" + std::to_string(i)).c_str(), {0.f, 85.f}, true);
                     for (size_t i{1}; i <= value["time"].size(); ++i) {
                         char buff[15];
                         sprintf(buff, "time[%d]", i);
@@ -458,7 +453,6 @@ void Menu::init() {
         }
         if (g_menuData.m_pSelected)
             ImGui::EndChild();
-        background();
         render_warning();
 
         ImGui::End();
@@ -469,7 +463,6 @@ void Menu::init() {
     };
 }
 void Menu::remove() {
-    SAFE_DELETE(g_pBlurEffect);
     ImGui_ImplDX9_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -503,25 +496,17 @@ void Menu::render_warning() {
     auto&& pos = (ImGui::GetWindowPos() + ImGui::GetWindowSize() / 2) - size / 2;
 
     static D3DXCOLOR s_color = 0xFF'FF'FF'FF;
-    static auto s_Tick = GetTickCount64();
     static auto      a = 0.05f;
-    if (auto&& t = GetTickCount64(); t - s_Tick > 50) {
-        s_Tick = t;
+    if (static snippets::Timer<50> s_tick;
+        s_tick) {
         if (s_color.a >= 1.0f || s_color.a <= 0.0f) {
             a *= -1;
         }
         s_color.a += a;
+        s_tick.reset();
     }
     
     ImGui::GetWindowDrawList()->AddText(pos, s_color, msg);
-}
-
-void Menu::background() {
-    auto         wsize = ImGui::GetWindowSize();
-    auto         wpos = ImGui::GetWindowPos();
-    //static float s_blurValue{};
-    //ImGui::SliderFloat("Blur value:", &s_blurValue, 0.0f, 100.0f);
-    g_pBlurEffect->Render({long(wpos.x), long(wpos.y), long(wpos.x + wsize.x), long(wpos.y + wsize.y)}, 75.f);
 }
 
 void Menu::show_cursor(bool show) {
@@ -551,61 +536,55 @@ void Menu::show_cursor(bool show) {
 void Menu::set_style() {
     auto &io = ImGui::GetIO();
     //io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
+    //io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
+
+    auto& colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
+    colors[ImGuiCol_MenuBarBg] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_Border] = ImVec4{0.44f, 0.37f, 0.61f, 0.29f};
+    colors[ImGuiCol_BorderShadow] = ImVec4{0.0f, 0.0f, 0.0f, 0.24f};
+    colors[ImGuiCol_Text] = ImVec4{1.0f, 1.0f, 1.0f, 1.0f};
+    colors[ImGuiCol_TextDisabled] = ImVec4{0.5f, 0.5f, 0.5f, 1.0f};
+    colors[ImGuiCol_Header] = ImVec4{0.13f, 0.13f, 0.17f, 1.0f};
+    colors[ImGuiCol_HeaderHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_HeaderActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_Button] = ImVec4{0.13f, 0.13f, 0.17f, 1.0f};
+    colors[ImGuiCol_ButtonHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_ButtonActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_CheckMark] = ImVec4{0.74f, 0.58f, 0.98f, 1.0f};
+    colors[ImGuiCol_PopupBg] = ImVec4{0.1f, 0.1f, 0.13f, 0.92f};
+    colors[ImGuiCol_SliderGrab] = ImVec4{0.44f, 0.37f, 0.61f, 0.54f};
+    colors[ImGuiCol_SliderGrabActive] = ImVec4{0.74f, 0.58f, 0.98f, 0.54f};
+    colors[ImGuiCol_FrameBg] = ImVec4{0.13f, 0.13f, 0.17f, 1.0f};
+    colors[ImGuiCol_FrameBgHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_FrameBgActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_Tab] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TabHovered] = ImVec4{0.24f, 0.24f, 0.32f, 1.0f};
+    colors[ImGuiCol_TabActive] = ImVec4{0.2f, 0.22f, 0.27f, 1.0f};
+    colors[ImGuiCol_TabUnfocused] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TitleBg] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TitleBgActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_ScrollbarBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
+    colors[ImGuiCol_ScrollbarGrab] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4{0.24f, 0.24f, 0.32f, 1.0f};
+    colors[ImGuiCol_Separator] = ImVec4{0.44f, 0.37f, 0.61f, 1.0f};
+    colors[ImGuiCol_SeparatorHovered] = ImVec4{0.74f, 0.58f, 0.98f, 1.0f};
+    colors[ImGuiCol_SeparatorActive] = ImVec4{0.84f, 0.58f, 1.0f, 1.0f};
+    colors[ImGuiCol_ResizeGrip] = ImVec4{0.44f, 0.37f, 0.61f, 0.29f};
+    colors[ImGuiCol_ResizeGripHovered] = ImVec4{0.74f, 0.58f, 0.98f, 0.29f};
+    colors[ImGuiCol_ResizeGripActive] = ImVec4{0.84f, 0.58f, 1.0f, 0.29f};
 
     auto& style = ImGui::GetStyle();
-    auto colors = style.Colors;
-    colors[ImGuiCol_Text] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
-    colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, /*1.000f*/ 0.f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.325f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
-    colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.000f, 0.000f, 0.000f, 0.000f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.200f, 0.200f, 0.200f, 1.000f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.280f, 0.280f, 0.280f, 1.000f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-    colors[ImGuiCol_MenuBarBg] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.277f, 0.277f, 0.277f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.300f, 0.300f, 0.300f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.330f, 0.330f, 0.330f, 1.000f);
-    colors[ImGuiCol_CheckMark] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
-    colors[ImGuiCol_SliderGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_Button] = ImVec4(1.000f, 1.000f, 1.000f, 0.000f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(1.000f, 1.000f, 1.000f, 0.391f);
-    colors[ImGuiCol_Header] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-    colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
-    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
-    colors[ImGuiCol_SeparatorActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_ResizeGrip] = ImVec4(1.000f, 1.000f, 1.000f, 0.250f);
-    colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.670f);
-    colors[ImGuiCol_ResizeGripActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_Tab] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
-    colors[ImGuiCol_TabHovered] = ImVec4(0.352f, 0.352f, 0.352f, 1.000f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-    colors[ImGuiCol_TabUnfocused] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
-    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-    colors[ImGuiCol_PlotLines] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-    colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_PlotHistogram] = ImVec4(0.586f, 0.586f, 0.586f, 1.000f);
-    colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_TextSelectedBg] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
-    colors[ImGuiCol_DragDropTarget] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_NavHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
-    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
-
-    //style.Colors[ImGuiCol_WindowBg] = ImVec4(0.f, 0.f, 0.f, 0.f);
-
-    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+    style.TabRounding = 4;
+    style.ScrollbarRounding = 9;
+    style.WindowRounding = 7;
+    style.GrabRounding = 3;
+    style.FrameRounding = 3;
+    style.PopupRounding = 4;
+    style.ChildRounding = 4;
+    style.WindowTitleAlign = {0.5f, 0.5f};
     style.WindowMenuButtonPosition = ImGuiDir_None;
 }
