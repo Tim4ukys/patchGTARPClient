@@ -6,6 +6,10 @@
 <br>[![Windows](https://img.shields.io/badge/Windows%207-0078D6?style=flat-square&logo=windows&logoColor=white)](https://ru.wikipedia.org/wiki/Windows_7)
 
 # patchGTARPClient
+* [Что делает плагин?](#что-делает-плагин)
+* [Что именно добавлено на данный момент?](#что-именно-добавлено-на-данный-момент)
+* [third party](#third-party)
+
 ## Что делает плагин?
 Плагин добавляет всё то, что давно хотят игроки, но чего не добавляют разработчики GTA RP.
 
@@ -28,7 +32,7 @@
 - Bypass(обход) на:
     - Подключение к стороним сервирам
 
-## Third party
+## third party
 ```
 PluginSDK by DK22Pac - Zlib license - https://github.com/dk22pac/plugin-sdk
 ImGui by ocornut - MIT license - https://github.com/ocornut/imgui
