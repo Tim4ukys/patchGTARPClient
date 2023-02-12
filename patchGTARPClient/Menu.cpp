@@ -305,7 +305,7 @@ void Menu::init() {
                 u8"Заменяет стандартный шрифт");
             if (g_Config["samp"]["isCustomFont"].get<bool>()) {
                 static std::string fontFaceName{g_Config["samp"]["fontFaceName"].get<std::string>()};
-                static int         s_nRd{400};
+                static int         s_nRd{g_Config["samp"]["customFontWeight"].get<int>()};
                 static bool        s_haveChanges{};
 
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
