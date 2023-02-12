@@ -17,7 +17,7 @@ CustomConnectScreen::sub_1F270_t CustomConnectScreen::sub_1F270_orig = nullptr;
 unsigned char                    CustomConnectScreen::s_nHour;
 bool __fastcall CustomConnectScreen::sub_1F270(DWORD* pthis, void* trash, void* a2, int a3, char a4) {
     auto r = sub_1F270_orig(pthis, trash, a2, a3, a4);
-    g_pSAMP->setHour(s_nHour);
+    g_pSAMP->getNetGame()->serverPresets->worldTimeHour = s_nHour;
     return r;
 }
 
