@@ -120,12 +120,13 @@ namespace snippets
 
     class WinProcHeader {
     public:
-
         static void Init();
-        static std::shared_ptr<PLH::x86Detour> regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader);
+        static std::shared_ptr<PLH::x86Detour> regWndProc(WNDPROC newProc, UINT64& jmp);
 
     private:
-        static WNDPROC s_pOrig;
+        static UINT64         s_sampWndProcJump;
+        static PLH::x86Detour s_sampWndProc;
+        
         static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     };
 

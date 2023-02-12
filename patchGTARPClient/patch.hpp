@@ -103,6 +103,14 @@ namespace patch {
         VirtualProtect((void*)addr, N - 1, oldProt, NULL);
     }
 
+    template<std::size_t N>
+    inline void setRaw(std::uintptr_t addr, char (&raw_str)[N]) {
+        DWORD oldProt;
+        VirtualProtect((void*)addr, N, PAGE_EXECUTE_READWRITE, &oldProt);
+        memcpy((void*)addr, (void*)raw_str, N);
+        VirtualProtect((void*)addr, N, oldProt, NULL);
+    }
+
     inline void setBytes(std::uintptr_t addr, const std::vector<std::uint8_t>& bytes) {
         const auto len = bytes.size();
         DWORD      oldProt;

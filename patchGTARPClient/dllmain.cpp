@@ -180,7 +180,7 @@ NOINLINE int __fastcall initSAMPDetour(PVOID pthis, PVOID trash, char* a2, int a
         return r;
 
     //BASS_Init(-1, 44100, 0, 0, nullptr);
-    g_onInitAudio.callMultithread();
+    g_onInitAudio.call();
     s_bIsInit = true;
     return r;
 }
@@ -195,6 +195,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         g_pD3D9Hook = new D3D9Hook();
         g_pSAMP = new SAMP();
 
+        //snippets::WinProcHeader::Init();
         plugin::Events::initGameEvent += []() {
             snippets::WinProcHeader::Init();
         };

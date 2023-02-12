@@ -21,8 +21,6 @@ private:
 
     std::uint8_t m_oldByte[2][9];
 
-    static std::string s_fontFaceName;
-
     static uint64_t                        s_ui64OnChatFontReset;
     static std::unique_ptr<PLH::x86Detour> s_onChatFontReset;
     static void __fastcall onChatFontReset(PVOID p_this, PVOID trash);

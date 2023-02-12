@@ -20,7 +20,7 @@
 static bool s_bStateRenderHelp = false;
 
 static std::shared_ptr<PLH::x86Detour> g_wndProcHangler;
-static WNDPROC m_pWindowProc;
+static UINT64 m_pWindowProc;
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_KEYUP:
@@ -32,7 +32,7 @@ static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPAR
         }
         break;
     }
-    return m_pWindowProc(hWnd, msg, wParam, lParam);
+    return WNDPROC(m_pWindowProc)(hWnd, msg, wParam, lParam);
 }
 
 void showHelpDialogHook() {
@@ -71,7 +71,7 @@ void CustomHelp::init() {
         g_D3DX9_25.callFnc<decltype(D3DXCreateSprite)>("D3DXCreateSprite",
                                                        pDevice, &m_pSprite);
 
-        g_wndProcHangler = snippets::WinProcHeader::regWinProc(WndProcHandler, &m_pWindowProc);
+        g_wndProcHangler = snippets::WinProcHeader::regWndProc(WndProcHandler, m_pWindowProc);
 
         RECT r;
         GetClientRect(*(HWND*)0xC97C1C, &r);
@@ -114,7 +114,7 @@ void CustomHelp::init() {
 CustomHelp::~CustomHelp() {
     if (m_bState)
         turnOff();
-    g_wndProcHangler.reset();
+    //g_wndProcHangler.reset();
     SAFE_RELEASE(m_pSprite);
     SAFE_RELEASE(m_pTexture);
 }

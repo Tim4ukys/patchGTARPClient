@@ -104,6 +104,10 @@ void Config::restoreAndCheckKeysCorrect() {
     safeLoadStruct(j, "samp", [](nlohmann::json& jn) {
         SET_DEFAULT_STR(jn, "fontFaceName", "Comic Sans MS")
         SET_DEFAULT_BOOL(jn, "isCustomFont", false)
+        SET_DEFAULT_INT(jn, "customFontWeight", 400)
+        if (jn["customFontWeight"].get<int>() != 400 && jn["customFontWeight"].get<int>() != 700) {
+            jn["customFontWeight"] = 400;
+        }
         SET_DEFAULT_BOOL(jn, "isSortingScreenshots", true)
         SET_DEFAULT_BOOL(jn, "isWhiteID", true)
         SET_DEFAULT_BOOL(jn, "isCustomF1", true)

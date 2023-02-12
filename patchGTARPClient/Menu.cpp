@@ -28,6 +28,7 @@ struct stServerIcon {
 extern stServerIcon g_serverIcon;
 
 extern void FastScreenshot__updateFormat(const char* l);
+extern void CustomFont__CallResetFont();
 
 //#define DEBUG_NEWS
 
@@ -47,7 +48,7 @@ public:
     }
 } g_menuData;
 
-static WNDPROC g_pWindowProc;
+static UINT64 g_pWindowProc;
 static std::shared_ptr<PLH::x86Detour> g_wndProcHangler;
 extern IMGUI_IMPL_API LRESULT          ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -71,13 +72,17 @@ static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 
         popen = true;
         ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+
+        if (ImGui::GetIO().WantCaptureKeyboard) {
+            return 1;
+        }
     } else {
         if (popen) {
             popen = false;
             Menu::show_cursor(false);
         }
     }
-    return g_pWindowProc(hWnd, msg, wParam, lParam);
+    return WNDPROC(g_pWindowProc)(hWnd, msg, wParam, lParam);
 }
 
 enum eTitles {
@@ -119,7 +124,7 @@ void Menu::init() {
 
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
+        g_wndProcHangler = snippets::WinProcHeader::regWndProc(&WndProcHandler, g_pWindowProc);
 
         ImGui::CreateContext();
         auto& io = ImGui::GetIO();
@@ -291,14 +296,54 @@ void Menu::init() {
                      u8"ID легче читать. Очень полезно в тех случаях когда чел, на которого\n"
                      u8"нужно написать донос в репорт, одел маску.");
 
-            checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], "CustomFont", 
-                     [](bool) { g_pSAMP->redraw(); }, u8"Заменяет стандартный шрифт");
+            checkbox(
+                u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], "CustomFont",
+                [](bool) {
+                    g_sampBase.getAddr<void(__thiscall*)(SAMP::ChatInfo*)>(0x669A0)(g_pSAMP->getChat());
+                    g_pSAMP->getChat()->redraw = 1;
+                },
+                u8"Заменяет стандартный шрифт");
             if (g_Config["samp"]["isCustomFont"].get<bool>()) {
+                static std::string fontFaceName{g_Config["samp"]["fontFaceName"].get<std::string>()};
+                static int         s_nRd{400};
+                static bool        s_haveChanges{};
+
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                textInput(u8"Название шрифта", g_Config["samp"]["fontFaceName"],
-                          u8"Например: \tSegoe UI Light\n"
-                          u8"\t\t\t\t\t\tComic Sans MS\n"
-                          u8"\t\t\t\t\t\tJetBrains Mono");
+                if (ImGui::InputText(u8"Название шрифта", &fontFaceName))
+                    s_haveChanges = true;
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(u8"Например:\tSegoe UI Light\n"
+                                      u8"\t\t\t\t\t\tComic Sans MS\n"
+                                      u8"\t\t\t\t\t\tJetBrains Mono Regular");
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::Text(u8"Ширина шрифта(тонкий или толще):");
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                if (ImGui::RadioButton("400", &s_nRd, 400))
+                    s_haveChanges = true;
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                if (ImGui::RadioButton("700", &s_nRd, 700))
+                    s_haveChanges = true;
+
+                static bool haveErr{};
+                if (s_haveChanges &&
+                    (ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE), ImGui::Button(u8"Применить и сохранить настройки"))) {
+                    if (snippets::GetSystemFontPath(fontFaceName) == "") {
+                        haveErr = true;
+                    } else {
+                        haveErr = false;
+
+                        haveErr = snippets::GetSystemFontPath(fontFaceName) == "";
+                        g_Config["samp"]["fontFaceName"] = fontFaceName;
+                        g_Config["samp"]["customFontWeight"] = s_nRd;
+                        g_Config.saveFile();
+                        CustomFont__CallResetFont();
+                        s_haveChanges = false;
+                    }
+                }
+                if (haveErr) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    ImGui::TextColored(ImVec4(0xff, 0x00, 0x00, 0xff), u8"ОШИБКА: Не удалось найти данный шрифт");
+                }
             }
             checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"], "FastScreenshot", nullptr,
                      u8"Ускоряет создание скриншотов в несколько раз.");

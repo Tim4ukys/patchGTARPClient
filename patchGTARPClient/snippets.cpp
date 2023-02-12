@@ -36,27 +36,31 @@ std::string snippets::ConvertWideToANSI(const wchar_t* wstr)
 
 // -------------------------
 
-WNDPROC snippets::WinProcHeader::s_pOrig;
+UINT64 snippets::WinProcHeader::s_sampWndProcJump;
+PLH::x86Detour snippets::WinProcHeader::s_sampWndProc{g_sampBase.getAddr<UINT64>(0x60EE0), UINT64(WndProcHandler), &s_sampWndProcJump};
 
 void snippets::WinProcHeader::Init() {
-    s_pOrig = (WNDPROC)SetWindowLongW(**(HWND**)0xC17054, GWL_WNDPROC, (LONG)WndProcHandler);
+    s_sampWndProc.hook();
 }
 
-std::shared_ptr<PLH::x86Detour> snippets::WinProcHeader::regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader) {
-    static std::mutex s_lock;
-    std::lock_guard<std::mutex> lock(s_lock);
-
-    uint64_t jumpToBack;
-    auto pWinProc = std::make_shared<PLH::x86Detour>(UINT64(WndProcHandler),
-                                                     UINT64(pNewHeader),
-                                                     &jumpToBack);
-    pWinProc->hook();
-    *pOldHeader = WNDPROC(jumpToBack);
-    return pWinProc;
-}
+//void snippets::WinProcHeader::regWinProc(WNDPROC newProc, WNDPROC& jumpDetour) {
+//    jumpDetour = reinterpret_cast<WNDPROC>(s_sampWndProcJump);
+//    s_sampWndProcJump = reinterpret_cast<UINT64>(newProc);
+//}
 
 LRESULT __stdcall snippets::WinProcHeader::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    return CallWindowProcA(s_pOrig, hWnd, msg, wParam, lParam);
+    return WNDPROC(s_sampWndProcJump)(hWnd, msg, wParam, lParam);
+}
+
+std::shared_ptr<PLH::x86Detour> snippets::WinProcHeader::regWndProc(WNDPROC newProc, UINT64& jmp) {
+    static std::mutex           s_lock;
+    std::lock_guard<std::mutex> lock(s_lock);
+
+    auto r = std::make_shared<PLH::x86Detour>(UINT64(WndProcHandler),
+                                              UINT64(newProc),
+                                              &jmp);
+    r->hook();
+    return r;
 }
 
 // -------------------------
@@ -81,24 +85,24 @@ std::string snippets::GetSystemFontPath(const std::string &faceName) {
     HKEY                hKey;
     LONG                result;
     std::wstring        wsFaceName{faceName.begin(), faceName.end()};
+    std::wstring        wsFontFile;
 
     // Open Windows font registry key
     result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, fontRegistryPath, 0, KEY_READ, &hKey);
     if (result != ERROR_SUCCESS) {
-        return "";
+        goto chk_local;
     }
 
     DWORD maxValueNameSize, maxValueDataSize;
     result = RegQueryInfoKey(hKey, 0, 0, 0, 0, 0, 0, 0, &maxValueNameSize, &maxValueDataSize, 0, 0);
     if (result != ERROR_SUCCESS) {
-        return "";
+        goto chk_local;
     }
 
     DWORD        valueIndex = 0;
     LPWSTR       valueName = new WCHAR[maxValueNameSize];
     LPBYTE       valueData = new BYTE[maxValueDataSize];
     DWORD        valueNameSize, valueDataSize, valueType;
-    std::wstring wsFontFile;
 
     // Look for a matching font name
     do {
@@ -118,7 +122,71 @@ std::string snippets::GetSystemFontPath(const std::string &faceName) {
         std::wstring wsValueName(valueName, valueNameSize);
 
         // Found a match
-        if (_wcsnicmp(wsFaceName.c_str(), wsValueName.c_str(), wsFaceName.length()) == 0) {
+        if (_wcsnicmp(wsFaceName.c_str(), wsValueName.c_str(), wsFaceName.length()) == 0 &&
+            wsFaceName.length() + ARRAYSIZE(" (TrueType)") - 1 == wsValueName.length()) {
+
+            wsFontFile.assign((LPWSTR)valueData, valueDataSize);
+            break;
+        }
+    } while (result != ERROR_NO_MORE_ITEMS);
+
+    delete[] valueName;
+    delete[] valueData;
+
+    RegCloseKey(hKey);
+
+    if (wsFontFile.empty()) {
+        goto chk_local;
+    }
+
+    // Build full font file path
+    wchar_t winDir[MAX_PATH];
+    GetWindowsDirectoryW(winDir, MAX_PATH);
+
+    {
+        std::wstringstream ss{};
+        ss << winDir << "\\Fonts\\" << wsFontFile;
+        wsFontFile = ss.str();
+    }
+
+    return std::string(wsFontFile.begin(), wsFontFile.end());
+
+ chk_local:
+
+    result = RegOpenKeyEx(HKEY_CURRENT_USER, fontRegistryPath, 0, KEY_READ, &hKey);
+    if (result != ERROR_SUCCESS) {
+        return "";
+    }
+
+    result = RegQueryInfoKey(hKey, 0, 0, 0, 0, 0, 0, 0, &maxValueNameSize, &maxValueDataSize, 0, 0);
+    if (result != ERROR_SUCCESS) {
+        return "";
+    }
+
+    valueIndex = 0;
+    valueName = new WCHAR[maxValueNameSize];
+    valueData = new BYTE[maxValueDataSize];
+
+    // Look for a matching font name
+    do {
+
+        wsFontFile.clear();
+        valueDataSize = maxValueDataSize;
+        valueNameSize = maxValueNameSize;
+
+        result = RegEnumValue(hKey, valueIndex, valueName, &valueNameSize, 0, &valueType, valueData, &valueDataSize);
+
+        valueIndex++;
+
+        if (result != ERROR_SUCCESS || valueType != REG_SZ) {
+            continue;
+        }
+
+        std::wstring wsValueName(valueName, valueNameSize);
+
+        // Found a match
+        if (_wcsnicmp(wsFaceName.c_str(), wsValueName.c_str(), wsFaceName.length()) == 0 && 
+            wsFaceName.length() + ARRAYSIZE(" (TrueType)") - 1 == wsValueName.length()) {
 
             wsFontFile.assign((LPWSTR)valueData, valueDataSize);
             break;
@@ -133,14 +201,6 @@ std::string snippets::GetSystemFontPath(const std::string &faceName) {
     if (wsFontFile.empty()) {
         return "";
     }
-
-    // Build full font file path
-    wchar_t winDir[MAX_PATH];
-    GetWindowsDirectoryW(winDir, MAX_PATH);
-
-    std::wstringstream ss{};
-    ss << winDir << "\\Fonts\\" << wsFontFile;
-    wsFontFile = ss.str();
 
     return std::string(wsFontFile.begin(), wsFontFile.end());
 }

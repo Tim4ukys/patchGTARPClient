@@ -15,7 +15,10 @@
 * Этот файл заменяет стандартный шрифт в чате на любой другой
 */
 
-std::string CustomFont::s_fontFaceName;
+void CustomFont__CallResetFont() {
+    g_sampBase.getAddr<void(__thiscall*)(PVOID)>(0x6B170)(*g_sampBase.getAddr<PVOID*>(0x26E8E4)); // CFonts::Reset
+    g_sampBase.getAddr<void(__thiscall*)(SAMP::ChatInfo*)>(0x67A50)(g_pSAMP->getChat());          // CChat::OnResetDevice
+}
 
 CustomFont::stFont* CustomFont::s_pFontCE;
 ID3DXFont*          CustomFont::s_pShadowFont;
@@ -29,17 +32,16 @@ void __fastcall CustomFont::onChatFontReset(PVOID p_this, PVOID trash) {
     SAFE_RELEASE(s_pShadowFont);
 
     const int iFontSize = g_sampBase.getAddr<int (*)()>(0xC5B20)();
-    const int iFontWeight = g_sampBase.getAddr<int (*)()>(0xC5BD0)();
-
-    g_Log.Write("[CustomFont]: iFontSize: %d | iFontWeight: %d", iFontSize, iFontWeight);
-
-    D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1,
-                    FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-                    DEFAULT_PITCH, s_fontFaceName.c_str(), &s_pFontCE->m_pFont);
+    const int iFontWeight = g_Config["samp"]["customFontWeight"].get<int>();
+    const auto faceName = g_Config["samp"]["fontFaceName"].get<std::string>();
 
     D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1,
                     FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
-                    DEFAULT_PITCH, s_fontFaceName.c_str(), &s_pShadowFont);
+                    DEFAULT_PITCH, faceName.c_str(), &s_pFontCE->m_pFont);
+
+    D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1,
+                    FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY,
+                    DEFAULT_PITCH, faceName.c_str(), &s_pShadowFont);
 }
 
 uint64_t                        CustomFont::s_ui64OnLostDevice;
@@ -62,15 +64,34 @@ void __fastcall CustomFont::onResetDevice(PVOID p_this, PVOID trash) {
 
 void CustomFont::turnOn() {
     patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(0x66D06), m_oldByte[1]);
+
+    /**
+     * mov ecx, &s_pFontCE
+     */
+    char rwGetSizeLineChat[]{
+        '\x90', '\xB9', 0, 0, 0, 0};
+    *(stFont***)(rwGetSizeLineChat + 2) = &s_pFontCE;
+    patch::setRaw(g_sampBase.getAddr<std::uintptr_t>(0x6737F), rwGetSizeLineChat); // in CChat::render
+
+    patch::setRaw(g_sampBase.getAddr<std::uintptr_t>(0x669D4), rwGetSizeLineChat); // in recalcSize
+    /**
+     * nop
+     * mov eax, &s_pFontCE
+     */
+    rwGetSizeLineChat[0] = '\x90';
+    rwGetSizeLineChat[1] = '\xB8';
+    patch::setRaw(g_sampBase.getAddr<std::uintptr_t>(0x669B7), rwGetSizeLineChat); // in recalcSize
 }
 
 void CustomFont::turnOff() {
     patch::setBytes(g_sampBase.getAddr<std::uintptr_t>(0x66D06), m_oldByte[0]);
+
+    patch::setRaw(g_sampBase.getAddr<std::uintptr_t>(0x6737F), "\x8B\x8E\xA2\x63\x00\x00"); // in CChat::render
+    patch::setRaw(g_sampBase.getAddr<std::uintptr_t>(0x669D4), "\x8B\x8E\xA2\x63\x00\x00"); // in recalcSize
+    patch::setRaw(g_sampBase.getAddr<std::uintptr_t>(0x669B7), "\x8B\x86\xA2\x63\x00\x00"); // in recalcSize
 }
 
 void CustomFont::init() {
-    s_fontFaceName = g_Config["samp"]["fontFaceName"].get<std::string>();
-
     s_pFontCE = (stFont*)new uint8_t[sizeof(stFont)];
     ZeroMemory(s_pFontCE, sizeof(stFont));
     // Ставим VTable из SA-MP. В нём находятся функции из сампа, которые делают такие секас цвета
@@ -113,6 +134,8 @@ void CustomFont::init() {
 
     if (!(m_bState = g_Config["samp"]["isCustomFont"].get<bool>()))
         turnOff();
+    else
+        turnOn();
 }
 CustomFont::~CustomFont() {
     s_onChatFontReset->unHook();
