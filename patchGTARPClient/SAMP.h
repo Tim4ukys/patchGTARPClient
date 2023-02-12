@@ -132,7 +132,7 @@ public:
         ID3DXRenderToSurface* d3dRenderToSurface;
         IDirect3DTexture9*    texture;
         IDirect3DSurface9*    surface;
-        D3DDISPLAYMODE*       d3dDisplayMode;
+        D3DDISPLAYMODE        d3dDisplayMode;
         int                   unk[2];
         int                   redraw;
         int                   scrollBarPosition;
