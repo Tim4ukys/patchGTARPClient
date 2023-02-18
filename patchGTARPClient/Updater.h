@@ -26,6 +26,16 @@ public:
     DECLARATION_VERSION(10, 1, 0)
     #undef DECLARATION_VERSION
 
+    static inline bool check(int l_maj, int l_min, int l_patch,
+                             int r_maj, int r_min, int r_patch) {
+        if (r_maj > l_maj ||
+            (r_maj == l_maj && r_min > l_min) ||
+            (r_maj == l_maj && r_min == l_min && r_patch > l_patch)) {
+            return true;
+        }
+        return false;
+    }
+
     static inline bool check(int maj, int min, int patch) {
         if (maj > MAJ::value ||
             (maj == MAJ::value && min > MIN::value) ||

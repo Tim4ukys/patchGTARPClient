@@ -173,7 +173,7 @@ void Menu::init() {
             g_Config.saveFile();
             fnc_downloadNews();
         } else if (auto&& [mj, mn, pt] = snippets::versionParse(g_Config["vers"]);
-                   g_Updater.check(mj, mn, pt))  {
+                   g_Updater.check(mj, mn, pt, Updater::MAJ::value, Updater::MIN::value, Updater::PATCH::value)) {
             g_menuData.m_sOldVersion = g_Config["vers"];
             g_Config["vers"] = Updater::VERSION;
             g_Config.saveFile();
