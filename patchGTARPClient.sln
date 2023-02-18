@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "third-party", "third-party"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RakHook", "third-party\RakHook\RakHook.vcxproj", "{3B9AC95E-E125-4FF8-B9E4-23F67846539B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updater", "updater\updater.csproj", "{F553920E-C999-4E77-8F06-679D6EA2C70B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -33,6 +35,10 @@ Global
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Debug|x86.Build.0 = Debug|Win32
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Release|x86.ActiveCfg = Release|Win32
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Release|x86.Build.0 = Release|Win32
+		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Debug|x86.Build.0 = Debug|Any CPU
+		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Release|x86.ActiveCfg = Release|Any CPU
+		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

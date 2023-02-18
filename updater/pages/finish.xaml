@@ -1,0 +1,36 @@
+﻿<Page
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:updater.pages"
+      xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+      xmlns:svg="http://sharpvectors.codeplex.com/runtime/" x:Class="updater.pages.finish"
+      mc:Ignorable="d" 
+      d:DesignHeight="394" d:DesignWidth="800"
+      Title="finish">
+
+    <Grid>
+        <TextBox x:Name="changeLog"
+                   Style="{StaticResource cool_TextBox}" Margin="10,41,10,0" Height="267"/>
+        <Label x:Name="changeLog_header"
+               Content="ChangeLog: " 
+               Style="{StaticResource header}"
+               HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top"/>
+        <TextBlock Style="{StaticResource textBlock}"
+               HorizontalAlignment="Left" Margin="73,353,0,0" VerticalAlignment="Top"
+               FontWeight="Medium">
+            Так же Вы можете поддержать автора патча, задонатив ему на
+            <Hyperlink NavigateUri="https://www.donationalerts.com/r/tim4ukys"
+                       Style="{StaticResource hyperlink}"
+                       RequestNavigate="Hyperlink_RequestNavigate"
+                       FontWeight="Medium">
+                DonationAlerts
+            </Hyperlink>
+        </TextBlock>
+        <svgc:SvgViewbox Source="res/donate.svg" Margin="19,336,735,2"/>
+        <Separator HorizontalAlignment="Center" VerticalAlignment="Top" Height="14" Width="780" Margin="0,313,0,0"
+                   Style="{StaticResource Separ}"/>
+
+    </Grid>
+</Page>
