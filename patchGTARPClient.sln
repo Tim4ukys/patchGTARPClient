@@ -19,36 +19,24 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updater", "updater\updater.
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86
-		Release|Any CPU = Release|Any CPU
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x86.ActiveCfg = Debug|Win32
 		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Debug|x86.Build.0 = Debug|Win32
-		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|Any CPU.ActiveCfg = Release|Win32
 		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x86.ActiveCfg = Release|Win32
 		{850A97F7-B2D8-4A5D-9FEE-29B71F367B00}.Release|x86.Build.0 = Release|Win32
-		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Debug|x86.ActiveCfg = Debug|Win32
 		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Debug|x86.Build.0 = Debug|Win32
-		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Release|Any CPU.ActiveCfg = Release|Win32
 		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Release|x86.ActiveCfg = Release|Win32
 		{DF7CBE2E-03BD-4EF9-B271-5482133A0731}.Release|x86.Build.0 = Release|Win32
-		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Debug|x86.ActiveCfg = Debug|Win32
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Debug|x86.Build.0 = Debug|Win32
-		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Release|Any CPU.ActiveCfg = Release|Win32
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Release|x86.ActiveCfg = Release|Win32
 		{3B9AC95E-E125-4FF8-B9E4-23F67846539B}.Release|x86.Build.0 = Release|Win32
-		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Debug|x86.Build.0 = Debug|Any CPU
-		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Release|x86.ActiveCfg = Release|Any CPU
 		{F553920E-C999-4E77-8F06-679D6EA2C70B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
