@@ -11,7 +11,7 @@
 #pragma once
 
 #ifndef CURRENT_VERSION
-#define CURRENT_VERSION "10.1.0"
+#define CURRENT_VERSION "10.2.0"
 #endif
 
 class Updater {
@@ -23,7 +23,7 @@ public:
         using MIN = std::integral_constant<int, min>; \
         using PATCH = std::integral_constant<int, patch>;
 
-    DECLARATION_VERSION(10, 1, 0)
+    DECLARATION_VERSION(10, 2, 0)
     #undef DECLARATION_VERSION
 
     static inline bool check(int l_maj, int l_min, int l_patch,
