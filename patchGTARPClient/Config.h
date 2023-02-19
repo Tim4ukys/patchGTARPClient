@@ -12,7 +12,7 @@
 class Config {
 public:
 
-	Config(std::string fileName);
+	Config(std::string_view fileName);
     ~Config();
 
 	void saveFile();

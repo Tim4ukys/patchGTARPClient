@@ -1,0 +1,21 @@
+﻿<Page x:Class="updater.pages.loading"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:updater.pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="394" d:DesignWidth="800"
+      Title="loading">
+
+    <Grid>
+        <TextBox x:Name="logBox" 
+                    HorizontalAlignment="Center" 
+                    Margin="0,28,0,0" 
+                    Width="780" Height="356" 
+                    TextChanged="logBox_TextChanged"
+                    Style="{StaticResource cool_TextBox}"/>
+        <ProgressBar Name="progressBar" HorizontalAlignment="Center" Height="13" Margin="0,10,0,0" VerticalAlignment="Top" 
+                     Width="780" Background="#FF313742" BorderBrush="#FF57595D" Foreground="#FF3F5058" Maximum="140"/>
+    </Grid>
+</Page>

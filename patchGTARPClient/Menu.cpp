@@ -10,6 +10,8 @@
 ****************************************************/
 #include "pch.h"
 #include "Menu.h"
+#include "Updater.h"
+extern Updater g_Updater;
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -26,8 +28,7 @@ struct stServerIcon {
 extern stServerIcon g_serverIcon;
 
 extern void FastScreenshot__updateFormat(const char* l);
-
-BlurEffect* g_pBlurEffect{};
+extern void CustomFont__CallResetFont();
 
 //#define DEBUG_NEWS
 
@@ -47,7 +48,7 @@ public:
     }
 } g_menuData;
 
-static WNDPROC g_pWindowProc;
+static UINT64 g_pWindowProc;
 static std::shared_ptr<PLH::x86Detour> g_wndProcHangler;
 extern IMGUI_IMPL_API LRESULT          ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -56,15 +57,32 @@ static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPAR
             Menu::show_cursor(true);
         }
 
+        switch (msg) {
+        case WM_KEYDOWN:
+            switch (wParam) {
+            case VK_ESCAPE:
+                if (!*PBYTE(0xB7CB49)) { // [byte] Menu show
+                    g_menuData.m_bOpen = false;
+                    return 0;
+                }
+                break;
+            }
+            break;
+        }
+
         popen = true;
         ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+
+        if (ImGui::GetIO().WantCaptureKeyboard) {
+            return 1;
+        }
     } else {
         if (popen) {
             popen = false;
             Menu::show_cursor(false);
         }
     }
-    return g_pWindowProc(hWnd, msg, wParam, lParam);
+    return WNDPROC(g_pWindowProc)(hWnd, msg, wParam, lParam);
 }
 
 enum eTitles {
@@ -77,27 +95,22 @@ enum eTitles {
 };
 
 void Menu::title_menu() {
-    std::array<const char*, 3> TITLES{
-        "Titles_SA-MP", "Titles_GTA SA", "Titles_GTA RP"
+    std::string_view titles[]{
+        "SA-MP", "GTA SA", "GTA RP"
     };
-    constexpr float HEIGHT_TITLEMENU = 40.f;
-    auto            width = ImGui::GetWindowWidth();
-
-    auto oldWindowPadding = ImGui::GetStyle().WindowPadding.y;
-    ImGui::GetStyle().WindowPadding.y = 0;
-
-    ImGui::SetCursorPos({0, ImGui::GetCurrentWindow()->TitleBarHeight()});
-    ImGui::BeginChild("select_item", ImVec2(width, HEIGHT_TITLEMENU), true, ImGuiWindowFlags_NoScrollbar);
-    for (size_t i{}, off{static_cast<size_t>(width / TITLES.size())}; i < TITLES.size(); ++i) {
-        ImGui::SetCursorPos({static_cast<float>(off * i), 0});
-        if (ImGui::Button(TITLES[i] + (ARRAYSIZE("Titles_")-1), ImVec2(static_cast<float>(off), HEIGHT_TITLEMENU))) {
-            g_menuData.m_iSelected = i + 1;
-            g_menuData.m_pSelected = TITLES[i];
+    // constexpr float height_title = 40.f;
+    // ImGui::GetWindow
+    auto len = ImGui::GetCurrentWindow()->Size.x / ARRAYSIZE(titles);
+    if (ImGui::BeginTabBar("mainTitles")) {
+        for (size_t i{}; i < ARRAYSIZE(titles); ++i) {
+            ImGui::SetNextItemWidth(len);
+            if (ImGui::TabItemButton(titles[i].data())) {
+                g_menuData.m_iSelected = static_cast<int>(i + 1);
+                g_menuData.m_pSelected = titles[i].data();
+            }
         }
+        ImGui::EndTabBar();
     }
-    ImGui::EndChild();
-
-    ImGui::GetStyle().WindowPadding.y = oldWindowPadding;
 }
 
 void Menu::init() {
@@ -111,11 +124,15 @@ void Menu::init() {
 
     g_pD3D9Hook->onInitDevice += [](LPDIRECT3DDEVICE9 pDevice) {
         //g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect = new BlurEffect(pDevice);
-        g_wndProcHangler = snippets::WinProcHeader::regWinProc(&WndProcHandler, &g_pWindowProc);
+        g_wndProcHangler = snippets::WinProcHeader::regWndProc(&WndProcHandler, g_pWindowProc);
 
         ImGui::CreateContext();
-        ImGui::StyleColorsDark();
+        auto& io = ImGui::GetIO();
+        auto  conf = ImFontConfig();
+        conf.GlyphRanges = io.Fonts->GetGlyphRangesCyrillic();
+        conf.SizePixels = 16;
+        io.Fonts->AddFontDefault(&conf);
+
         set_style();
 
         auto fnc_downloadNews = []() {
@@ -123,14 +140,14 @@ void Menu::init() {
             auto j = json::parse(client::downloadStringFromURL("https://raw.githubusercontent.com/Tim4ukys/patchGTARPClient/master/news.json"));
 
             auto oldVers = snippets::versionParse(g_menuData.m_sOldVersion);
-            auto curVers = snippets::versionParse(g_szCurrentVersion);
             //g_Log.Write("oldVers: %d.%d.%d", oldVers[0], oldVers[1], oldVers[2]);
 
             for (json::iterator i = j.begin(); i != j.end(); ++i) {;
                 auto key = snippets::versionParse(i.key());
-                if (key[0] <= curVers[0] && key[0] > oldVers[0] 
-                    || ((key[0] <= curVers[0] && key[1] <= curVers[1]) && (key[0] == oldVers[0] && key[1] > oldVers[1])) 
-                    || ((key[0] <= curVers[0] && key[1] <= curVers[1] && key[2] <= curVers[2]) && (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2]))) 
+                if (key[0] <= Updater::MAJ::value && key[0] > oldVers[0] 
+                    || ((key[0] <= Updater::MAJ::value && key[1] <= Updater::MIN::value) && (key[0] == oldVers[0] && key[1] > oldVers[1])) 
+                    || ((key[0] <= Updater::MAJ::value && key[1] <= Updater::MIN::value && key[2] <= Updater::PATCH::value) 
+                        && (key[0] == oldVers[0] && key[1] == oldVers[1] && key[2] > oldVers[2]))) 
                 {
                     std::pair<std::string, std::vector<std::string>> t;
                     t.first = i.key();
@@ -151,14 +168,14 @@ void Menu::init() {
         if (!g_Config["vers"].is_string()) {
             if (!g_Config["vers"].is_null())
                 g_Config.getJSON().erase("vers");
-            g_Config["vers"] = g_szCurrentVersion;
+            g_Config["vers"] = Updater::VERSION;
             g_menuData.m_sOldVersion = "8.0.0";
             g_Config.saveFile();
             fnc_downloadNews();
-        } else if (g_Config["vers"] < g_szCurrentVersion) {
-            //g_Log << R"(g_Config["vers"] < g_szCurrentVersion)";
+        } else if (auto&& [mj, mn, pt] = snippets::versionParse(g_Config["vers"]);
+                   g_Updater.check(mj, mn, pt, Updater::MAJ::value, Updater::MIN::value, Updater::PATCH::value)) {
             g_menuData.m_sOldVersion = g_Config["vers"];
-            g_Config["vers"] = g_szCurrentVersion;
+            g_Config["vers"] = Updater::VERSION;
             g_Config.saveFile();
         #else 
         {
@@ -177,12 +194,10 @@ void Menu::init() {
     };
     g_pD3D9Hook->onLostDevice += [](LPDIRECT3DDEVICE9, D3DPRESENT_PARAMETERS*) {
         ImGui_ImplDX9_InvalidateDeviceObjects();
-        g_pBlurEffect->onLostDevice();
     };
     g_pD3D9Hook->onResetDevice += [](LPDIRECT3DDEVICE9 pDevice, D3DPRESENT_PARAMETERS* pPresentParams) {
         ImGui_ImplDX9_CreateDeviceObjects();
         g_Log.Write("hooked device=0x%X; RwD3D9=0x%X", pDevice, RwD3D9GetCurrentD3DDevice());
-        g_pBlurEffect->onResetDevice(pDevice, pPresentParams);
     };
     g_pD3D9Hook->onPresentEvent += [](IDirect3DDevice9* pDevice, const RECT*, const RECT*, HWND, const RGNDATA*) {
         if (!g_menuData.m_bOpen)
@@ -192,8 +207,10 @@ void Menu::init() {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::SetNextWindowSize({670.f, 342.f});
-        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoResize);
+        ImGui::SetNextWindowSize({670.f, 342.f}, ImGuiCond_Appearing);
+        ImGui::SetNextWindowSizeConstraints({670.f, 342.f}, {FLT_MAX, FLT_MAX});
+        ImGui::SetNextWindowPos({plugin::screen::GetScreenCenterX(), plugin::screen::GetScreenCenterY()}, ImGuiCond_Appearing, {0.5f, 0.5f});
+        ImGui::Begin("patchGTARPClient", &g_menuData.m_bOpen, ImGuiWindowFlags_NoSavedSettings);
         title_menu();
 
         auto checkbox = [](const char* label, nlohmann::json& j, const char* keyModule = nullptr,
@@ -247,7 +264,7 @@ void Menu::init() {
         constexpr auto TAB_SIZE = 20;
 
         if (g_menuData.m_pSelected)
-            ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false);
+            ImGui::BeginChild(g_menuData.m_pSelected, {-1, ImGui::GetWindowHeight() - 85.f}, false, ImGuiWindowFlags_NoBackground);
         switch (g_menuData.m_iSelected) {
         case eTitles_INFO:
             render_doska();
@@ -279,14 +296,54 @@ void Menu::init() {
                      u8"ID легче читать. Очень полезно в тех случаях когда чел, на которого\n"
                      u8"нужно написать донос в репорт, одел маску.");
 
-            checkbox(u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], "CustomFont", 
-                     [](bool) { g_pSAMP->redraw(); }, u8"Заменяет стандартный шрифт");
+            checkbox(
+                u8"Кастомный шрифт в чате", g_Config["samp"]["isCustomFont"], "CustomFont",
+                [](bool) {
+                    g_sampBase.getAddr<void(__thiscall*)(SAMP::ChatInfo*)>(0x669A0)(g_pSAMP->getChat());
+                    g_pSAMP->getChat()->redraw = 1;
+                },
+                u8"Заменяет стандартный шрифт");
             if (g_Config["samp"]["isCustomFont"].get<bool>()) {
+                static std::string fontFaceName{g_Config["samp"]["fontFaceName"].get<std::string>()};
+                static int         s_nRd{g_Config["samp"]["customFontWeight"].get<int>()};
+                static bool        s_haveChanges{};
+
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                textInput(u8"Название шрифта", g_Config["samp"]["fontFaceName"],
-                          u8"Например: \tSegoe UI Light\n"
-                          u8"\t\t\t\t\t\tComic Sans MS\n"
-                          u8"\t\t\t\t\t\tJetBrains Mono");
+                if (ImGui::InputText(u8"Название шрифта", &fontFaceName))
+                    s_haveChanges = true;
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(u8"Например:\tSegoe UI Light\n"
+                                      u8"\t\t\t\t\t\tComic Sans MS\n"
+                                      u8"\t\t\t\t\t\tJetBrains Mono Regular");
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::Text(u8"Ширина шрифта(тонкий или толще):");
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                if (ImGui::RadioButton("400", &s_nRd, 400))
+                    s_haveChanges = true;
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                if (ImGui::RadioButton("700", &s_nRd, 700))
+                    s_haveChanges = true;
+
+                static bool haveErr{};
+                if (s_haveChanges &&
+                    (ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE), ImGui::Button(u8"Применить и сохранить настройки"))) {
+                    if (snippets::GetSystemFontPath(fontFaceName) == "") {
+                        haveErr = true;
+                    } else {
+                        haveErr = false;
+
+                        haveErr = snippets::GetSystemFontPath(fontFaceName) == "";
+                        g_Config["samp"]["fontFaceName"] = fontFaceName;
+                        g_Config["samp"]["customFontWeight"] = s_nRd;
+                        g_Config.saveFile();
+                        CustomFont__CallResetFont();
+                        s_haveChanges = false;
+                    }
+                }
+                if (haveErr) {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                    ImGui::TextColored(ImVec4(0xff, 0x00, 0x00, 0xff), u8"ОШИБКА: Не удалось найти данный шрифт");
+                }
             }
             checkbox(u8"Быстрые скриншоты", g_Config["samp"]["isMakeQuickScreenshot"], "FastScreenshot", nullptr,
                      u8"Ускоряет создание скриншотов в несколько раз.");
@@ -345,11 +402,102 @@ void Menu::init() {
                       u8"Например(Как в настройках->Как в итоге):\n\t"
                       u8R"(%%s\CustomSAA2\hud.txd -> G:\gta rp\CustomSAA2\hud.txd)"
                       u8"\n\nЧтобы путь до файла был стандартным, следует написать: NONE");
+            checkbox(u8"Свой экран загрузки на север", g_Config["customScreen"]["state"], nullptr, nullptr,
+                     u8"Заменяет время, погоду, местоположение камеры и куда она смотрит\n"
+                     u8"при коннекте к серверу.");
+            /*
+            if (g_Config["customScreen"]["state"].get<bool>()) {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::BeginChild("customScreen", {0.f, 55.f});
+                for (auto& it : g_Config["customScreen"]["screens"].items()) {
+                    float cum[3];
+                    cum[0] = it.value()["camera"][0].get<float>();
+                    cum[1] = it.value()["camera"][1].get<float>();
+                    cum[2] = it.value()["camera"][2].get<float>();
+                    if (ImGui::InputFloat3("Camera", cum)) {
+                        it.value()["camera"][0] = cum[0];
+                        it.value()["camera"][1] = cum[1];
+                        it.value()["camera"][2] = cum[2];
+                        g_Config.saveFile();
+                    }
+                    
+                }
+                ImGui::EndChild();
+            }
+            */
+            if (g_Config["customScreen"]["state"].get<bool>()) {
+                //auto pCustConScreen = dynamic_cast<CustomConnectScreen*>(g_modules["CustomConnectScreen"].get());
+
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::SetNextWindowSizeConstraints({670.f - TAB_SIZE - 16.f*2, 165.f}, {670.f - TAB_SIZE - 16.f*2, 342.f});
+                ImGui::BeginChild("customScreen", ImVec2(0, 0), true);
+                int i{1};
+                for (auto& [key, value] : g_Config["customScreen"]["screens"].items()) {
+                    char tmp[14]{};
+                    float cum[3]{value["camera"][0].get<float>(), value["camera"][1].get<float>(), value["camera"][2].get<float>()};
+
+                    sprintf(tmp, "Camera[%d]", i);
+                    if (ImGui::InputFloat3(tmp, cum)) {
+                        value["camera"][0] = cum[0]; value["camera"][1] = cum[1]; value["camera"][2] = cum[2];
+                        g_Config.saveFile();
+                    }
+
+                    float point[3]{value["point"][0].get<float>(), value["point"][1].get<float>(), value["point"][2].get<float>()};
+                    sprintf(tmp, "Point[%d]", i);
+                    if (ImGui::InputFloat3(tmp, point)) {
+                        value["point"][0] = point[0]; value["point"][1] = point[1]; value["point"][2] = point[2];
+                        g_Config.saveFile();
+                    }
+
+                    ImGui::BeginChild(("customScreen_" + std::to_string(i)).c_str(), {0.f, 85.f}, true);
+                    for (size_t i{1}; i <= value["time"].size(); ++i) {
+                        char buff[15];
+                        sprintf(buff, "time[%d]", i);
+                        if (ImGui::SliderInt(buff, (int*)value["time"][i-1].get_ptr<long long*>(), 0, 23))
+                            g_Config.saveFile();
+                        sprintf(buff, "weather[%d]", i);
+                        if (ImGui::SliderInt(buff, (int*)value["weather"][i-1].get_ptr<long long*>(), 0, 45))
+                            g_Config.saveFile();
+                        if (i > 1 && ImGui::Button((u8"Удалить time и weather " + std::to_string(i)).c_str())) {
+                            value["time"].erase(i-1);
+                            value["weather"].erase(i-1);
+                            g_Config.saveFile();
+                            break;
+                        }
+                        ImGui::Separator();
+                    }
+                    if (ImGui::Button(u8"Добавить time и weather")) {
+                        value["time"].push_back(2);
+                        value["weather"].push_back(0);
+                        g_Config.saveFile();
+                    }
+                    ImGui::EndChild();
+                    
+                    if (ImGui::Button((u8"Удалить screen " + std::to_string(i)).c_str())) {
+                        g_Config["customScreen"]["screens"].erase(i-1);
+                        g_Config.saveFile();
+                        break;     
+                    }
+
+                    ImGui::Separator(); ++i;
+                }
+
+                if (ImGui::Button(u8"Добавить screen")) {
+                    g_Config["customScreen"]["screens"].push_back(R"({
+                        "camera": [ 835.89148, -94.770203, 40.035099 ],
+                        "point": [ 659.96997, -90.027298, 6.7947001 ],
+                        "time": [ 2 ],
+                        "weather": [ 0 ]
+                    })"_json);
+                    g_Config.saveFile();
+                }
+
+                ImGui::EndChild();
+            }
             break;
         }
         if (g_menuData.m_pSelected)
             ImGui::EndChild();
-        background();
         render_warning();
 
         ImGui::End();
@@ -360,7 +508,6 @@ void Menu::init() {
     };
 }
 void Menu::remove() {
-    SAFE_DELETE(g_pBlurEffect);
     ImGui_ImplDX9_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -381,37 +528,30 @@ void Menu::render_doska() {
     ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - ImGui::CalcTextSize(brend).x / 2);
     ImGui::Text(brend);
     ImGui::Text(u8"Автор: Tim4ukys(vk.com/tim4ukys)\n"
-                u8"Ранняя помощь: Дмитрий Макаров(vk.com/molodoy_diman), Шамиль Макаров(vk.com/shamilqq)\n"
-                u8"Топ донатеров: пусто =(");
+                u8"Ранняя помощь(тестирование): Шамиль Макаров, Дмитрий Макаров\n"
+                u8"Топ донатеров:\n"
+                u8"1. Salik_Alvarez\n");
 }
 
 void Menu::render_warning() {
     if (g_menuData.m_iSelected == eTitles_News || g_menuData.m_iSelected == eTitles_INFO) return;
 
-    const char msg[] = u8"Внимание: большинство изменённых настройек вступят в силу только после перезагрузки игры";
+    const char msg[] = u8"Внимание: некоторые настройки вступят в силу только после перезагрузки игры";
     auto&& size = ImGui::CalcTextSize(msg);
     auto&& pos = (ImGui::GetWindowPos() + ImGui::GetWindowSize() / 2) - size / 2;
 
     static D3DXCOLOR s_color = 0xFF'FF'FF'FF;
-    static auto s_Tick = GetTickCount64();
     static auto      a = 0.05f;
-    if (auto&& t = GetTickCount64(); t - s_Tick > 50) {
-        s_Tick = t;
+    if (static snippets::Timer<50> s_tick;
+        s_tick) {
         if (s_color.a >= 1.0f || s_color.a <= 0.0f) {
             a *= -1;
         }
         s_color.a += a;
+        s_tick.reset();
     }
     
     ImGui::GetWindowDrawList()->AddText(pos, s_color, msg);
-}
-
-void Menu::background() {
-    auto         wsize = ImGui::GetWindowSize();
-    auto         wpos = ImGui::GetWindowPos();
-    //static float s_blurValue{};
-    //ImGui::SliderFloat("Blur value:", &s_blurValue, 0.0f, 100.0f);
-    g_pBlurEffect->Render({long(wpos.x), long(wpos.y), long(wpos.x + wsize.x), long(wpos.y + wsize.y)}, 75.f);
 }
 
 void Menu::show_cursor(bool show) {
@@ -427,71 +567,69 @@ void Menu::show_cursor(bool show) {
 
         *(DWORD*)(*g_sampBase.getAddr<DWORD*>(0x26E8F4) + 0x61) = 2;
 
-        ImGui::GetIO().MouseDrawCursor = true;
+        ShowCursor(TRUE);
+        if (!GetCursor()) {
+            SetCursor(LoadCursorA(0, (const char*)0x7F00));
+        }
     } else {
+        ShowCursor(FALSE);
+        SetCursor(0);
         g_pSAMP->setCursorMode(CURSOR_NONE, TRUE);
-        ImGui::GetIO().MouseDrawCursor = false;
     }
 }
 
 void Menu::set_style() {
     auto &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
+    //io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+    //io.Fonts->AddFontFromFileTTF(snippets::GetSystemFontPath("Segoe UI Semibold").c_str(), 18.f, 0, io.Fonts->GetGlyphRangesCyrillic());
+
+    auto& colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
+    colors[ImGuiCol_MenuBarBg] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_Border] = ImVec4{0.44f, 0.37f, 0.61f, 0.29f};
+    colors[ImGuiCol_BorderShadow] = ImVec4{0.0f, 0.0f, 0.0f, 0.24f};
+    colors[ImGuiCol_Text] = ImVec4{1.0f, 1.0f, 1.0f, 1.0f};
+    colors[ImGuiCol_TextDisabled] = ImVec4{0.5f, 0.5f, 0.5f, 1.0f};
+    colors[ImGuiCol_Header] = ImVec4{0.13f, 0.13f, 0.17f, 1.0f};
+    colors[ImGuiCol_HeaderHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_HeaderActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_Button] = ImVec4{0.13f, 0.13f, 0.17f, 1.0f};
+    colors[ImGuiCol_ButtonHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_ButtonActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_CheckMark] = ImVec4{0.74f, 0.58f, 0.98f, 1.0f};
+    colors[ImGuiCol_PopupBg] = ImVec4{0.1f, 0.1f, 0.13f, 0.92f};
+    colors[ImGuiCol_SliderGrab] = ImVec4{0.44f, 0.37f, 0.61f, 0.54f};
+    colors[ImGuiCol_SliderGrabActive] = ImVec4{0.74f, 0.58f, 0.98f, 0.54f};
+    colors[ImGuiCol_FrameBg] = ImVec4{0.13f, 0.13f, 0.17f, 1.0f};
+    colors[ImGuiCol_FrameBgHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_FrameBgActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_Tab] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TabHovered] = ImVec4{0.24f, 0.24f, 0.32f, 1.0f};
+    colors[ImGuiCol_TabActive] = ImVec4{0.2f, 0.22f, 0.27f, 1.0f};
+    colors[ImGuiCol_TabUnfocused] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TitleBg] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TitleBgActive] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_ScrollbarBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
+    colors[ImGuiCol_ScrollbarGrab] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4{0.19f, 0.2f, 0.25f, 1.0f};
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4{0.24f, 0.24f, 0.32f, 1.0f};
+    colors[ImGuiCol_Separator] = ImVec4{0.44f, 0.37f, 0.61f, 1.0f};
+    colors[ImGuiCol_SeparatorHovered] = ImVec4{0.74f, 0.58f, 0.98f, 1.0f};
+    colors[ImGuiCol_SeparatorActive] = ImVec4{0.84f, 0.58f, 1.0f, 1.0f};
+    colors[ImGuiCol_ResizeGrip] = ImVec4{0.44f, 0.37f, 0.61f, 0.29f};
+    colors[ImGuiCol_ResizeGripHovered] = ImVec4{0.74f, 0.58f, 0.98f, 0.29f};
+    colors[ImGuiCol_ResizeGripActive] = ImVec4{0.84f, 0.58f, 1.0f, 0.29f};
 
     auto& style = ImGui::GetStyle();
-    auto colors = style.Colors;
-    colors[ImGuiCol_Text] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
-    colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, /*1.000f*/ 0.f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.000f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
-    colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.000f, 0.000f, 0.000f, 0.000f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.200f, 0.200f, 0.200f, 1.000f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.280f, 0.280f, 0.280f, 1.000f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-    colors[ImGuiCol_MenuBarBg] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.277f, 0.277f, 0.277f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.300f, 0.300f, 0.300f, 1.000f);
-    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.330f, 0.330f, 0.330f, 1.000f);
-    colors[ImGuiCol_CheckMark] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
-    colors[ImGuiCol_SliderGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_Button] = ImVec4(1.000f, 1.000f, 1.000f, 0.000f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(1.000f, 1.000f, 1.000f, 0.391f);
-    colors[ImGuiCol_Header] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-    colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
-    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
-    colors[ImGuiCol_SeparatorActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_ResizeGrip] = ImVec4(1.000f, 1.000f, 1.000f, 0.250f);
-    colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.670f);
-    colors[ImGuiCol_ResizeGripActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_Tab] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
-    colors[ImGuiCol_TabHovered] = ImVec4(0.352f, 0.352f, 0.352f, 1.000f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-    colors[ImGuiCol_TabUnfocused] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
-    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-    colors[ImGuiCol_PlotLines] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-    colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_PlotHistogram] = ImVec4(0.586f, 0.586f, 0.586f, 1.000f);
-    colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_TextSelectedBg] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
-    colors[ImGuiCol_DragDropTarget] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_NavHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
-    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
-
-    //style.Colors[ImGuiCol_WindowBg] = ImVec4(0.f, 0.f, 0.f, 0.f);
-
-    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+    style.TabRounding = 4;
+    style.ScrollbarRounding = 9;
+    style.WindowRounding = 7;
+    style.GrabRounding = 3;
+    style.FrameRounding = 3;
+    style.PopupRounding = 4;
+    style.ChildRounding = 4;
+    style.WindowTitleAlign = {0.5f, 0.5f};
     style.WindowMenuButtonPosition = ImGuiDir_None;
 }

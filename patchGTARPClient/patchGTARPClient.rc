@@ -54,7 +54,7 @@ IDR_RCDATA1             RCDATA                  "help_overlay.dds"
 
 IDR_WAVE1               RCDATA                  "screenshot.wav"
 
-IDR_BLUR1               RCDATA                  "effects\\blur.hlsl"
+//IDR_BLUR1               RCDATA                  "effects\\blur.hlsl"
 
 
 #endif    // Русский (Россия) resources

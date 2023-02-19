@@ -85,9 +85,6 @@
     <ClInclude Include="FSignal.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="BlurEffect.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="Menu.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -99,6 +96,12 @@
     </ClInclude>
     <ClInclude Include="MLoad.h">
       <Filter>md</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomConnectScreen.h">
+      <Filter>md\gtarp</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -157,9 +160,6 @@
     <ClCompile Include="FSignal.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="BlurEffect.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="Menu.cpp">
       <Filter>core</Filter>
     </ClCompile>
@@ -168,6 +168,12 @@
     </ClCompile>
     <ClCompile Include="DisableSnowWindow.cpp">
       <Filter>md\gtarp</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomConnectScreen.cpp">
+      <Filter>md\gtarp</Filter>
+    </ClCompile>
+    <ClCompile Include="Updater.cpp">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -187,10 +193,5 @@
     <Image Include="help_overlay.dds">
       <Filter>resource</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="effects\blur.hlsl">
-      <Filter>resource</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

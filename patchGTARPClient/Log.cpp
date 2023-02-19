@@ -11,8 +11,8 @@
 #include "pch.h"
 #include "Log.h"
 
-Log::Log(std::string fileName)
-    : m_fileName(std::filesystem::current_path().string() + '\\' + fileName) 
+Log::Log(std::string_view fileName)
+    : m_fileName(std::filesystem::current_path().string() + '\\' + fileName.data()) 
 {
     std::filesystem::path file{m_fileName};
     if (std::filesystem::exists(file)) {

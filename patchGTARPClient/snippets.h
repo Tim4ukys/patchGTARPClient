@@ -12,6 +12,25 @@
 
 namespace snippets 
 {
+    /**
+    * Use: static_assert(all_same<Args...>::value, "Params must have same types");
+    */
+    template<typename... args>
+    struct all_same : public std::false_type {};
+
+    template<typename T>
+    struct all_same<T> : public std::true_type {};
+
+    template<typename T, typename... args>
+    struct all_same<T, T, args...> : public all_same<T, args...> {};
+
+    inline int randomInteger(int min, int max) {
+        static std::random_device          rd;
+        static std::default_random_engine  e1(rd());
+        std::uniform_int_distribution<int> uniform_dist(min, max);
+        return uniform_dist(e1);
+    }
+
     template<UINT64 toWait>
     class Timer {
         UINT64 nextTick{};
@@ -101,12 +120,13 @@ namespace snippets
 
     class WinProcHeader {
     public:
-
         static void Init();
-        static std::shared_ptr<PLH::x86Detour> regWinProc(WNDPROC pNewHeader, WNDPROC* pOldHeader);
+        static std::shared_ptr<PLH::x86Detour> regWndProc(WNDPROC newProc, UINT64& jmp);
 
     private:
-        static WNDPROC s_pOrig;
+        static UINT64         s_sampWndProcJump;
+        static PLH::x86Detour s_sampWndProc;
+        
         static LRESULT __stdcall WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     };
 

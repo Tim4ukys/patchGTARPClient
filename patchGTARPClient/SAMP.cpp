@@ -21,8 +21,8 @@ void SAMP::initPointerList() {
         FNC_SETCURSORMODE = 0x9FFE0
     };
 
-    g_pNetGame = *g_sampBase.getAddr<PVOID*>(OFF::INFO);
-    g_pChat = *g_sampBase.getAddr<PVOID*>(OFF::CHAT);
+    g_pNetGame = *g_sampBase.getAddr<NetGame**>(OFF::INFO);
+    g_pChat = *g_sampBase.getAddr<ChatInfo**>(OFF::CHAT);
     g_pInput = *g_sampBase.getAddr<PVOID*>(OFF::INPUT);
     g_pGame = *g_sampBase.getAddr<PVOID*>(OFF::GAME);
 
@@ -49,15 +49,23 @@ void SAMP::cmdRect(const char* szCmdName, CMDPROC pCmdProc) {
     g_fncAddCmdProc(g_pInput, szCmdName, pCmdProc);
 }
 
-void SAMP::redraw() {
-    if (!g_pNetGame || !g_pChat) return;
-
-    // pChatInfo->m_bRedraw
-    *reinterpret_cast<BOOL*>((std::uintptr_t)g_pChat + 0x63DA) = 1;
-}
+//void SAMP::redraw() {
+//    if (!g_pNetGame || !g_pChat) return;
+//
+//    // pChatInfo->m_bRedraw
+//    *reinterpret_cast<BOOL*>((std::uintptr_t)g_pChat + 0x63DA) = 1;
+//}
 
 void SAMP::setCursorMode(int nMode, BOOL bImmediatelyHideCursor) {
     if (!g_pNetGame || !g_pGame || !g_fncSetCursorMode) return;
 
+    //constexpr auto ch = offsetof(ServerPresets, worldTimeHour);
+
     g_fncSetCursorMode(g_pGame, nMode, bImmediatelyHideCursor);
 }
+
+//void SAMP::setHour(unsigned char hour) {
+//    if (!g_pNetGame) return;
+//
+//    *PCHAR(*PDWORD((DWORD)g_pNetGame + 981) + 44) = hour;
+//}

@@ -1,210 +1,92 @@
-[![GitHub license](https://img.shields.io/github/license/Tim4ukys/patchGTARPClient)](https://github.com/Tim4ukys/patchGTARPClient/blob/main/LICENSE)
-[![GitHub top language](https://img.shields.io/github/languages/top/Tim4ukys/patchGTARPClient)](https://github.com/Tim4ukys/patchGTARPClient/search?l=c%2B%2B)
-[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/Tim4ukys/patchGTARPClient?label=version)](https://github.com/Tim4ukys/patchGTARPClient/releases/latest)
-[![GitHub Release Date](https://img.shields.io/github/release-date/Tim4ukys/patchGTARPClient)](https://github.com/Tim4ukys/patchGTARPClient/releases)
-[![GitHub download](https://img.shields.io/github/downloads/tim4ukys/patchGTARPClient/total.svg?label=Total%20download)](https://github.com/Tim4ukys/patchGTARPClient/releases/latest)
+[![GitHub license](https://img.shields.io/github/license/Tim4ukys/patchGTARPClient?style=flat-square)](https://github.com/Tim4ukys/patchGTARPClient/blob/main/LICENSE)
+[![GitHub top language](https://img.shields.io/github/languages/top/Tim4ukys/patchGTARPClient?style=flat-square)](https://github.com/Tim4ukys/patchGTARPClient/search?l=c%2B%2B)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/Tim4ukys/patchGTARPClient?label=version&style=flat-square)](https://github.com/Tim4ukys/patchGTARPClient/releases/latest)
+[![GitHub Release Date](https://img.shields.io/github/release-date/Tim4ukys/patchGTARPClient?style=flat-square)](https://github.com/Tim4ukys/patchGTARPClient/releases)
+[![GitHub download](https://img.shields.io/github/downloads/tim4ukys/patchGTARPClient/total.svg?label=Total%20download&style=flat-square)](https://github.com/Tim4ukys/patchGTARPClient/releases/latest)
+<br>[![Windows](https://img.shields.io/badge/Windows%207-0078D6?style=flat-square&logo=windows&logoColor=white)](https://ru.wikipedia.org/wiki/Windows_7)
 
-## Patch GTA RP
+# patchGTARPClient
+* [Что делает плагин?](#что-делает-плагин)
+* [Что именно добавлено на данный момент?](#что-именно-добавлено-на-данный-момент)
+* [Установка](#установка)
+* [Контакты](#контакты)
+* [Галерея](#галерея)
+* [Благодарность](#благодарность)
+* [third party](#third-party)
 
-__Описание:__ ASI Plugin который патчит(латает)/улучшает клиент GTA RP.
+## Что делает плагин?
+Плагин добавляет всё то, что давно хотят игроки, но чего не добавляют разработчики GTA RP.
 
----
+## Что именно добавлено на данный момент?
+- Худ из GTA SA
+    - Худ вовзращён полностью. __Он не эмулируется, это именно тот самый худ.__
+        - Это значит, что можно использовать все моды, которые кастомизируют худ из GTA SA. _Это: InterfaceEditor, AnimationFist и т.д._
+        - Больше FPS!
+    - Можно сменить время на часах, чтобы он совпадал с Московским часовым поясом.
+    - По желанию можно вернуть иконку сервера, кастомизировать её на своё усмотрение
+    - Можно вернуть старый радар
+- Можно сменить путь до "HUD.TXD" - _очень полезно для сборок, чтобы не менять фист и прицел в каждой папке_
+- FastScreenshot - _скриншоты на F8 будут сохраняться ассинхронном режиме, что сведёт задержку к минимуму_
+    - Так же есть возможность включить звуковое сопровождение при создании скриншота
+- Кастомный шрифт в чате
+    - Изменяется шрифт только в чате
+    - Можно изменить ширину символов
+    - Изменить шрифт можно не выходя из игры
+- Белые ID - _очень полезно, когда игрок бежит в маске(или /clist 29), и нужно кинуть его в /rep_
+- DelCarTable - _убирает ту самую табличку, которая появляется при посадке в автомобиль_
+- SortScreenshot - _сортирует скриншоты по папкам. Очень удобно, когда скриншотов много._
+- CustomHelp - _заменяет окно на F1_
+- TurnF*ckingRadioOff - _при посадке в автомобиль радио будет выключено_
+- DisableSnowWindow - _убирает эффект наледи при быстрой езде_
+- CustomConnectScreen - _кастомизирует экран при подключении к серверу_
+- Bypass(обход) на:
+    - Подключение к стороним сервирам
+    
 ## Установка
 
-*Фотография кликабельная. При нажатии на неё перекинет на видео на YouTube*</br>
-[![Видео](https://img.youtube.com/vi/YC9oGw_tunQ/0.jpg)](https://www.youtube.com/watch?v=YC9oGw_tunQ)
+Чтобы что-то устанавливать надо это скачать (логично). Переходим [последний релиз](https://github.com/Tim4ukys/patchGTARPClient/releases/latest). В нём два архива: _patchGTARPClientByTim4ukys.zip, updater_patchGTARPclient.7z_
+
+### Установка патча
+
+Распаковываем всё содержимое архива "_patchGTARPClientByTim4ukys.zip_" в корень игры*. Запускаем игру. </br>В С Ё.
+
+\* это папка, в которой лежит gta_sa.exe
+
+### Установка автообновления к патчу
+
+Распаковываем всё содержимое архива "_updater_patchGTARPclient.7z_" в тот же корень игры. Всё, теперь при выходе обновления при входе в игру у вас будет открываться окно автообновления. Следуйте инструкциям в нём и всё будет alright.
+
+_Если вам как-то, чем-то не угодило автообновление, то можете его не устанавливать. На работе плагина это никаким образом не скачивается. Но тогда вы сами будете следить за выходом обновлений. Кому легче сделаете мне не понятно, но точно не себе._
 
 
-Чтобы установить последнию версию данного плагина, перейдите в [_Release_](https://github.com/Tim4ukys/patchGTARPClient/releases/latest) и скачайте _patchGTARPClientByTim4ukys.zip_.</br> 
-В этом архиве будет лежать два файла, Вам нужен именно _!000patchGTARPClientByTim4ukys.ASI_.</br>
-Этот файл нужно будет перенести в корневую папку игры *(эта та папка в которой лежит gta_sa.exe)*.
+## Контакты
 
-Так же, если Вы хотите, чтобы новая версия плагина автоматически скачивалась при заходе в игру, в корневую папку с игрой перетащите *updater_patchGTARPclient.exe*.</br>
-Когда выйдет обновление патча, он закроет игру и скачает обновление. После того, как он установит обновление, нужно запустить игру ещё раз.
+Связаться со мной можно через [tg](https://t.me/tim4ukys).</br>Если вы хотите узнать интересное о самом патче, то рекомендую подписаться на наш [блог разработки](https://t.me/+LVGCHEsDZEhmY2My).
 
----
-## Настройки
+_Если вы наткнулись на какой-либо баг в патче, то настоятельно прошу: свяжитесь со мной и расскажите мне о нём_
 
-Для настройки работы плагина в этом моде используется JSON. Ниже предоставлен конфиг с комментариями, _"какой параметр и что он делает"_.</br>
-Сам конфиг должен лежить в папке с игрой как _"!000patchGTARPClientByTim4ukys.json"_. При первом запуске игры и её закрытии с этим модом, он автоматически создатся в папке с параметрами по умолчанию.
+## Галерея
 
-__P.S.__ С обновлением [`8.1.0`](https://github.com/Tim4ukys/patchGTARPClient/releases/tag/v8.1.0) настраивать JSON конфиг можно прям в игре(cmd: /patch_open).
+[![FastPic.Ru](https://i121.fastpic.org/thumb/2023/0218/fd/_fe18706583d702f0fc88c4c1f6ac58fd.jpeg)](https://fastpic.org/view/121/2023/0218/_fe18706583d702f0fc88c4c1f6ac58fd.jpg.html)
+[![FastPic.Ru](https://i121.fastpic.org/thumb/2023/0218/33/_f420893aadb79ce08f1f79ed510abf33.jpeg)](https://fastpic.org/view/121/2023/0218/_f420893aadb79ce08f1f79ed510abf33.jpg.html)
+[![FastPic.Ru](https://i121.fastpic.org/thumb/2023/0218/2a/64344eede70985c29995928025a8b72a.jpeg)](https://fastpic.org/view/121/2023/0218/64344eede70985c29995928025a8b72a.jpg.html)
 
-```json5
-
-{
-    /* То, что связано с часами на худе(в верхнем правом угле) */
-    "clock": {
-        /*
-            На часах будет время по МСК(коректно работает только если на ПК установлен верный часовой пояс).
-
-            true - время по МСК.
-            false - то время, которое установлено на ПК. 
-        */
-        "fixTimeZone": true
-    },
-    /* Всё, что связанно на 100% с gta sa */
-    "gtasa": {
-        /*
-            "Turn-*******-radio-off" - мод, который делает так, чтобы при посадке в автомобиль, радиостанция
-            был автоматически выключена.
-            
-            true - да, включить этот мод
-            false - нет, отсавить всё как есть
-        */
-        "tfro": true
-    },
-    /* Всё, что связоно со старым худом */
-    "oldHud": {
-        /*
-            Возращает старый худ.
-
-            true - Да, пускай будет старый.
-            false - нет, меня полностью устраивает тот худ, который сейчас на GTA RP.
-        */
-        "hud": true,
-        /*
-            Путь до hud.txd
-
-            "NONE" - (по умолчанию), ничего не меняет, оставляет всё как есть.
-            "Любой другой путь" - заменяет путь на этот, который показан внизу.
-        */
-        "pathToTXDhud": "%s\\CustomSAA2\\hud.txd",
-        /*
-            Возращает старый радар.
-
-            true - Да, вернуть старый радар.
-            false - Нет, меня устраивает новый.
-        */
-        "radar": true,
-        "radarScaleFix": true
-    },
-    /* Всё, что связано с сампусиком(SA-MP :D) */
-    "samp": {
-        /*
-            Заменяет шрифт чата на другой(на тот, который написан в "fontFaceName").
-
-            true - заменить шрифт на свой.
-            false - оставить всё как есть. 
-        */
-        "isCustomFont": true,
-        /*
-            Название шрифта.
-            P.s. Этот шрифт должен быть устоновлен в системе!
-        */
-        "fontFaceName": "Comic Sans MS",
-        /*
-            Ускоряет скорость создания скриншота до 0.01 - 0.02 секунд(зависит от скорости RAM памяти).
-            P.s. Из-за схожей скорости работы создания скриншота с клиентом Steam, по созданию скриншота
-            будет слышан характерный звук.
-            
-            true - да, я хочу чтобы скриншоты создавались быстро
-            false - нет, я хочу чтобы они создавались так же долго, как и в обычном SA-MP
-        */
-        "isMakeQuickScreenshot": true,
-        /*
-            Изменяет формат сохраняемых скриншотов.
-           JPEG - самый маленький размер, качество на любителя
-           PNG - средний размер, качество нормальное
-           TGA - большой размер, качество отличное
-        */
-        "formatScreenshotIMG": "JPEG",
-        /*
-            После создания скриншота проигрывает звук. 
-            P.s. Работает только если isMakeQuickScreenshot имеет значение true
-
-            true - да, я хочу чтобы после создания скриншота был некий звук
-            false - нет, я хочу чтобы никакого доп. звука не было
-        */
-        "isPlaySoundAfterMakeScreenshot": true,
-        /*
-            Сортировать ли скриншоты. Формат: Год-месяц-день
-            Например: 2022-02-30
-
-            true - да, сортировать только что созданные скриншоты по папкам
-            false - нет, пускай лежат в одной папке как раньше
-        */
-        "isSortingScreenshots": true,
-        /*
-            Делает ID игроков цвета *MY CUM*(белого цвета).
-            Очень удобно, если у игрока черный ник(одета маска) и на него нужно написать в /rep.
-
-            true - да, я хочу чтобы ID были белого цвета
-            false - нет, пускай будет как будет
-        */
-        "isWhiteID": true,
-        /*
-            Заменяет старое окно помощи(F1) на более стильное, модное и молодёжное окно!
-
-            true - да, я хочу быть крутым и с новым и обновлённым справочником на F1!!
-            false - нет, я хочу гонять со старым окном, т.к. у меня нет вкуса.
-        */
-        "isCustomF1": true
-    },
-    /* Всё то, что связано с логотипом GTA RP в верхнем правом углу */
-    "serverIcon": {
-        /*
-            Отображать ли логотип.
-
-            true - да, отображать.
-            false - нет, оно не к чему.
-        */
-        "state": false,
-        /*
-            Местоположение логотипа на экране по X(право-лево) и Y(верх-вниз).
-            Размер иконки(ширина и высота)
-        */
-        "x": 656.0,
-        "y": 28.0,
-        "width": 366.0,
-        "height": 144.0
-    },
-    /* Всё, что связано с интерьфесом автомобилья(спидометр и т.д.) */
-    "vehicleHud": {
-        /*
-            Отображать ли табличку, когда посажир садиться в автомобиль.
-            P.s. Та самая табличка, которая никому не нужна и на которой написано, куда
-            и на какие клавиши нажимать и т.д.
-
-            true - да, пускай будет.
-            false - убрать её к **** собачим.
-        */
-        "isDrawHelpTablet": false,
-        /* 
-            Убрать ли наледь на окне(При большой скорости она появляется на экране).
-
-            true - да, убрать.
-            false - нет, пускай будет.
-        */
-        "isDisableSnowWindow": true
-    }
-}
-
+## Благодарность
+Список тех людей, кто помогал в тестировании плагина или находил баги(сорян, кого забыл):
+```
+Шамиль Макаров
+Дмитрий Макаров
+Salik_Alvarez
+Yakoff
 ```
 
----
-## Что делать, если я нашёл баг?
-
-Вы можете написать мне в ЛС [_(Контакты есть ниже)_](#Автор).
-
-## Как я могу отблагодарить автора?
-
-<img src="https://www.donationalerts.com/img/header/logo.svg" width="75" height="75">
-
-Донатом на DonationAlerts: https://www.donationalerts.com/r/tim4ukys
-
-## Что он может?
-
-Для этого есть специальный [список](./CHANGE.md). В нём я написал всё, что есть и что планируется добавить.
-
----
-## Автор
-
-[Tim4ukys](https://vk.com/tim4ukys) - Разработчик и простой игрок GTA RP. *Имя кликабельно*</br>
-Ник - Antonina_Sobol _(читается как Антонина Соболь, не Собол!!!)_.
-
-### Спасибо
-
-[Шамиль Макаров](https://vk.com/markeazz) - Помощь в тестировании
-
-[Дмитрий Макаров](https://vk.com/molodoy_diman) - Идея
+## third party
+```
+PluginSDK by DK22Pac - Zlib license - https://github.com/dk22pac/plugin-sdk
+ImGui by ocornut - MIT license - https://github.com/ocornut/imgui
+PolyHook 2.0 by stevemk14ebr - MIT license - https://github.com/stevemk14ebr/PolyHook_2_0
+RakHook by imring - MIT license - https://github.com/imring/RakHook
+Boost - Boost Software License - https://www.boost.org/
+JSON Modern by nlohmann - MIT license - https://github.com/nlohmann/json
+7z by Igor Pavlov (после компиляции архивирует файлы в zip) - https://www.7-zip.org/
+```

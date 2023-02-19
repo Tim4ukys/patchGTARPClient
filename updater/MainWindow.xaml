@@ -1,0 +1,48 @@
+﻿<Window x:Class="updater.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:updater" 
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True" Background="#FF292E39">
+
+    <Grid>
+        <!-- #region заголовок -->
+        <Border Margin="0,0,0,430"
+            MaxHeight="20"
+            CornerRadius="2" 
+            Background="#FF313742"
+            MouseDown="Title_MovedWindow">
+            <DockPanel LastChildFill="False">
+                <TextBlock  Margin="325,0,0,4" 
+                            FontStretch="UltraExpanded" 
+                            Foreground="#c0c9d8" 
+                            TextTrimming="CharacterEllipsis" 
+                            TextWrapping="NoWrap" 
+                            Text="Updater | patchGTARPClient" 
+                            FontSize="13"/>
+                <Button DockPanel.Dock="Right" 
+                        VerticalAlignment="Center"
+                        Style="{StaticResource TitleBTN}"
+                        Click="PART_CLOSE_Click">
+                    <Image Source="res/btn_close.png"/>
+                </Button>
+                <Button HorizontalAlignment="Center"
+                        VerticalAlignment="Center" 
+                        Style="{StaticResource TitleBTN}"
+                        DockPanel.Dock="Right" Click="PART_MINIMIZE_Click">
+                    <Image Source="res/btn_minimize.png"/>
+                </Button>
+            </DockPanel>
+        </Border>
+        <!--#endregion-->
+
+        <Frame Name="MainFrame" Margin="0,20,0,36" NavigationUIVisibility="Hidden"/>
+
+        <Button x:Name="btn_next" Content="Далее" HorizontalAlignment="Left" Margin="736,419,0,0" VerticalAlignment="Top" Height="21" Width="54" Click="btn_next_Click" Style="{StaticResource btn_botton}"/>
+        <!--
+        <Button x:Name="btn_rev" Content="Назад" HorizontalAlignment="Left" Margin="677,419,0,0" VerticalAlignment="Top" Height="21" Width="54" Click="btn_rev_Click" Style="{StaticResource btn_botton}"/>
+        -->
+    </Grid>
+</Window>
