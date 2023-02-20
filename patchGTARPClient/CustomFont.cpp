@@ -31,8 +31,23 @@ void __fastcall CustomFont::onChatFontReset(PVOID p_this, PVOID trash) {
     SAFE_RELEASE(s_pFontCE->m_pFont);
     SAFE_RELEASE(s_pShadowFont);
 
-    const int iFontSize = g_sampBase.getAddr<int (*)()>(0xC5B20)();
-    const int iFontWeight = g_Config["samp"]["customFontWeight"].get<int>();
+    /* Псевдо-код взятый из samp r3-1 */
+    auto getFontSize = [](int sz) {
+        int v0; // esi
+
+        if (*PDWORD(0xC17044) >= 1024) {
+            if (*PDWORD(0xC17044) >= 1400)
+                v0 = 2 * (*PDWORD(0xC17044) >= 1600) + 18;
+            else
+                v0 = 16;
+        } else {
+            v0 = 14;
+        }
+        return v0 + 2 * sz;
+    };
+
+    const int  iFontSize = getFontSize(g_Config["samp"]["customFontHeight"].get<int>());
+    const int  iFontWeight = g_Config["samp"]["customFontWeight"].get<int>();
     const auto faceName = g_Config["samp"]["fontFaceName"].get<std::string>();
 
     D3DXCreateFontA(LPDIRECT3DDEVICE9(RwD3D9GetCurrentD3DDevice()), iFontSize, 0, iFontWeight, 1,

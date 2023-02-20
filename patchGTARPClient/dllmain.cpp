@@ -240,6 +240,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     }
         break;
     case DLL_PROCESS_DETACH:
+        rakhook::destroy();
         Menu::remove();
         SAFE_DELETE(g_pD3D9Hook);
         SAFE_DELETE(g_pSAMP);

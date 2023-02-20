@@ -306,6 +306,7 @@ void Menu::init() {
             if (g_Config["samp"]["isCustomFont"].get<bool>()) {
                 static std::string fontFaceName{g_Config["samp"]["fontFaceName"].get<std::string>()};
                 static int         s_nRd{g_Config["samp"]["customFontWeight"].get<int>()};
+                static int         s_nFH{g_Config["samp"]["customFontHeight"].get<int>()};
                 static bool        s_haveChanges{};
 
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
@@ -323,6 +324,9 @@ void Menu::init() {
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
                 if (ImGui::RadioButton("700", &s_nRd, 700))
                     s_haveChanges = true;
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                if (ImGui::SliderInt(u8"׀אחלונ רנטפעא", &s_nFH, -3, 5))
+                    s_haveChanges = true;
 
                 static bool haveErr{};
                 if (s_haveChanges &&
@@ -335,6 +339,7 @@ void Menu::init() {
                         haveErr = snippets::GetSystemFontPath(fontFaceName) == "";
                         g_Config["samp"]["fontFaceName"] = fontFaceName;
                         g_Config["samp"]["customFontWeight"] = s_nRd;
+                        g_Config["samp"]["customFontHeight"] = s_nFH;
                         g_Config.saveFile();
                         CustomFont__CallResetFont();
                         s_haveChanges = false;
