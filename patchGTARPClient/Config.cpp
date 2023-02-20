@@ -108,6 +108,10 @@ void Config::restoreAndCheckKeysCorrect() {
         if (jn["customFontWeight"].get<int>() != 400 && jn["customFontWeight"].get<int>() != 700) {
             jn["customFontWeight"] = 400;
         }
+        SET_DEFAULT_INT(jn, "customFontHeight", 0)
+        if (jn["customFontHeight"].get<int>() >= -3 && jn["customFontHeight"].get<int>() <= 5) {
+            jn["customFontHeight"] = 0;
+        }
         SET_DEFAULT_BOOL(jn, "isSortingScreenshots", true)
         SET_DEFAULT_BOOL(jn, "isWhiteID", true)
         SET_DEFAULT_BOOL(jn, "isCustomF1", true)
