@@ -13,10 +13,10 @@
 #include "offsets.hpp"
 
 void DisableSnowWindow::turnOff() {
-    patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0x74);
+    //patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0x74);
 }
 void DisableSnowWindow::turnOn() {
-    patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0xEB);
+    //patch::writeMemory<std::uint8_t>(g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::NEWYEAR_DISABLEWINTERWINDOW), 0xEB);
 }
 
 void DisableSnowWindow::init() {

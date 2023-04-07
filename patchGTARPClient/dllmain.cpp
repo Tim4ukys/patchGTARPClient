@@ -53,7 +53,7 @@ std::map<std::string, std::shared_ptr<MLoad>> g_modules{
         MK_MOD(CustomHelp),
         MK_MOD(FastScreenshot),
         MK_MOD(TFRO),
-        MK_MOD(DisableSnowWindow),
+        //MK_MOD(DisableSnowWindow),
         MK_MOD(CustomConnectScreen)
     }
 };
