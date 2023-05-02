@@ -378,7 +378,7 @@ void Menu::init() {
         case eTitles_GTARP:
             checkbox(u8"Car hotkey table", g_Config["vehicleHud"]["isDrawHelpTablet"], "DelCarTable", nullptr,
                      u8"Подсказка с клавишами, которая появляется, когда персонаж садится в авто.");
-            checkbox(u8"Убрать наледь на окне при езде", g_Config["vehicleHud"]["isDisableSnowWindow"], "DisableSnowWindow", nullptr);
+            //checkbox(u8"Убрать наледь на окне при езде", g_Config["vehicleHud"]["isDisableSnowWindow"], "DisableSnowWindow", nullptr);
             checkbox(u8"Старый худ", g_Config["oldHud"]["hud"], "OldHUD", nullptr,
                      u8"Возвращает старый худ из GTA SA");
             if (g_Config["oldHud"]["hud"].get<bool>()) {
