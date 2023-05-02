@@ -15,7 +15,7 @@
 #include "Updater.h"
 
 const char SAMP_CMP[] = "E86D9A0A0083C41C85C0";
-constexpr DWORD GTARP_TIMESTAMP = 0x642F0B41;
+constexpr DWORD GTARP_TIMESTAMP = 0x644FD347;
 
 #define GITHUB_URL      "github.com/Tim4ukys/patchGTARPClient"
 
