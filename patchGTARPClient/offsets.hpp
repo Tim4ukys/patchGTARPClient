@@ -19,11 +19,11 @@ public:
     */
     enum class GTARP : unsigned int {
         /* Sig: 83 F8 FF 75 14 6A 00 FF 15 ? ? ? ? 50 FF 15 ? ? ? ? E9 ? ? ? ? */
-        LOCKCONNECTTOOTHERSERVER = 0x5119, // +
+        LOCKCONNECTTOOTHERSERVER = 0x4F0D, 
         /* Sig(offs: -1h): A3 ? ? ? ? B9 ? ? ? ? 8B C4 C7 00 ? ? ? ? E8 ? ? ? ? 51 89 45 94  */
-        INITTEXTURE_INITHOOK = 0x1C087,
+        INITTEXTURE_INITHOOK = 0x1BE57,
         /* Sig: 55 8B EC 83 EC 70 */
-        INITTEXTURE_FNC = 0x1BA60,
+        INITTEXTURE_FNC = 0x1B830,
 
         /* [can be found in] Sig: 8B 04 B5 ? ? ? ? 8B 0D ? ? ? ? FF 30 8B 41 20 6A 01 FF D0 8B 0D ? ? ? ? */
         ARRAYSERVERLOGO = 0xDADBC, /* 01 - +0h, 02 - +4h, test - +8h*/
@@ -31,9 +31,9 @@ public:
         SERVERID = 0xCFB20, // 2 - test server
 
         /* Sig: 55 8B EC 83 EC 48 A1 ? ? ? ? 33 C5 89 45 FC 56 */
-        DRAWHUD = 0x1C450,
+        DRAWHUD = 0x1C230,
         /* Sig: 85 C0 75 1F C7 05 ? ? ? ? ? ? ? ? */
-        DRAWSPEEDOMETER_DRAWRAMKA = 0x2597A,
+        DRAWSPEEDOMETER_DRAWRAMKA = 0x2576A,
 
         /* [can be found in] Sig: 8B 0D ? ? ? ? 83 C4 08 85 C9 */
         WANTEDLEVEL = 0xDAB70,
@@ -42,22 +42,22 @@ public:
         //DISABLECHECKTXD = 0xF134, goodbay epta
 
         /* Sig(offs: +5h): A3 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? 51 */
-        DISABLE_CALL_SET_CUSTOM_RADAR = 0xF386,
+        DISABLE_CALL_SET_CUSTOM_RADAR = 0xF176,
         /* Sig: FF D7 83 C4 10 8B D8 */
-        CUSTOM_PATH_TXD_HUD = 0x2E899, // ?
+        CUSTOM_PATH_TXD_HUD = 0x2E6D8, // ?
         
         /* Sig: 85 C0 0F 95 45 F4 88 1E */
-        DISABLE_RECHANGE_SCALE_STATE = 0x2EE69,
+        DISABLE_RECHANGE_SCALE_STATE = 0x2EBF9,
 
         /* Gde-to ryadom s "wh" or "strobe" */
-        CONSCREEN_POS_X = 0x202AB + 2,
-        CONSCREEN_POS_Y = 0x20328 + 2,
-        CONSCREEN_POS_Z = 0x203A5 + 2,
-        CONSCREEN_POINT_X = 0x20422 + 2,
-        CONSCREEN_POINT_Y = 0x2049F + 2,
-        CONSCREEN_POINT_Z = 0x2051C + 2,
+        CONSCREEN_POS_X = 0x2009B + 2,
+        CONSCREEN_POS_Y = 0x20118 + 2,
+        CONSCREEN_POS_Z = 0x20195 + 2,
+        CONSCREEN_POINT_X = 0x20212 + 2,
+        CONSCREEN_POINT_Y = 0x2028F + 2,
+        CONSCREEN_POINT_Z = 0x2030C + 2,
 
-        CONSCREEN_TIME = 0x1FAA3 + 2
+        CONSCREEN_TIME = 0x1F893 + 2
     };
 
     enum class SAMP : unsigned int {
