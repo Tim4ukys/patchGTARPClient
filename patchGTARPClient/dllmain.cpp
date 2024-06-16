@@ -160,7 +160,7 @@ NOINLINE void   gameLoopDetourFNC() {
             g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Сайт: {990000}" GITHUB_URL "{FF9900}!");
         }
         g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Все самые свежие новости об обновлениях в нашем tg канале!");
-        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Ссылка: {990000}https://t.me/+LVGCHEsDZEhmY2My");
+        g_pSAMP->addChatMessage(0x99'00'00, "[{FF9900}patchGTARPClient{990000}] {FF9900}Ссылка: {990000}https://t.me/gaZmanoV_m0ds");
         s_bIsInit = true;
     }
 }
