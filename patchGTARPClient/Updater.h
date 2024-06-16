@@ -23,7 +23,7 @@ public:
         using MIN = std::integral_constant<int, min>; \
         using PATCH = std::integral_constant<int, patch>;
 
-    DECLARATION_VERSION(12, 0, 0)
+    DECLARATION_VERSION(13, 0, 0)
     #undef DECLARATION_VERSION
 
     static inline bool check(int l_maj, int l_min, int l_patch,
