@@ -49,7 +49,7 @@
     <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\include;$(BOOST_ROOT);$(IncludePath)</IncludePath>
     <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\lib;$(LibraryPath)</LibraryPath>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
-    <OutDir>D:\Games\GTA RP\</OutDir>
+    <OutDir>D:\Games\new gta rp\gtarp_crmp</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -57,7 +57,7 @@
     <IncludePath>$(DXSDK_DIR)Include;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\include;$(BOOST_ROOT);$(IncludePath)</IncludePath>
     <LibraryPath>$(DXSDK_DIR)Lib\x86;$(SolutionDir)third-party\PolyHook_2_0\out\install\x86-$(Configuration)\lib;$(LibraryPath)</LibraryPath>
     <TargetName>!000patchGTARPClientByTim4ukys</TargetName>
-    <OutDir>D:\Games\GTA RP\</OutDir>
+    <OutDir>D:\Games\new gta rp\gtarp_crmp</OutDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>false</VcpkgEnabled>
