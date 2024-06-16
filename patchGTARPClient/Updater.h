@@ -11,7 +11,7 @@
 #pragma once
 
 #ifndef CURRENT_VERSION
-#define CURRENT_VERSION "12.0.0"
+#define CURRENT_VERSION "13.0.0"
 #endif
 
 class Updater {
