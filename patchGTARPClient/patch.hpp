@@ -13,7 +13,7 @@
 
 /*
  * @auther Tim4ukys
- * @date 01.01.2023
+ * @date 23.06.2024
  * @copyright GNU GPLv3
  * @warning Работает только с x86 приложениями
  *
@@ -21,9 +21,12 @@
  */
 
 #include <cstdint>
+#include <vector>
 #include <string>
+#include <functional>
 #include <cstring>
 #include <Windows.h>
+#include <xbyak/xbyak.h>
 
 namespace patch {
 
@@ -48,7 +51,7 @@ namespace patch {
 
         inline void setDet(std::uintptr_t det) noexcept { m_detFnc = det; }
         inline void setHookAddr(std::uintptr_t hkAddr) noexcept { m_hookAddr = hkAddr; }
-
+        
         inline void install() {
             if (!m_detFnc || !m_hookAddr) return;
 
@@ -78,7 +81,7 @@ namespace patch {
         VirtualProtect((void*)addr, count, PAGE_EXECUTE_READWRITE, &oldProt);
         textOut.resize(count*2);
         for (std::size_t i{}; i < count; ++i)
-            sprintf(textOut.data() + i*2, "%02X", *(std::uint8_t*)(addr + i));
+            sprintf((char*)(textOut.data()) + i * 2, "%02X", *(std::uint8_t*)(addr + i));
         VirtualProtect((void*)addr, count, oldProt, NULL);
     }
 
@@ -127,7 +130,7 @@ namespace patch {
     }
 
     template<std::size_t N>
-    void setBytes(std::uintptr_t addr, const std::uint8_t(&bytes)[N]) {
+    void setBytes(std::uintptr_t addr, const std::uint8_t (&bytes)[N]) {
         DWORD oldProt;
         VirtualProtect((void*)addr, N, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, (void*)bytes, N);
@@ -162,12 +165,27 @@ namespace patch {
         }
     }
 
-    BOOL setRawThroughJump(std::uintptr_t address, const char* raw,
-                           std::size_t rawSize, std::size_t saveByte,
-                           BOOL isSave);
+    inline void writeCode(std::uintptr_t addr, std::function<void(Xbyak::CodeGenerator& code)> clbCodeGenerate, std::size_t len) {
+        Xbyak::CodeGenerator code{len, (void*)addr};
+        code.setProtectModeRW();
+        memset((void*)addr, 0x90, len);
+        code.getCode();
+        clbCodeGenerate(code);
+        if (len - code.getSize() > 2u) {
+            code.jmp(PVOID(addr + len));
+        }
+        code.setProtectModeRE();
+    }
 
-    BOOL setJumpThroughJump(std::uintptr_t address, std::uintptr_t detour,
-                            std::size_t saveByte, BOOL isSave);
+    [[maybe_unused]] BOOL setRawThroughJump(std::uintptr_t address, const char* raw,
+                                            std::size_t rawSize, std::size_t saveByte,
+                                            BOOL isSave);
+
+    [[maybe_unused]] BOOL setJumpThroughJump(std::uintptr_t address, std::uintptr_t detour,
+                                             std::size_t saveByte, BOOL isSave);
+
+    [[maybe_unused]] BOOL setShellCodeThroughJump(std::uintptr_t address, Xbyak::CodeGenerator& code,
+                                                  std::size_t saveByte, BOOL isSave);
 
     inline void fill(std::uintptr_t addr, std::size_t sz, unsigned int value) {
         DWORD oldProt;
@@ -175,6 +193,18 @@ namespace patch {
         FillMemory((void*)addr, sz, value);
         VirtualProtect((void*)addr, sz, oldProt, NULL);
     }
+
+    /*
+     * @breaf Ищет патерн и возвращает его адрес
+     * @param module Название модуля
+     * @param pattern Патерн в виде RAW строки
+     * @param mask Маска. X - будут читаться, а ? - игнорироваться
+     * @param startSearchAddr Адресс с которого нужно начинать поиск.
+     * @return Адрес патерна
+     * @auther fredaikis unknowncheats
+     */
+    [[maybe_unused]] DWORD FindPattern(const char* module, const char* pattern, const char* mask,
+                                       DWORD startSearchAddr = NULL);
 
 } // namespace patch
 
