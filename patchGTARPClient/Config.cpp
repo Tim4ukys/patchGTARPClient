@@ -33,33 +33,35 @@ void Config::saveFile() {
     oFile << j.dump(4);
 }
 
-#define SET_DEFAULT_STR(js, str_key, str_def) \
-    if (!(js)[str_key].is_string()) { \
-        (js)[str_key] = str_def; \
+template<typename T>
+inline void SET_DEFAULT_PROP(nlohmann::json& js, std::string_view key, T&& param) {
+    bool r{};
+    if constexpr (std::is_same_v<T, bool>)
+        r = !js[key.data()].is_boolean();
+    else if constexpr (std::is_same_v<T, float>)
+        r = !js[key.data()].is_number_float();
+    else if constexpr (std::is_same_v<T, int>)
+        r = !js[key.data()].is_number_integer();
+    else
+        static_assert(true && "Unkown type");
+
+    if (r)
+        js[key.data()] = param;
+    }
+template<std::size_t N>
+inline void SET_DEFAULT_PROP(nlohmann::json& js, std::string_view key, const char (&param)[N]) {
+    if (!js[key.data()].is_string()) {
+        js[key.data()] = param;
+    }
     }
 
-#define SET_DEFAULT_INT(js, str_key, int_def) \
-    if (!(js)[str_key].is_number_integer()) { \
-        (js)[str_key] = int_def; \
-    }
-
-#define SET_DEFAULT_FLT(js, str_key, flt_def) \
-    if (!(js)[str_key].is_number_float()) { \
-        (js)[str_key] = flt_def; \
-    }
-
-#define SET_DEFAULT_BOOL(js, str_key, bool_def) \
-    if (!(js)[str_key].is_boolean()) { \
-        (js)[str_key] = bool_def; \
-    }
-
-inline void SET_DEFAULT_ARR(nlohmann::json& js, const char* key, const nlohmann::json& arr, nlohmann::json::value_t type) {
-    if (!js[key].is_array()) {
-        js[key] = arr;
+inline void SET_DEFAULT_ARR(nlohmann::json& js, std::string_view key, const nlohmann::json& arr, nlohmann::json::value_t type) {
+    if (!js[key.data()].is_array()) {
+        js[key.data()] = arr;
     } else {
-        for (size_t i{}; i < js[key].size(); ++i) {
-            if (js[key][i].type() != type) {
-                js[key] = arr;
+        for (size_t i{}; i < js[key.data()].size(); ++i) {
+            if (js[key.data()][i].type() != type) {
+                js[key.data()] = arr;
                 break;
             }
         }
@@ -67,71 +69,71 @@ inline void SET_DEFAULT_ARR(nlohmann::json& js, const char* key, const nlohmann:
 }
 
 void Config::restoreAndCheckKeysCorrect() {
-    auto safeLoadStruct = [](nlohmann::json& jch, const char* key, std::function<void(nlohmann::json&)> fnc) -> void {
-        if (!jch[key].is_structured() && !jch[key].is_null()) {
+    auto safeLoadStruct = [](nlohmann::json& jch, std::string_view key, std::function<void(nlohmann::json&)> fnc) -> void {
+        if (!jch[key.data()].is_structured() && !jch[key.data()].is_null()) {
             //g_Log.Write("type: %s", jch.type_name());
-            jch.erase(key);
+            jch.erase(key.data());
         }
-        fnc(jch[key]);
+        fnc(jch[key.data()]);
     };
-    auto safeLoadArray = [](nlohmann::json& jch, const char* key, std::function<void(nlohmann::json&)> fnc,
+    auto safeLoadArray = [](nlohmann::json& jch, std::string_view key, std::function<void(nlohmann::json&)> fnc,
                             std::function<void(nlohmann::json&)> def_load) -> void {
-        if (!jch[key].is_array() && !jch[key].is_null()) {
-            jch.erase(key);
+        if (!jch[key.data()].is_array() && !jch[key.data()].is_null()) {
+            jch.erase(key.data());
         }
-        const auto len = jch[key].size();
+        const auto len = jch[key.data()].size();
         if (len != 0) {
             for (size_t i{}; i < len; ++i) {
-                fnc(jch[key][i]);
+                fnc(jch[key.data()][i]);
             }
         } else {
-            def_load(jch[key]);
+            def_load(jch[key.data()]);
         }
     };
     //SET_DEFAULT_STR(j, "version", g_szCurrentVersion);
     safeLoadStruct(j, "gtasa", [](nlohmann::json& jn) {
-        SET_DEFAULT_BOOL(jn, "tfro", true);
+        SET_DEFAULT_PROP(jn, "tfro", true);
     });
     safeLoadStruct(j, "oldHud", [](nlohmann::json &jn) {
-        SET_DEFAULT_BOOL(jn, "radar", false)
-        SET_DEFAULT_BOOL(jn, "hud", true)
-        SET_DEFAULT_STR(jn, "pathToTXDhud", "NONE")
-        SET_DEFAULT_BOOL(jn, "radarScaleFix", false)
+        SET_DEFAULT_PROP(jn, "radar", false);
+        SET_DEFAULT_PROP(jn, "hud", true);
+        SET_DEFAULT_PROP(jn, "pathToTXDhud", "NONE");
+        SET_DEFAULT_PROP(jn, "radarScaleFix", false);
     });
     safeLoadStruct(j, "clock", [](nlohmann::json& jn) {
-        SET_DEFAULT_BOOL(jn, "fixTimeZone", true)
+        SET_DEFAULT_PROP(jn, "fixTimeZone", true);
     });
     safeLoadStruct(j, "samp", [](nlohmann::json& jn) {
-        SET_DEFAULT_STR(jn, "fontFaceName", "Comic Sans MS")
-        SET_DEFAULT_BOOL(jn, "isCustomFont", false)
-        SET_DEFAULT_INT(jn, "customFontWeight", 400)
+        SET_DEFAULT_PROP(jn, "fontFaceName", "Comic Sans MS");
+        SET_DEFAULT_PROP(jn, "isCustomFont", false);
+        SET_DEFAULT_PROP(jn, "customFontWeight", 400);
         if (jn["customFontWeight"].get<int>() != 400 && jn["customFontWeight"].get<int>() != 700) {
             jn["customFontWeight"] = 400;
         }
-        SET_DEFAULT_INT(jn, "customFontHeight", 0)
+        SET_DEFAULT_PROP(jn, "customFontHeight", 0);
         if (jn["customFontHeight"].get<int>() >= -3 && jn["customFontHeight"].get<int>() <= 5) {
             jn["customFontHeight"] = 0;
         }
-        SET_DEFAULT_BOOL(jn, "isSortingScreenshots", true)
-        SET_DEFAULT_BOOL(jn, "isWhiteID", true)
-        SET_DEFAULT_BOOL(jn, "isCustomF1", true)
-        SET_DEFAULT_BOOL(jn, "isMakeQuickScreenshot", true)
-        SET_DEFAULT_BOOL(jn, "isPlaySoundAfterMakeScreenshot", true)
-        SET_DEFAULT_STR(jn, "formatScreenshotIMG", "PNG");
+        SET_DEFAULT_PROP(jn, "isSortingScreenshots", true);
+        SET_DEFAULT_PROP(jn, "isWhiteID", true);
+        SET_DEFAULT_PROP(jn, "isCustomF1", true);
+        SET_DEFAULT_PROP(jn, "isMakeQuickScreenshot", true);
+        SET_DEFAULT_PROP(jn, "isPlaySoundAfterMakeScreenshot", true);
+        SET_DEFAULT_PROP(jn, "formatScreenshotIMG", "PNG");
     });
     safeLoadStruct(j, "serverIcon", [](nlohmann::json& jn) {
-        SET_DEFAULT_BOOL(jn, "state", false)
-        SET_DEFAULT_FLT(jn, "x", 656.0)
-        SET_DEFAULT_FLT(jn, "y", 28.0)
-        SET_DEFAULT_FLT(jn, "width", 366.0)
-        SET_DEFAULT_FLT(jn, "height", 144.0)
+        SET_DEFAULT_PROP(jn, "state", false);
+        SET_DEFAULT_PROP(jn, "x", 656.0);
+        SET_DEFAULT_PROP(jn, "y", 28.0);
+        SET_DEFAULT_PROP(jn, "width", 366.0);
+        SET_DEFAULT_PROP(jn, "height", 144.0);
     });
     safeLoadStruct(j, "vehicleHud", [](nlohmann::json& jn) {
-        SET_DEFAULT_BOOL(jn, "isDrawHelpTablet", false)
-        SET_DEFAULT_BOOL(jn, "isDisableSnowWindow", true)
+        SET_DEFAULT_PROP(jn, "isDrawHelpTablet", false);
+        SET_DEFAULT_PROP(jn, "isDisableSnowWindow", true);
     });
     safeLoadStruct(j, "customScreen", [safeLoadArray](nlohmann::json& jn) {
-        SET_DEFAULT_BOOL(jn, "state", true)
+        SET_DEFAULT_PROP(jn, "state", true);
         safeLoadArray(
             jn, "screens",
             [](nlohmann::json& jn) {
