@@ -86,6 +86,7 @@ PluginSDK by DK22Pac - Zlib license - https://github.com/dk22pac/plugin-sdk
 ImGui by ocornut - MIT license - https://github.com/ocornut/imgui
 PolyHook 2.0 by stevemk14ebr - MIT license - https://github.com/stevemk14ebr/PolyHook_2_0
 RakHook by imring - MIT license - https://github.com/imring/RakHook
+Xbyak by Mitsunari Shigeo - BSD-3-Clause license - https://github.com/herumi/xbyak
 Boost - Boost Software License - https://www.boost.org/
 JSON Modern by nlohmann - MIT license - https://github.com/nlohmann/json
 7z by Igor Pavlov (после компиляции архивирует файлы в zip) - https://www.7-zip.org/
