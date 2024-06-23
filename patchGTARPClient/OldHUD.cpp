@@ -181,7 +181,7 @@ void OldHUD::init() {
         const DWORD addrPatch = g_gtarpclientBase.getAddr<std::uintptr_t>(OFFSETS::GTARP::CUSTOM_PATH_TXD_HUD);
         //patch::setRaw(g_gtarpclientBase.getAddress(addrPatch), "\x90\x90", 2u);
         patch::fill(addrPatch, 2u, 0x90);
-        patch::setJumpThroughJump(addrPatch, uint32_t(&fmtDirPath), 0u, TRUE);
+        patch::setJumpThroughJump(addrPatch, uint32_t(&fmtDirPath), 5u, TRUE);
     }
 
     g_pSAMPHudScale = g_sampBase.getAddr<bool*>(OFFSETS::SAMP::SCALE_HUD_FIX_STATE);
