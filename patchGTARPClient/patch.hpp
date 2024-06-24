@@ -38,6 +38,25 @@ namespace patch {
         VirtualProtect((void*)addr, sizeof(T), oldProt, NULL);
     }
 
+    template<typename T>
+    inline T getDetour(std::uintptr_t addr) {
+        addr += 1;
+        DWORD oldProt;
+        VirtualProtect((void*)addr, 4u, PAGE_EXECUTE_READWRITE, &oldProt);
+        T result = *reinterpret_cast<T*>(addr)+5+addr-1;
+        VirtualProtect((void*)addr, 4u, oldProt, NULL);
+        return result;
+    }
+
+    template<typename T>
+    inline T readMemory(std::uintptr_t addr) {
+        DWORD oldProt;
+        VirtualProtect((void*)addr, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProt);
+        T result = *reinterpret_cast<T*>(addr);
+        VirtualProtect((void*)addr, sizeof(T), oldProt, NULL);
+        return result;
+    }
+
     class callHook {
         std::uintptr_t m_oldFnc{}, m_hookAddr{}, m_detFnc{};
 

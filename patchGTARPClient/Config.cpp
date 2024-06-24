@@ -47,13 +47,13 @@ inline void SET_DEFAULT_PROP(nlohmann::json& js, std::string_view key, T&& param
 
     if (r)
         js[key.data()] = param;
-    }
+}
 template<std::size_t N>
 inline void SET_DEFAULT_PROP(nlohmann::json& js, std::string_view key, const char (&param)[N]) {
     if (!js[key.data()].is_string()) {
         js[key.data()] = param;
     }
-    }
+}
 
 inline void SET_DEFAULT_ARR(nlohmann::json& js, std::string_view key, const nlohmann::json& arr, nlohmann::json::value_t type) {
     if (!js[key.data()].is_array()) {
@@ -198,6 +198,18 @@ void Config::restoreAndCheckKeysCorrect() {
                     "weather": [ 11 ]
                 }
             ])"_json;
+            });
+    });
+    safeLoadStruct(j, "customLoadScreen", [safeLoadArray](nlohmann::json& jn) {
+        SET_DEFAULT_PROP(jn, "path", "NONE");
+        safeLoadArray(
+            jn, "splashs", 
+            [](nlohmann::json& jn) {
+                SET_DEFAULT_PROP(jn, "texture", "NONE");
+                SET_DEFAULT_PROP(jn, "color", 0xFF'00'00'00);
+            },
+            [](nlohmann::json& jn) {
+                jn = nlohmann::json::array();
             });
     });
 }

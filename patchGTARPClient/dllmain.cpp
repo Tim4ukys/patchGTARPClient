@@ -37,6 +37,7 @@ Updater g_Updater;
 #include "tfro.h"
 #include "DisableSnowWindow.h"
 #include "CustomConnectScreen.h"
+#include "CustomLoadScreen.h"
 
 #include "Menu.h"
 
@@ -54,7 +55,8 @@ std::map<std::string, std::shared_ptr<MLoad>> g_modules{
         MK_MOD(FastScreenshot),
         MK_MOD(TFRO),
         //MK_MOD(DisableSnowWindow),
-        MK_MOD(CustomConnectScreen)
+        MK_MOD(CustomConnectScreen),
+        MK_MOD(CustomLoadScreen)
     }
 };
 #undef MK_MOD

@@ -127,6 +127,7 @@
     <ClInclude Include="CustomConnectScreen.h" />
     <ClInclude Include="CustomFont.h" />
     <ClInclude Include="CustomHelp.h" />
+    <ClInclude Include="CustomLoadScreen.h" />
     <ClInclude Include="D3D9Hook.h" />
     <ClInclude Include="DelCarTable.h" />
     <ClInclude Include="DisableSnowWindow.h" />
@@ -155,6 +156,7 @@
     <ClCompile Include="CustomConnectScreen.cpp" />
     <ClCompile Include="CustomFont.cpp" />
     <ClCompile Include="CustomHelp.cpp" />
+    <ClCompile Include="CustomLoadScreen.cpp" />
     <ClCompile Include="D3D9Hook.cpp" />
     <ClCompile Include="DelCarTable.cpp" />
     <ClCompile Include="DisableSnowWindow.cpp" />

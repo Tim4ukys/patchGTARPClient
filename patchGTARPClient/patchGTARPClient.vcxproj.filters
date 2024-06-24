@@ -103,6 +103,9 @@
     <ClInclude Include="Updater.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="CustomLoadScreen.h">
+      <Filter>md\gtarp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -174,6 +177,9 @@
     </ClCompile>
     <ClCompile Include="Updater.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomLoadScreen.cpp">
+      <Filter>md\gtarp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
