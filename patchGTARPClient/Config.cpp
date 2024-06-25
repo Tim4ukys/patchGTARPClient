@@ -205,7 +205,7 @@ void Config::restoreAndCheckKeysCorrect() {
         safeLoadArray(
             jn, "splashs", 
             [](nlohmann::json& jn) {
-                SET_DEFAULT_PROP(jn, "texture", "NONE");
+                SET_DEFAULT_PROP(jn, "texture", "");
                 SET_DEFAULT_PROP(jn, "color", 0xFF'00'00'00);
             },
             [](nlohmann::json& jn) {

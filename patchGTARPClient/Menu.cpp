@@ -410,26 +410,6 @@ void Menu::init() {
             checkbox(u8"Свой экран загрузки на север", g_Config["customScreen"]["state"], nullptr, nullptr,
                      u8"Заменяет время, погоду, местоположение камеры и куда она смотрит\n"
                      u8"при коннекте к серверу.");
-            /*
-            if (g_Config["customScreen"]["state"].get<bool>()) {
-                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
-                ImGui::BeginChild("customScreen", {0.f, 55.f});
-                for (auto& it : g_Config["customScreen"]["screens"].items()) {
-                    float cum[3];
-                    cum[0] = it.value()["camera"][0].get<float>();
-                    cum[1] = it.value()["camera"][1].get<float>();
-                    cum[2] = it.value()["camera"][2].get<float>();
-                    if (ImGui::InputFloat3("Camera", cum)) {
-                        it.value()["camera"][0] = cum[0];
-                        it.value()["camera"][1] = cum[1];
-                        it.value()["camera"][2] = cum[2];
-                        g_Config.saveFile();
-                    }
-                    
-                }
-                ImGui::EndChild();
-            }
-            */
             if (g_Config["customScreen"]["state"].get<bool>()) {
                 //auto pCustConScreen = dynamic_cast<CustomConnectScreen*>(g_modules["CustomConnectScreen"].get());
 
@@ -493,6 +473,52 @@ void Menu::init() {
                         "point": [ 659.96997, -90.027298, 6.7947001 ],
                         "time": [ 2 ],
                         "weather": [ 0 ]
+                    })"_json);
+                    g_Config.saveFile();
+                }
+
+                ImGui::EndChild();
+            }
+            
+            textInput(u8"Путь до TXD файла загрузочной заставки", g_Config["customLoadScreen"]["path"],
+                      u8"Заменяет заставку при запуске игры."
+                      u8"\n\nЕсли Вы не хотите ничего менять, то следует написать: NONE");
+            if (g_Config["customLoadScreen"]["path"].get<std::string>() != "NONE") {
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::Text(u8"Текстуры в TXD:");
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + TAB_SIZE);
+                ImGui::SetNextWindowSizeConstraints({670.f - TAB_SIZE - 16.f * 2, 165.f}, {670.f - TAB_SIZE - 16.f * 2, 342.f});
+                ImGui::BeginChild("customLoadScreen", ImVec2(0, 0), true);
+
+                int i{1};
+                for (auto& [key, value] : g_Config["customLoadScreen"]["splashs"].items()) {
+                    char tmp[16]{};
+                    sprintf(tmp, "Texture[%d]", i);
+                    textInput(tmp, value["texture"], u8"Название текстуры в самом TXD файле");
+
+                    ImVec4 cum = ImGui::ColorConvertU32ToFloat4(value["color"].get<DWORD>());
+                    sprintf(tmp, "Color[%d]", i);
+                    if (ImGui::ColorPicker3(tmp, &cum.x)) {
+                        value["color"] = ImGui::ColorConvertFloat4ToU32(cum);
+                        g_Config.saveFile();
+                    }
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip(u8"Цвет ползунка загрузки");
+
+                    if (ImGui::Button((u8"Удалить splash " + std::to_string(i)).c_str())) {
+                        g_Config["customLoadScreen"]["splashs"].erase(i - 1);
+                        g_Config.saveFile();
+                        break;
+                    }
+
+                    ImGui::Separator();
+                    ++i;
+                }
+
+                if (ImGui::Button(u8"Добавить screen")) {
+                    g_Config["customLoadScreen"]["splashs"].push_back(R"({
+                        "color": 0,
+                        "texture": ""
                     })"_json);
                     g_Config.saveFile();
                 }

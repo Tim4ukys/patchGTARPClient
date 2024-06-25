@@ -13,8 +13,10 @@
 
 class CustomLoadScreen : public MLoad {
     CSprite2d m_txtSplash;
-    Xbyak::CodeGenerator m_code;
+    Xbyak::CodeGenerator m_code[3];
     CRect                m_saveRect;
+
+    static constexpr std::string_view TEXTURESLOTNAME = "CUSTOMLOADSCREEN_MY";
 
 public:
 
