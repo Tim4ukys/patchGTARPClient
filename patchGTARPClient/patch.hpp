@@ -35,7 +35,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProt);
         *reinterpret_cast<T*>(addr) = value;
-        VirtualProtect((void*)addr, sizeof(T), oldProt, NULL);
+        VirtualProtect((void*)addr, sizeof(T), oldProt, &oldProt);
     }
 
     template<typename T>
@@ -44,7 +44,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, 4u, PAGE_EXECUTE_READWRITE, &oldProt);
         T result = *reinterpret_cast<T*>(addr)+5+addr-1;
-        VirtualProtect((void*)addr, 4u, oldProt, NULL);
+        VirtualProtect((void*)addr, 4u, oldProt, &oldProt);
         return result;
     }
 
@@ -53,7 +53,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProt);
         T result = *reinterpret_cast<T*>(addr);
-        VirtualProtect((void*)addr, sizeof(T), oldProt, NULL);
+        VirtualProtect((void*)addr, sizeof(T), oldProt, &oldProt);
         return result;
     }
 
@@ -81,7 +81,7 @@ namespace patch {
             reinterpret_cast<std::uint8_t*>(m_hookAddr)[0] = '\xE8'; // call ...
             m_oldFnc = *reinterpret_cast<std::uint32_t*>(m_hookAddr + 1);
             *reinterpret_cast<std::uint32_t*>(m_hookAddr + 1) = m_detFnc;
-            VirtualProtect((void*)m_hookAddr, 5u, oldProt, NULL);
+            VirtualProtect((void*)m_hookAddr, 5u, oldProt, &oldProt);
         }
         inline void remove() {
             if (!m_oldFnc) return;
@@ -101,7 +101,7 @@ namespace patch {
         textOut.resize(count*2);
         for (std::size_t i{}; i < count; ++i)
             sprintf((char*)(textOut.data()) + i * 2, "%02X", *(std::uint8_t*)(addr + i));
-        VirtualProtect((void*)addr, count, oldProt, NULL);
+        VirtualProtect((void*)addr, count, oldProt, &oldProt);
     }
 
     inline std::string getHEX(std::uintptr_t addr, std::size_t count) {
@@ -114,7 +114,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, len, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, raw_str, len);
-        VirtualProtect((void*)addr, len, oldProt, NULL);
+        VirtualProtect((void*)addr, len, oldProt, &oldProt);
     }
 
     template<std::size_t N>
@@ -122,7 +122,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, N - 1, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, (void*)raw_str, N - 1);
-        VirtualProtect((void*)addr, N - 1, oldProt, NULL);
+        VirtualProtect((void*)addr, N - 1, oldProt, &oldProt);
     }
 
     template<std::size_t N>
@@ -130,7 +130,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, N, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, (void*)raw_str, N);
-        VirtualProtect((void*)addr, N, oldProt, NULL);
+        VirtualProtect((void*)addr, N, oldProt, &oldProt);
     }
 
     inline void setBytes(std::uintptr_t addr, const std::vector<std::uint8_t>& bytes) {
@@ -138,14 +138,14 @@ namespace patch {
         DWORD      oldProt;
         VirtualProtect((void*)addr, len, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, bytes.data(), len);
-        VirtualProtect((void*)addr, len, oldProt, NULL);
+        VirtualProtect((void*)addr, len, oldProt, &oldProt);
     }
 
     inline void setBytes(std::uintptr_t addr, const std::uint8_t* bytes, std::size_t len_bytes) {
         DWORD oldProt;
         VirtualProtect((void*)addr, len_bytes, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, bytes, len_bytes);
-        VirtualProtect((void*)addr, len_bytes, oldProt, NULL);
+        VirtualProtect((void*)addr, len_bytes, oldProt, &oldProt);
     }
 
     template<std::size_t N>
@@ -153,7 +153,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, N, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)addr, (void*)bytes, N);
-        VirtualProtect((void*)addr, N, oldProt, NULL);
+        VirtualProtect((void*)addr, N, oldProt, &oldProt);
     }
 
     inline void getBytes(std::uintptr_t addr, std::vector<std::uint8_t>& outBytes, std::size_t count) {
@@ -161,7 +161,7 @@ namespace patch {
         VirtualProtect((void*)addr, count, PAGE_EXECUTE_READWRITE, &oldProt);
         outBytes.resize(count);
         memcpy(outBytes.data(), (void*)addr, count);
-        VirtualProtect((void*)addr, count, oldProt, NULL);
+        VirtualProtect((void*)addr, count, oldProt, &oldProt);
     }
 
     template<std::size_t N>
@@ -169,7 +169,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, N, PAGE_EXECUTE_READWRITE, &oldProt);
         memcpy((void*)outBytes, (void*)addr, N);
-        VirtualProtect((void*)addr, N, oldProt, NULL);
+        VirtualProtect((void*)addr, N, oldProt, &oldProt);
     }
 
     enum class TYPE_JMP { sml, lrg };
@@ -186,14 +186,15 @@ namespace patch {
 
     inline void writeCode(std::uintptr_t addr, std::function<void(Xbyak::CodeGenerator& code)> clbCodeGenerate, std::size_t len) {
         Xbyak::CodeGenerator code{len, (void*)addr};
-        code.setProtectModeRW();
+        DWORD                oldProt;
+        VirtualProtect((void*)addr, len, PAGE_EXECUTE_READWRITE, &oldProt);
         memset((void*)addr, 0x90, len);
         code.getCode();
         clbCodeGenerate(code);
         if (len - code.getSize() > 2u) {
             code.jmp(PVOID(addr + len));
         }
-        code.setProtectModeRE();
+        VirtualProtect((void*)addr, len, oldProt, &oldProt);
     }
 
     [[maybe_unused]] BOOL setRawThroughJump(std::uintptr_t address, const char* raw,
@@ -210,7 +211,7 @@ namespace patch {
         DWORD oldProt;
         VirtualProtect((void*)addr, sz, PAGE_EXECUTE_READWRITE, &oldProt);
         FillMemory((void*)addr, sz, value);
-        VirtualProtect((void*)addr, sz, oldProt, NULL);
+        VirtualProtect((void*)addr, sz, oldProt, &oldProt);
     }
 
     /*
